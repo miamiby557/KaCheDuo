@@ -1,0 +1,18 @@
+package com.szcinda.repository;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import javax.persistence.Entity;
+
+@EqualsAndHashCode(callSuper = true)
+@Data
+@Entity
+public class Driver extends BaseEntity {
+    private String name;
+    private String phone;
+    private String vehicleNo;
+    private String company;
+    private String wechat;
+    private String owner;
+}

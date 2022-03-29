@@ -1,0 +1,350 @@
+package com.szcinda.service.robot;
+
+import com.szcinda.repository.Robot;
+import com.szcinda.repository.RobotRepository;
+import com.szcinda.repository.User;
+import com.szcinda.repository.UserRepository;
+import com.szcinda.service.RobotAliveDto;
+import com.szcinda.service.ScheduleService;
+import com.szcinda.service.SnowFlakeFactory;
+import org.springframework.beans.BeanUtils;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+public class RobotServiceImpl implements RobotService {
+    private final RobotRepository robotRepository;
+    private final SnowFlakeFactory snowFlakeFactory;
+    private final UserRepository userRepository;
+    private final ScheduleService scheduleService;
+
+    public RobotServiceImpl(RobotRepository robotRepository, UserRepository userRepository, ScheduleService scheduleService) {
+        this.robotRepository = robotRepository;
+        this.userRepository = userRepository;
+        this.scheduleService = scheduleService;
+        this.snowFlakeFactory = SnowFlakeFactory.getInstance();
+    }
+
+    @Override
+    public void create(CreateRobotDto dto) {
+        Assert.isTrue(dto.getSubRobotList().size() > 0, "必须添加至少一条子账号数据");
+        Robot robot = robotRepository.findByPhone(dto.getPhone());
+        Assert.isTrue(robot == null, String.format("存在相同登录帐号【%s】，不允许创建", dto.getPhone()));
+        robot = robotRepository.findByAccount2(dto.getAccount2());
+        Assert.isTrue(robot == null, String.format("存在相同登录帐号【%s】，不允许创建", dto.getAccount2()));
+        // 判断子账号有没有创建过
+        for (CreateRobotDto createRobotDto : dto.getSubRobotList()) {
+            robot = robotRepository.findByPhone(createRobotDto.getPhone());
+            Assert.isTrue(robot == null, String.format("存在相同登录帐号【%s】，不允许创建", createRobotDto.getPhone()));
+        }
+        robot = new Robot();
+        BeanUtils.copyProperties(dto, robot);
+        robot.setId(snowFlakeFactory.nextId("RB"));
+        robotRepository.save(robot);
+        scheduleService.addRobotFromCopyOnWriteRobots(robot);
+        // 监控帐号
+        ScheduleService.robotChuZhiMap.put(robot.getPhone(), robot.isRun());
+        ScheduleService.robotPwdMap.put(robot.getPhone(), robot.getPwd());
+        // 处理和位置监控
+        ScheduleService.robotChuZhiMap.put(robot.getAccount2(), robot.isRun());
+        ScheduleService.robotPwdMap.put(robot.getAccount2(), robot.getPwd2());
+        for (CreateRobotDto createRobotDto : dto.getSubRobotList()) {
+            Robot subRobot = new Robot();
+            BeanUtils.copyProperties(createRobotDto, subRobot);
+            subRobot.setId(snowFlakeFactory.nextId("RB"));
+            subRobot.setParentId(robot.getId());
+            subRobot.setOwner(robot.getOwner());
+            subRobot.setCompany(dto.getCompany());
+            robotRepository.save(subRobot);
+            scheduleService.addRobotFromCopyOnWriteRobots(subRobot);
+            ScheduleService.robotChuZhiMap.put(subRobot.getPhone(), subRobot.isRun());
+            ScheduleService.robotPwdMap.put(subRobot.getPhone(), subRobot.getPwd());
+        }
+    }
+
+    @Override
+    public void update(UpdateRobotDto dto) {
+        Assert.isTrue(dto.getSubRobotList().size() > 0, "必须添加至少一条子账号数据");
+        Robot robot = robotRepository.findByPhone(dto.getPhone());
+        Assert.isTrue(robot == null || robot.getId().equals(dto.getId()), String.format("存在相同登录帐号【%s】，不允许修改", dto.getPhone()));
+        robot = robotRepository.findByAccount2(dto.getAccount2());
+        Assert.isTrue(robot == null || robot.getId().equals(dto.getId()), String.format("存在相同登录帐号【%s】，不允许创建", dto.getAccount2()));
+        robot = robotRepository.findById(dto.getId());
+        robot.setPhone(dto.getPhone());
+        robot.setPwd(dto.getPwd());
+        robot.setCompany(dto.getCompany());
+        robot.setAccount2(dto.getAccount2());
+        robot.setPwd2(dto.getPwd2());
+        robotRepository.save(robot);
+        scheduleService.updateRobotFromCopyOnWriteRobots(robot);
+        // 监控帐号
+        ScheduleService.robotChuZhiMap.put(robot.getPhone(), robot.isRun());
+        ScheduleService.robotPwdMap.put(robot.getPhone(), robot.getPwd());
+        // 处理和位置监控
+        ScheduleService.robotChuZhiMap.put(robot.getAccount2(), robot.isRun());
+        ScheduleService.robotPwdMap.put(robot.getAccount2(), robot.getPwd2());
+        List<Robot> subRobots = robotRepository.findByParentId(robot.getId());
+        for (Robot subRobot : subRobots) {
+            ScheduleService.robotChuZhiMap.remove(subRobot.getPhone());
+            ScheduleService.robotPwdMap.remove(subRobot.getPhone());
+            robotRepository.delete(subRobot);
+            scheduleService.removeRobotFromCopyOnWriteRobots(subRobot.getId());
+        }
+        // 判断子账号有没有创建过
+        for (UpdateRobotDto createRobotDto : dto.getSubRobotList()) {
+            Robot subRobot = robotRepository.findByPhone(createRobotDto.getPhone());
+            Assert.isTrue(subRobot == null, String.format("存在相同登录帐号【%s】，不允许修改", createRobotDto.getPhone()));
+        }
+        for (UpdateRobotDto createRobotDto : dto.getSubRobotList()) {
+            Robot subRobot = new Robot();
+            BeanUtils.copyProperties(createRobotDto, subRobot);
+            subRobot.setId(snowFlakeFactory.nextId("RB"));
+            subRobot.setParentId(robot.getId());
+            subRobot.setOwner(robot.getOwner());
+            subRobot.setCompany(dto.getCompany());
+            robotRepository.save(subRobot);
+            scheduleService.addRobotFromCopyOnWriteRobots(subRobot);
+            ScheduleService.robotChuZhiMap.put(subRobot.getPhone(), subRobot.isRun());
+            ScheduleService.robotPwdMap.put(subRobot.getPhone(), subRobot.getPwd());
+        }
+    }
+
+    @Override
+    public List<RobotDto> query(String owner) {
+        List<Robot> robots = robotRepository.findByOwnerAndParentIdIsNull(owner);
+        List<RobotDto> robotDtos = new ArrayList<>();
+        if (robots.size() > 0) {
+            ConcurrentHashMap<String, RobotAliveDto> robotAliveMap = ScheduleService.robotAliveMap;
+            for (Robot robot : robots) {
+                RobotDto dto = new RobotDto();
+                BeanUtils.copyProperties(robot, dto);
+                if (robotAliveMap.containsKey(robot.getPhone())) {
+                    dto.setAlive(true);
+                    dto.setLastTime(robotAliveMap.get(robot.getPhone()).getTime());
+                } else {
+                    dto.setAlive(false);
+                }
+                // 查找子账号
+                List<Robot> subRobots = robotRepository.findByParentId(robot.getId());
+                for (Robot subRobot : subRobots) {
+                    RobotDto subRobotDto = new RobotDto();
+                    BeanUtils.copyProperties(subRobot, subRobotDto);
+                    if (robotAliveMap.containsKey(subRobotDto.getPhone())) {
+                        subRobotDto.setAlive(true);
+                        subRobotDto.setLastTime(robotAliveMap.get(subRobotDto.getPhone()).getTime());
+                    } else {
+                        subRobotDto.setAlive(false);
+                    }
+                    dto.getSubRobots().add(subRobotDto);
+                }
+                robotDtos.add(dto);
+            }
+        }
+        return robotDtos;
+    }
+
+
+    @Override
+    public List<RobotGroupDto> querySelf(String owner) {
+        List<Robot> robots = scheduleService.queryBySelfFromCopyOnWriteRobots(owner);
+        List<RobotGroupDto> robotDtos = new ArrayList<>();
+        ConcurrentHashMap<String, RobotAliveDto> robotAliveMap = ScheduleService.robotAliveMap;
+        for (Robot robot : robots) {
+            RobotGroupDto groupDto = new RobotGroupDto();
+            groupDto.setOwner(robot.getPhone());
+            RobotDto dto = new RobotDto();
+            BeanUtils.copyProperties(robot, dto);
+            if (robotAliveMap.containsKey(robot.getPhone())) {
+                dto.setAlive(true);
+                dto.setLastTime(robotAliveMap.get(robot.getPhone()).getTime());
+            } else {
+                dto.setAlive(false);
+            }
+            dto.setPhone(dto.getPhone() + "(监控" + ")");
+            groupDto.getSubRobots().add(dto);
+            // 处理、位置监控
+            if (StringUtils.hasText(robot.getAccount2())) {
+                RobotDto robot2 = new RobotDto();
+                robot2.setPhone(robot.getAccount2() + "(处理" + ")");
+                robot2.setAlive(false);
+                groupDto.getSubRobots().add(robot2);
+            }
+            // 查找子账号
+            List<Robot> subRobots = scheduleService.querySubRobotsFromCopyOnWriteRobots(robot.getId());
+            for (Robot subRobot : subRobots) {
+                RobotDto subRobotDto = new RobotDto();
+                BeanUtils.copyProperties(subRobot, subRobotDto);
+                if (robotAliveMap.containsKey(subRobotDto.getPhone())) {
+                    subRobotDto.setAlive(true);
+                    subRobotDto.setLastTime(robotAliveMap.get(subRobotDto.getPhone()).getTime());
+                } else {
+                    subRobotDto.setAlive(false);
+                }
+                subRobotDto.setPhone(subRobotDto.getPhone() + "(处置" + ")");
+                groupDto.getSubRobots().add(subRobotDto);
+            }
+            robotDtos.add(groupDto);
+        }
+        return robotDtos;
+    }
+
+
+    @Override
+    public void delete(String id) {
+        Robot robot = robotRepository.findById(id);
+        List<Robot> subRobots = robotRepository.findByParentId(id);
+        robotRepository.delete(robot);
+        scheduleService.removeRobotFromCopyOnWriteRobots(id);
+        // 监控帐号
+        ScheduleService.robotChuZhiMap.remove(robot.getPhone());
+        ScheduleService.robotPwdMap.remove(robot.getPhone());
+        if (StringUtils.isEmpty(robot.getParentId())) {
+            // 处理和位置监控
+            ScheduleService.robotChuZhiMap.remove(robot.getAccount2());
+            ScheduleService.robotPwdMap.remove(robot.getAccount2());
+        }
+        // 把主账号改为停止
+        scheduleService.removeFromMainRobotWatchMap(id);
+        if (subRobots.size() > 0) {
+            for (Robot subRobot : subRobots) {
+                robotRepository.delete(subRobot);
+                scheduleService.removeRobotFromCopyOnWriteRobots(subRobot.getId());
+                ScheduleService.robotChuZhiMap.remove(subRobot.getPhone());
+                ScheduleService.robotPwdMap.remove(subRobot.getPhone());
+            }
+        }
+    }
+
+
+    @Override
+    public void stop(String id) {
+        Robot robot = robotRepository.findById(id);
+        List<Robot> subRobots = robotRepository.findByParentId(id);
+        robot.setRun(false);
+        robotRepository.save(robot);
+        // 改变状态，不允许继续处置
+        scheduleService.changeChuZhiRobotStatus(robot.getPhone(), false);
+        scheduleService.updateRobotFromCopyOnWriteRobots(robot);
+        if (StringUtils.hasText(robot.getAccount2())) {
+            scheduleService.changeChuZhiRobotStatus(robot.getAccount2(), false);
+        }
+        // 把主账号改为停止
+        scheduleService.removeFromMainRobotWatchMap(id);
+        if (StringUtils.hasText(robot.getAccount2())) {
+            scheduleService.changeChuZhiRobotStatus(robot.getPhone(), false);
+            scheduleService.changeChuZhiRobotStatus(robot.getAccount2(), false);
+        }
+        if (subRobots.size() > 0) {
+            for (Robot subRobot : subRobots) {
+                subRobot.setRun(false);
+                robotRepository.save(subRobot);
+                scheduleService.changeChuZhiRobotStatus(subRobot.getPhone(), false);
+                scheduleService.updateRobotFromCopyOnWriteRobots(subRobot);
+            }
+        }
+    }
+
+    @Override
+    public void start(String id) {
+        Robot robot = robotRepository.findById(id);
+        List<Robot> subRobots = robotRepository.findByParentId(id);
+        robot.setRun(true);
+        robotRepository.save(robot);
+        scheduleService.changeChuZhiRobotStatus(robot.getPhone(), true);
+        if (StringUtils.hasText(robot.getAccount2())) {
+            scheduleService.changeChuZhiRobotStatus(robot.getAccount2(), true);
+        }
+        // 把主账号改为运行
+        scheduleService.updateToMainRobotWatchMap(id);
+        scheduleService.updateRobotFromCopyOnWriteRobots(robot);
+        if (subRobots.size() > 0) {
+            for (Robot subRobot : subRobots) {
+                subRobot.setRun(true);
+                robotRepository.save(subRobot);
+                scheduleService.changeChuZhiRobotStatus(subRobot.getPhone(), true);
+                scheduleService.updateRobotFromCopyOnWriteRobots(subRobot);
+            }
+        }
+    }
+
+    @Override
+    public List<RobotGroupDto> group() {
+        List<RobotGroupDto> groupDtos = new ArrayList<>();
+        List<Robot> robots = scheduleService.queryAllRobotsFromCopyOnWriteRobots();
+        Map<String, List<Robot>> map = robots.stream().collect(Collectors.groupingBy(Robot::getOwner));
+        ConcurrentHashMap<String, RobotAliveDto> robotAliveMap = ScheduleService.robotAliveMap;
+        map.forEach((owner, list) -> {
+            RobotGroupDto groupDto = new RobotGroupDto();
+            User user = userRepository.findById(owner);
+            groupDto.setOwner(user.getAccount());
+            groupDto.setCompany(user.getCompany());
+            for (Robot robot : list) {
+                RobotDto dto = new RobotDto();
+                BeanUtils.copyProperties(robot, dto);
+                if (robotAliveMap.containsKey(robot.getPhone())) {
+                    dto.setAlive(true);
+                    dto.setLastTime(robotAliveMap.get(robot.getPhone()).getTime());
+                } else {
+                    dto.setAlive(false);
+                }
+                if (StringUtils.isEmpty(robot.getParentId())) {
+                    dto.setPhone(dto.getPhone() + "(监控" + ")");
+                } else {
+                    dto.setPhone(dto.getPhone() + "(处置" + ")");
+                }
+                groupDto.getSubRobots().add(dto);
+            }
+            // 取出处理、位置监控的机器人
+            list.stream().filter(item -> StringUtils.hasText(item.getAccount2())).forEach(item -> {
+                RobotDto dto = new RobotDto();
+                dto.setPhone(item.getAccount2() + "(处理" + ")");
+                groupDto.getSubRobots().add(dto);
+            });
+            groupDtos.add(groupDto);
+        });
+        return groupDtos;
+    }
+
+    @Override
+    public List<RobotDto> find10Account() {
+        List<RobotDto> robotDtos = new ArrayList<>();
+        List<Robot> robots = scheduleService.queryAllRobotsFromCopyOnWriteRobots();
+        for (Robot robot : robots) {
+            boolean inMap = scheduleService.checkIsInMainRobotWatchMap(robot.getId());
+            if (StringUtils.isEmpty(robot.getParentId()) && !inMap && robot.isRun()) {
+                RobotDto dto = new RobotDto();
+                dto.setId(robot.getId());
+                dto.setPhone(robot.getPhone());
+                dto.setPwd(robot.getPwd());
+                robotDtos.add(dto);
+                // 添加到主账号监控集合中
+                scheduleService.updateToMainRobotWatchMap(robot.getId());
+                if (robotDtos.size() >= 10) {
+                    break;
+                }
+            }
+        }
+        return robotDtos;
+    }
+
+    @Override
+    public List<String> getLocationRobots(String owner) {
+        List<String> names = new ArrayList<>();
+        List<Robot> robots = robotRepository.findByOwnerAndParentIdIsNull(owner);
+        for (Robot robot : robots) {
+            if (StringUtils.hasText(robot.getAccount2())) {
+                names.add(robot.getAccount2());
+            }
+        }
+        return names;
+    }
+}
