@@ -5,7 +5,6 @@ import com.szcinda.repository.RobotRepository;
 import com.szcinda.repository.RobotTask;
 import com.szcinda.repository.RobotTaskRepository;
 import com.szcinda.service.PageResult;
-import com.szcinda.service.ScheduleService;
 import com.szcinda.service.SnowFlakeFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
@@ -24,7 +23,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
@@ -163,9 +161,8 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                 List<Robot> robots = robotRepository.findByParentId(robotUserName.getId());
                 if (robots.size() > 0) {
                     CreateRobotTaskDto dto;
-                    ConcurrentHashMap<String, Boolean> robotChuZhiMap = ScheduleService.robotChuZhiMap;
                     for (Robot robot : robots) {
-                        if (robotChuZhiMap.containsKey(robot.getPhone()) && robotChuZhiMap.get(robot.getPhone())) {
+                        if (robot.isRun()) {
                             // 所有的子账号一起配合工作
                             dto = new CreateRobotTaskDto();
                             dto.setUserName(robot.getPhone());
