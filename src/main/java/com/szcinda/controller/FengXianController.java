@@ -46,6 +46,17 @@ public class FengXianController {
         }
         return Result.fail("暂停执行处置");
     }
+
+    @GetMapping("canRunChuLiAndLocation/{phone}")
+    public Result<String> canRunChuLiAndLocation(@PathVariable String phone) {
+        boolean canRun = scheduleService.canRunChuLiAndLocation(phone);
+        if (canRun) {
+            String pwd = scheduleService.getPwd(phone);
+            return Result.success(pwd);
+        }
+        return Result.fail("暂停执行处置");
+    }
+
     @GetMapping("canWatch/{id}")
     public Result<String> canWatch(@PathVariable String id) {
         boolean canWatch = scheduleService.canWatch(id);

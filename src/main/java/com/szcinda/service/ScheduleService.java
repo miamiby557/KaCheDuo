@@ -214,6 +214,19 @@ public class ScheduleService {
         return false;
     }
 
+    public boolean canRunChuLiAndLocation(String phone) {
+        if (robotChuZhiMap.containsKey(phone)) {
+            return robotChuZhiMap.get(phone);
+        } else {
+            Robot robot = robotRepository.findByAccount2(phone);
+            if (robot != null) {
+                robotChuZhiMap.put(robot.getPhone(), robot.isRun());
+                return robot.isRun();
+            }
+        }
+        return false;
+    }
+
     public String getPwd(String phone) {
         if (robotPwdMap.containsKey(phone)) {
             return robotPwdMap.get(phone);
