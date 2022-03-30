@@ -51,11 +51,11 @@ public class ScheduleService {
     public void run() throws Exception {
         // 清空历史任务
         robotSearchLocationList.clear();
-        List<Robot> robots = robotRepository.findByParentIdIsNull();
+        List<Robot> robots = robotRepository.findByType("处理-位置监控");
         if (robots.size() > 0) {
             for (Robot robot : robots) {
                 //找处理、位置监控账号来处理位置监控的上传
-                robotSearchLocationList.add(robot.getAccount2());
+                robotSearchLocationList.add(robot.getPhone());
                 robotPwdMap.put(robot.getPhone(), robot.getPwd());
                 if (robot.isRun()) {
                     CreateRobotTaskDto taskDto = new CreateRobotTaskDto();

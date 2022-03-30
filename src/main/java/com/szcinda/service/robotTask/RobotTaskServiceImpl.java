@@ -164,7 +164,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                 if (robots.size() > 0) {
                     CreateRobotTaskDto dto;
                     for (Robot robot : robots) {
-                        if (robot.isRun()) {
+                        if ("处置".equals(robot.getType()) && robot.isRun()) {
                             // 所有的子账号一起配合工作
                             dto = new CreateRobotTaskDto();
                             dto.setUserName(robot.getPhone());

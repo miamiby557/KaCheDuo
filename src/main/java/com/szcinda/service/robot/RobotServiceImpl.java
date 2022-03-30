@@ -232,11 +232,6 @@ public class RobotServiceImpl implements RobotService {
         // 监控帐号
         ScheduleService.robotChuZhiMap.remove(robot.getPhone());
         ScheduleService.robotPwdMap.remove(robot.getPhone());
-        if (StringUtils.isEmpty(robot.getParentId())) {
-            // 处理和位置监控
-            ScheduleService.robotChuZhiMap.remove(robot.getAccount2());
-            ScheduleService.robotPwdMap.remove(robot.getAccount2());
-        }
         // 把主账号改为停止
         scheduleService.removeFromMainRobotWatchMap(id);
         if (subRobots.size() > 0) {
@@ -259,15 +254,8 @@ public class RobotServiceImpl implements RobotService {
         // 改变状态，不允许继续处置
         scheduleService.changeChuZhiRobotStatus(robot.getPhone(), false);
         scheduleService.updateRobotFromCopyOnWriteRobots(robot);
-        if (StringUtils.hasText(robot.getAccount2())) {
-            scheduleService.changeChuZhiRobotStatus(robot.getAccount2(), false);
-        }
         // 把主账号改为停止
         scheduleService.removeFromMainRobotWatchMap(id);
-        if (StringUtils.hasText(robot.getAccount2())) {
-            scheduleService.changeChuZhiRobotStatus(robot.getPhone(), false);
-            scheduleService.changeChuZhiRobotStatus(robot.getAccount2(), false);
-        }
         if (subRobots.size() > 0) {
             for (Robot subRobot : subRobots) {
                 subRobot.setRun(false);
