@@ -82,6 +82,8 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                 predicates.add(exp.in(statusInList));
             }
             List<String> phones = robots.stream().map(Robot::getPhone).collect(Collectors.toList());
+            // 加上处理的帐号
+            phones.addAll(robots.stream().filter(robot -> StringUtils.hasText(robot.getAccount2())).map(Robot::getAccount2).collect(Collectors.toList()));
             Expression<String> exp = root.get("userName");
             predicates.add(exp.in(phones));
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
@@ -95,10 +97,10 @@ public class RobotTaskServiceImpl implements RobotTaskService {
 
     @Override
     public void create(CreateRobotTaskDto dto) {
-        List<String> stausList = new ArrayList<>();
-        stausList.add("待运行");
-        stausList.add("运行中");
-        List<RobotTask> tasks = robotTaskRepository.findByUserNameAndTaskTypeAndTaskStatusIn(dto.getUserName(), dto.getTaskType(), stausList);
+        List<String> statusList = new ArrayList<>();
+        statusList.add("待运行");
+        statusList.add("运行中");
+        List<RobotTask> tasks = robotTaskRepository.findByUserNameAndTaskTypeAndTaskStatusIn(dto.getUserName(), dto.getTaskType(), statusList);
         if (tasks.size() == 0) {
             RobotTask task = new RobotTask();
             BeanUtils.copyProperties(dto, task);

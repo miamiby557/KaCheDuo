@@ -57,11 +57,14 @@ public class ScheduleService {
                 //找处理、位置监控账号来处理位置监控的上传
                 robotSearchLocationList.add(robot.getAccount2());
                 robotPwdMap.put(robot.getPhone(), robot.getPwd());
-                CreateRobotTaskDto taskDto = new CreateRobotTaskDto();
-                taskDto.setTaskType("位置监控");
-                taskDto.setUserName(robot.getAccount2());
-                taskDto.setPwd(robot.getPwd2());
-                robotTaskService.create(taskDto);
+                if (robot.isRun()) {
+                    CreateRobotTaskDto taskDto = new CreateRobotTaskDto();
+                    taskDto.setTaskType("位置监控");
+                    taskDto.setUserName(robot.getAccount2());
+                    taskDto.setPwd(robot.getPwd2());
+                    taskDto.setCompany(robot.getCompany());
+                    robotTaskService.create(taskDto);
+                }
             }
         }
     }
@@ -237,7 +240,7 @@ public class ScheduleService {
         //添加到机器人在线集合中
         robotAliveMap.put(phone, dto);
         // 添加到主账号监控集合中
-        if(mainRobotWatchMap.containsKey(id)){
+        if (mainRobotWatchMap.containsKey(id)) {
             mainRobotWatchMap.put(id, LocalDateTime.now());
         }
     }
