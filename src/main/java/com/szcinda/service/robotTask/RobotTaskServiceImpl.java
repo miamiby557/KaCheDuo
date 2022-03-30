@@ -82,8 +82,6 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                 predicates.add(exp.in(statusInList));
             }
             List<String> phones = robots.stream().map(Robot::getPhone).collect(Collectors.toList());
-            // 加上处理的帐号
-            phones.addAll(robots.stream().filter(robot -> StringUtils.hasText(robot.getAccount2())).map(Robot::getAccount2).collect(Collectors.toList()));
             Expression<String> exp = root.get("userName");
             predicates.add(exp.in(phones));
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
