@@ -6,6 +6,7 @@ import com.szcinda.repository.Robot;
 import com.szcinda.repository.RobotRepository;
 import com.szcinda.service.PageResult;
 import com.szcinda.service.SnowFlakeFactory;
+import com.szcinda.service.TypeStringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -104,7 +105,7 @@ public class FengXianServiceImpl implements FengXianService {
     @Override
     public void finish(String id) {
         FengXian fengXian = fengXianRepository.findOne(id);
-        fengXian.setChuLiType("处理完成");
+        fengXian.setChuLiType(TypeStringUtils.fxHandleStatus2);
         fengXian.setChuLiTime(LocalDateTime.now());
         fengXianRepository.save(fengXian);
     }
@@ -112,7 +113,7 @@ public class FengXianServiceImpl implements FengXianService {
     @Override
     public void error(HandleErrorDto errorDto) {
         FengXian fengXian = fengXianRepository.findOne(errorDto.getId());
-        fengXian.setChuLiType("处理失败");
+        fengXian.setChuLiType(TypeStringUtils.fxHandleStatus3);
         fengXian.setChuLiTime(LocalDateTime.now());
         fengXianRepository.save(fengXian);
     }

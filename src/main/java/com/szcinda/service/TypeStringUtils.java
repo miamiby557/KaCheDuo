@@ -14,4 +14,9 @@ public class TypeStringUtils {
     public static final String taskStatus2 = "运行中";
     public static final String taskStatus3 = "已完成";
     public static final String taskStatus4 = "运行失败";
+
+    // 风险处理状态
+    public static final String fxHandleStatus1 = "待处理";
+    public static final String fxHandleStatus2 = "已处理";
+    public static final String fxHandleStatus3 = "处理失败";
 }

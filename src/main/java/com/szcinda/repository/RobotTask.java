@@ -18,4 +18,6 @@ public class RobotTask  extends BaseEntity{
     private String message;
     private LocalDateTime finishTime;
     private String fxId;
+    private String vehicleNo;
+    private String happenTime;
 }

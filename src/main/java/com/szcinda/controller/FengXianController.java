@@ -54,7 +54,7 @@ public class FengXianController {
             String pwd = scheduleService.getPwd(phone);
             return Result.success(pwd);
         }
-        return Result.fail("暂停执行处置");
+        return Result.fail("暂停执行处理和位置监控");
     }
 
     @GetMapping("canWatch/{id}")

@@ -18,4 +18,6 @@ public class HistoryTask extends BaseEntity{
     private String message;
     private LocalDateTime finishTime;
     private String fxId;
+    private String vehicleNo;
+    private String happenTime;
 }

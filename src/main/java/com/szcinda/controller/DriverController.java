@@ -85,7 +85,7 @@ public class DriverController {
             fos.write(file.getBytes()); // 写入文件
             DriverScreenShotDto screenShotDto = new DriverScreenShotDto();
             screenShotDto.setFxId(fxId);
-            screenShotDto.setFilePath(saveFile.getAbsolutePath());
+            screenShotDto.setFilePath(dataStr + File.separator + fileName);
             driverService.savePic(screenShotDto);
             return Result.success();
         } catch (Exception e) {

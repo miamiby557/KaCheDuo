@@ -108,6 +108,8 @@ public class DriverServiceImpl implements DriverService {
             task.setTaskStatus(TypeStringUtils.robotType1);
             task.setTaskType(TypeStringUtils.robotType3);
             task.setFxId(fengXian.getId());
+            task.setVehicleNo(fengXian.getVehicleNo());
+            task.setHappenTime(fengXian.getHappenTime());
             for (Robot robot : copyOnWriteRobots) {
                 if (robot.getPhone().equals(fengXian.getOwner()) && TypeStringUtils.robotType3.equals(robot.getType())) {
                     task.setUserName(robot.getPhone());
