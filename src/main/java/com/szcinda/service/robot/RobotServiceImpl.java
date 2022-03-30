@@ -49,14 +49,25 @@ public class RobotServiceImpl implements RobotService {
         robot = new Robot();
         BeanUtils.copyProperties(dto, robot);
         robot.setId(snowFlakeFactory.nextId("RB"));
+        robot.setType("监控");
         robotRepository.save(robot);
         scheduleService.addRobotFromCopyOnWriteRobots(robot);
         // 监控帐号
         ScheduleService.robotChuZhiMap.put(robot.getPhone(), robot.isRun());
         ScheduleService.robotPwdMap.put(robot.getPhone(), robot.getPwd());
         // 处理和位置监控
-        ScheduleService.robotChuZhiMap.put(robot.getAccount2(), robot.isRun());
-        ScheduleService.robotPwdMap.put(robot.getAccount2(), robot.getPwd2());
+        // 创建处理帐号
+        Robot robot2 = new Robot();
+        robot2.setCompany(dto.getCompany());
+        robot2.setPhone(dto.getAccount2());
+        robot2.setPwd(dto.getPwd2());
+        robot2.setOwner(dto.getOwner());
+        robot2.setId(snowFlakeFactory.nextId("RB"));
+        robot2.setParentId(robot.getId());
+        robot2.setType("处理-位置监控");
+        robotRepository.save(robot2);
+        ScheduleService.robotChuZhiMap.put(robot2.getPhone(), robot2.isRun());
+        ScheduleService.robotPwdMap.put(robot2.getPhone(), robot2.getPwd());
         for (CreateRobotDto createRobotDto : dto.getSubRobotList()) {
             Robot subRobot = new Robot();
             BeanUtils.copyProperties(createRobotDto, subRobot);
@@ -64,11 +75,13 @@ public class RobotServiceImpl implements RobotService {
             subRobot.setParentId(robot.getId());
             subRobot.setOwner(robot.getOwner());
             subRobot.setCompany(dto.getCompany());
+            subRobot.setType("处置");
             robotRepository.save(subRobot);
             scheduleService.addRobotFromCopyOnWriteRobots(subRobot);
             ScheduleService.robotChuZhiMap.put(subRobot.getPhone(), subRobot.isRun());
             ScheduleService.robotPwdMap.put(subRobot.getPhone(), subRobot.getPwd());
         }
+        ScheduleService.copyOnWriteRobots.clear();
     }
 
     @Override
@@ -82,6 +95,7 @@ public class RobotServiceImpl implements RobotService {
         robot.setPhone(dto.getPhone());
         robot.setPwd(dto.getPwd());
         robot.setCompany(dto.getCompany());
+        robot.setType("监控");
         robot.setAccount2(dto.getAccount2());
         robot.setPwd2(dto.getPwd2());
         robotRepository.save(robot);
@@ -89,9 +103,6 @@ public class RobotServiceImpl implements RobotService {
         // 监控帐号
         ScheduleService.robotChuZhiMap.put(robot.getPhone(), robot.isRun());
         ScheduleService.robotPwdMap.put(robot.getPhone(), robot.getPwd());
-        // 处理和位置监控
-        ScheduleService.robotChuZhiMap.put(robot.getAccount2(), robot.isRun());
-        ScheduleService.robotPwdMap.put(robot.getAccount2(), robot.getPwd2());
         List<Robot> subRobots = robotRepository.findByParentId(robot.getId());
         for (Robot subRobot : subRobots) {
             ScheduleService.robotChuZhiMap.remove(subRobot.getPhone());
@@ -99,23 +110,39 @@ public class RobotServiceImpl implements RobotService {
             robotRepository.delete(subRobot);
             scheduleService.removeRobotFromCopyOnWriteRobots(subRobot.getId());
         }
+        // 判断处理帐号有没有创建过
+        Robot subRobot = robotRepository.findByPhone(dto.getAccount2());
+        Assert.isTrue(subRobot == null, String.format("存在相同(处理、位置监控)帐号【%s】，不允许修改", dto.getAccount2()));
         // 判断子账号有没有创建过
         for (UpdateRobotDto createRobotDto : dto.getSubRobotList()) {
-            Robot subRobot = robotRepository.findByPhone(createRobotDto.getPhone());
+            subRobot = robotRepository.findByPhone(createRobotDto.getPhone());
             Assert.isTrue(subRobot == null, String.format("存在相同登录帐号【%s】，不允许修改", createRobotDto.getPhone()));
         }
+        Robot robot2 = new Robot();
+        robot2.setCompany(dto.getCompany());
+        robot2.setPhone(dto.getAccount2());
+        robot2.setPwd(dto.getPwd2());
+        robot2.setId(snowFlakeFactory.nextId("RB"));
+        robot2.setParentId(robot.getId());
+        robot2.setOwner(dto.getOwner());
+        robot2.setType("处理-位置监控");
+        robotRepository.save(robot2);
+        ScheduleService.robotChuZhiMap.put(robot2.getPhone(), robot2.isRun());
+        ScheduleService.robotPwdMap.put(robot2.getPhone(), robot2.getPwd());
         for (UpdateRobotDto createRobotDto : dto.getSubRobotList()) {
-            Robot subRobot = new Robot();
+            subRobot = new Robot();
             BeanUtils.copyProperties(createRobotDto, subRobot);
             subRobot.setId(snowFlakeFactory.nextId("RB"));
             subRobot.setParentId(robot.getId());
             subRobot.setOwner(robot.getOwner());
             subRobot.setCompany(dto.getCompany());
+            subRobot.setType("处置");
             robotRepository.save(subRobot);
             scheduleService.addRobotFromCopyOnWriteRobots(subRobot);
             ScheduleService.robotChuZhiMap.put(subRobot.getPhone(), subRobot.isRun());
             ScheduleService.robotPwdMap.put(subRobot.getPhone(), subRobot.getPwd());
         }
+        ScheduleService.copyOnWriteRobots.clear();
     }
 
     @Override
@@ -136,15 +163,20 @@ public class RobotServiceImpl implements RobotService {
                 // 查找子账号
                 List<Robot> subRobots = robotRepository.findByParentId(robot.getId());
                 for (Robot subRobot : subRobots) {
-                    RobotDto subRobotDto = new RobotDto();
-                    BeanUtils.copyProperties(subRobot, subRobotDto);
-                    if (robotAliveMap.containsKey(subRobotDto.getPhone())) {
-                        subRobotDto.setAlive(true);
-                        subRobotDto.setLastTime(robotAliveMap.get(subRobotDto.getPhone()).getTime());
-                    } else {
-                        subRobotDto.setAlive(false);
+                    if("处理-位置监控".equals(subRobot.getType())){
+                        dto.setAccount2(subRobot.getPhone());
+                        dto.setPwd2(subRobot.getPwd());
+                    }else{
+                        RobotDto subRobotDto = new RobotDto();
+                        BeanUtils.copyProperties(subRobot, subRobotDto);
+                        if (robotAliveMap.containsKey(subRobotDto.getPhone())) {
+                            subRobotDto.setAlive(true);
+                            subRobotDto.setLastTime(robotAliveMap.get(subRobotDto.getPhone()).getTime());
+                        } else {
+                            subRobotDto.setAlive(false);
+                        }
+                        dto.getSubRobots().add(subRobotDto);
                     }
-                    dto.getSubRobots().add(subRobotDto);
                 }
                 robotDtos.add(dto);
             }
@@ -169,15 +201,8 @@ public class RobotServiceImpl implements RobotService {
             } else {
                 dto.setAlive(false);
             }
-            dto.setPhone(dto.getPhone() + "(监控" + ")");
+            dto.setPhone(dto.getPhone() + "(" + dto.getType() + ")");
             groupDto.getSubRobots().add(dto);
-            // 处理、位置监控
-            if (StringUtils.hasText(robot.getAccount2())) {
-                RobotDto robot2 = new RobotDto();
-                robot2.setPhone(robot.getAccount2() + "(处理" + ")");
-                robot2.setAlive(false);
-                groupDto.getSubRobots().add(robot2);
-            }
             // 查找子账号
             List<Robot> subRobots = scheduleService.querySubRobotsFromCopyOnWriteRobots(robot.getId());
             for (Robot subRobot : subRobots) {
@@ -189,7 +214,7 @@ public class RobotServiceImpl implements RobotService {
                 } else {
                     subRobotDto.setAlive(false);
                 }
-                subRobotDto.setPhone(subRobotDto.getPhone() + "(处置" + ")");
+                subRobotDto.setPhone(subRobotDto.getPhone() + "(" + subRobotDto.getType() + ")");
                 groupDto.getSubRobots().add(subRobotDto);
             }
             robotDtos.add(groupDto);
@@ -296,19 +321,9 @@ public class RobotServiceImpl implements RobotService {
                 } else {
                     dto.setAlive(false);
                 }
-                if (StringUtils.isEmpty(robot.getParentId())) {
-                    dto.setPhone(dto.getPhone() + "(监控" + ")");
-                } else {
-                    dto.setPhone(dto.getPhone() + "(处置" + ")");
-                }
+                dto.setPhone(dto.getPhone() + "(" + dto.getType() + ")");
                 groupDto.getSubRobots().add(dto);
             }
-            // 取出处理、位置监控的机器人
-            list.stream().filter(item -> StringUtils.hasText(item.getAccount2())).forEach(item -> {
-                RobotDto dto = new RobotDto();
-                dto.setPhone(item.getAccount2() + "(处理" + ")");
-                groupDto.getSubRobots().add(dto);
-            });
             groupDtos.add(groupDto);
         });
         return groupDtos;

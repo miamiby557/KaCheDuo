@@ -19,6 +19,7 @@ public class RobotDto implements Serializable {
     private boolean run;
     private LocalDateTime lastTime;
     private boolean alive;
+    private String type;
 
     private List<RobotDto> subRobots = new ArrayList<>();
 }
