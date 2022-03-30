@@ -12,4 +12,8 @@ public interface FengXianService {
     void chuZhi(ChuZhiDto chuZhiDto);
 
     PageResult<ChuZhiDetailDto> query(ChuZhiQuery query);
+
+    void finish(String id);
+
+    void error(HandleErrorDto errorDto);
 }

@@ -3,11 +3,16 @@ package com.szcinda.controller;
 import com.alibaba.excel.EasyExcelFactory;
 import com.alibaba.excel.metadata.Sheet;
 import com.szcinda.service.driver.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @RestController
@@ -15,6 +20,9 @@ import java.util.List;
 public class DriverController {
 
     private final DriverService driverService;
+
+    @Value("${file.save.path}")
+    private String savePath;
 
     public DriverController(DriverService driverService) {
         this.driverService = driverService;
@@ -51,5 +59,44 @@ public class DriverController {
     @PostMapping("query")
     public Result<List<DriverDto>> query(@RequestBody DriverQuery query) {
         return Result.success(driverService.query(query));
+    }
+
+
+    @PostMapping("connect")
+    public Result<String> connect(@RequestBody DriverConnectDto connectDto) {
+        driverService.connect(connectDto);
+        return Result.success();
+    }
+
+    @PostMapping("savePic/{fxId}")
+    public Result<String> savePic(@RequestParam("file") MultipartFile file, @PathVariable String fxId) throws Exception {
+        //保存文件
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+        String dataStr = LocalDateTime.now().format(dateTimeFormatter);
+        File path = new File(savePath, dataStr);
+        if (!path.exists()) {
+            path.mkdirs();
+        }
+        String fileName = file.getOriginalFilename();//获取文件名（包括后缀）
+        File saveFile = new File(path, fileName);
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(saveFile);
+            fos.write(file.getBytes()); // 写入文件
+            DriverScreenShotDto screenShotDto = new DriverScreenShotDto();
+            screenShotDto.setFxId(fxId);
+            screenShotDto.setFilePath(saveFile.getAbsolutePath());
+            driverService.savePic(screenShotDto);
+            return Result.success();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return Result.fail("保存文件失败");
     }
 }

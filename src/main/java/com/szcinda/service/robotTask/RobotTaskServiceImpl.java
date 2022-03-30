@@ -1,11 +1,9 @@
 package com.szcinda.service.robotTask;
 
-import com.szcinda.repository.Robot;
-import com.szcinda.repository.RobotRepository;
-import com.szcinda.repository.RobotTask;
-import com.szcinda.repository.RobotTaskRepository;
+import com.szcinda.repository.*;
 import com.szcinda.service.PageResult;
 import com.szcinda.service.SnowFlakeFactory;
+import com.szcinda.service.TypeStringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,7 +21,10 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,21 +33,29 @@ import java.util.stream.Collectors;
 public class RobotTaskServiceImpl implements RobotTaskService {
 
     private final RobotTaskRepository robotTaskRepository;
+    private final HistoryTaskRepository historyTaskRepository;
     private final SnowFlakeFactory snowFlakeFactory;
     private final RobotRepository robotRepository;
 
+
+    private static final ReentrantLock lock = new ReentrantLock(true);
+
+    // 正在处理的帐号
+    private final static ConcurrentHashMap<String, Object> handleAccountMap = new ConcurrentHashMap<>();
+
     private static final ConcurrentLinkedQueue<String> canCreateTaskUserQueue = new ConcurrentLinkedQueue<>();
 
-    public RobotTaskServiceImpl(RobotTaskRepository robotTaskRepository, RobotRepository robotRepository) {
+    public RobotTaskServiceImpl(RobotTaskRepository robotTaskRepository, HistoryTaskRepository historyTaskRepository, RobotRepository robotRepository) {
         this.robotTaskRepository = robotTaskRepository;
+        this.historyTaskRepository = historyTaskRepository;
         this.robotRepository = robotRepository;
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
 
     @Override
-    public PageResult<RobotTask> query(RobotTaskQuery params) {
+    public PageResult<HistoryTask> query(RobotTaskQuery params) {
         List<Robot> robots = robotRepository.findByOwner(params.getOwner());
-        Specification<RobotTask> specification = ((root, criteriaQuery, criteriaBuilder) -> {
+        Specification<HistoryTask> specification = ((root, criteriaQuery, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (!StringUtils.isEmpty(params.getUserName())) {
                 Predicate phone = criteriaBuilder.like(root.get("userName"), params.getUserName());
@@ -70,14 +79,14 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             }
             if (params.isQueryRunning()) {
                 List<String> statusInList = new ArrayList<>();
-                statusInList.add("待运行");
-                statusInList.add("运行中");
+                statusInList.add(TypeStringUtils.taskStatus1);
+                statusInList.add(TypeStringUtils.taskStatus2);
                 Expression<String> exp = root.get("taskStatus");
                 predicates.add(exp.in(statusInList));
             } else {
                 List<String> statusInList = new ArrayList<>();
-                statusInList.add("已完成");
-                statusInList.add("运行失败");
+                statusInList.add(TypeStringUtils.taskStatus3);
+                statusInList.add(TypeStringUtils.taskStatus4);
                 Expression<String> exp = root.get("taskStatus");
                 predicates.add(exp.in(statusInList));
             }
@@ -88,22 +97,61 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         });
         Sort order = new Sort(Sort.Direction.DESC, "createTime");
         Pageable pageable = new PageRequest(params.getPage() - 1, params.getPageSize(), order);
-        Page<RobotTask> details = robotTaskRepository.findAll(specification, pageable);
+        Page<HistoryTask> details = historyTaskRepository.findAll(specification, pageable);
         return PageResult.of(details.getContent(), params.getPage(), params.getPageSize(), details.getTotalElements());
+    }
+
+    @Override
+    public List<RobotTask> queryRunningTask(RobotTaskQuery params) {
+        List<Robot> robots = robotRepository.findByOwner(params.getOwner());
+        Specification<RobotTask> specification = ((root, criteriaQuery, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (!StringUtils.isEmpty(params.getUserName())) {
+                Predicate phone = criteriaBuilder.like(root.get("userName"), params.getUserName());
+                predicates.add(phone);
+            }
+            if (!StringUtils.isEmpty(params.getTaskStatus())) {
+                Predicate taskStatus = criteriaBuilder.equal(root.get("taskStatus"), params.getTaskStatus());
+                predicates.add(taskStatus);
+            }
+            if (!StringUtils.isEmpty(params.getTaskType())) {
+                Predicate taskType = criteriaBuilder.equal(root.get("taskType"), params.getTaskType());
+                predicates.add(taskType);
+            }
+            if (params.getCreateTimeStart() != null) {
+                Predicate timeStart = criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), params.getCreateTimeStart().atStartOfDay());
+                predicates.add(timeStart);
+            }
+            if (params.getCreateTimeEnd() != null) {
+                Predicate timeEnd = criteriaBuilder.lessThan(root.get("createTime"), params.getCreateTimeEnd().plusDays(1).atStartOfDay());
+                predicates.add(timeEnd);
+            }
+            List<String> statusInList = new ArrayList<>();
+            statusInList.add(TypeStringUtils.taskStatus1);
+            statusInList.add(TypeStringUtils.taskStatus2);
+            Expression<String> exp = root.get("taskStatus");
+            predicates.add(exp.in(statusInList));
+            List<String> phones = robots.stream().map(Robot::getPhone).collect(Collectors.toList());
+            Expression<String> exp2 = root.get("userName");
+            predicates.add(exp2.in(phones));
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        });
+        Sort order = new Sort(Sort.Direction.DESC, "createTime");
+        return robotTaskRepository.findAll(specification, order);
     }
 
 
     @Override
     public void create(CreateRobotTaskDto dto) {
         List<String> statusList = new ArrayList<>();
-        statusList.add("待运行");
-        statusList.add("运行中");
+        statusList.add(TypeStringUtils.taskStatus1);
+        statusList.add(TypeStringUtils.taskStatus2);
         List<RobotTask> tasks = robotTaskRepository.findByUserNameAndTaskTypeAndTaskStatusIn(dto.getUserName(), dto.getTaskType(), statusList);
         if (tasks.size() == 0) {
             RobotTask task = new RobotTask();
             BeanUtils.copyProperties(dto, task);
             task.setId(snowFlakeFactory.nextId("RT"));
-            task.setTaskStatus("待运行");
+            task.setTaskStatus(TypeStringUtils.taskStatus1);
             robotTaskRepository.save(task);
         }
     }
@@ -111,36 +159,70 @@ public class RobotTaskServiceImpl implements RobotTaskService {
     @Override
     public void run(String id) {
         RobotTask task = robotTaskRepository.findById(id);
-        task.setTaskStatus("运行中");
+        task.setTaskStatus(TypeStringUtils.taskStatus2);
         robotTaskRepository.save(task);
     }
 
     @Override
     public void error(TaskErrorDto errorDto) {
         RobotTask task = robotTaskRepository.findById(errorDto.getId());
-        task.setTaskStatus("运行失败");
+        task.setTaskStatus(TypeStringUtils.taskStatus4);
         task.setMessage(errorDto.getMessage());
         task.setFinishTime(LocalDateTime.now());
-        robotTaskRepository.save(task);
+        HistoryTask historyTask = new HistoryTask();
+        BeanUtils.copyProperties(task, historyTask);
+        robotTaskRepository.delete(task);
+        historyTaskRepository.save(historyTask);
+        // 从集合中删除正在运行的帐号
+        handleAccountMap.remove(task.getUserName());
     }
 
     @Override
     public void finish(String id) {
         RobotTask task = robotTaskRepository.findById(id);
-        task.setTaskStatus("已完成");
+        task.setTaskStatus(TypeStringUtils.taskStatus3);
         task.setFinishTime(LocalDateTime.now());
-        robotTaskRepository.save(task);
+        HistoryTask historyTask = new HistoryTask();
+        BeanUtils.copyProperties(task, historyTask);
+        robotTaskRepository.delete(task);
+        historyTaskRepository.save(historyTask);
+        // 从集合中删除正在运行的帐号
+        handleAccountMap.remove(task.getUserName());
     }
 
     @Override
     public List<RobotTask> getStandByList() {
-        return robotTaskRepository.findByTaskStatus("待运行");
+        try {
+            if (lock.tryLock(3, TimeUnit.SECONDS)) {
+                List<RobotTask> filterTasks = new ArrayList<>();
+                List<RobotTask> robotTasks = robotTaskRepository.findByTaskStatus(TypeStringUtils.taskStatus1);
+                for (RobotTask robotTask : robotTasks) {
+                    if (TypeStringUtils.robotType2.equals(robotTask.getTaskType())) {
+                        filterTasks.add(robotTask);
+                    } else if (TypeStringUtils.robotType3.equals(robotTask.getTaskType())) {
+                        // 过滤不是正在运行中的帐号，避免帐号冲突
+                        if (!handleAccountMap.containsKey(robotTask.getUserName())) {
+                            filterTasks.add(robotTask);
+                            handleAccountMap.put(robotTask.getUserName(), true);
+                        }
+                    }
+                }
+                return filterTasks;
+            }
+        } catch (Exception ignored) {
+
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+        return null;
     }
 
     @Override
     public boolean checkIsStandby(String id) {
         RobotTask task = robotTaskRepository.findById(id);
-        return "待运行".equals(task.getTaskStatus());
+        return TypeStringUtils.taskStatus1.equals(task.getTaskStatus());
     }
 
     @Override
@@ -162,13 +244,13 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                 if (robots.size() > 0) {
                     CreateRobotTaskDto dto;
                     for (Robot robot : robots) {
-                        if ("处置".equals(robot.getType()) && robot.isRun()) {
+                        if (TypeStringUtils.robotType2.equals(robot.getType()) && robot.isRun()) {
                             // 所有的子账号一起配合工作
                             dto = new CreateRobotTaskDto();
                             dto.setUserName(robot.getPhone());
                             dto.setPwd(robot.getPwd());
                             dto.setCompany(robot.getCompany());
-                            dto.setTaskType("处置");
+                            dto.setTaskType(TypeStringUtils.robotType2);
                             this.create(dto);
                         }
                     }
@@ -180,7 +262,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
     // 15分钟定时处理假死的任务
     @Scheduled(cron = "0 */2 * * * ?")
     public void dropDeadTaskOut15Minutes() throws Exception {
-        List<RobotTask> tasks = robotTaskRepository.findByTaskStatus("运行中");
+        List<RobotTask> tasks = robotTaskRepository.findByTaskStatus(TypeStringUtils.taskStatus2);
         if (tasks.size() > 0) {
             List<String> taskIds = new ArrayList<>();
             LocalDateTime now = LocalDateTime.now();
@@ -204,14 +286,14 @@ public class RobotTaskServiceImpl implements RobotTaskService {
     public void reRun(String id) {
         RobotTask task = robotTaskRepository.findById(id);
         List<String> stausList = new ArrayList<>();
-        stausList.add("待运行");
-        stausList.add("运行中");
+        stausList.add(TypeStringUtils.taskStatus1);
+        stausList.add(TypeStringUtils.taskStatus2);
         List<RobotTask> tasks = robotTaskRepository.findByUserNameAndTaskTypeAndTaskStatusIn(task.getUserName(), task.getTaskType(), stausList);
         if (tasks.size() == 0) {
-            task.setTaskStatus("待运行");
+            task.setTaskStatus(TypeStringUtils.taskStatus1);
             robotTaskRepository.save(task);
         } else {
-            task.setTaskStatus("待运行");
+            task.setTaskStatus(TypeStringUtils.taskStatus1);
             robotTaskRepository.save(task);
             // 其他相同任务丢弃
             for (RobotTask robotTask : tasks) {
@@ -228,5 +310,11 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         for (Robot robot : robotRepositoryByParentIdIsNull) {
             canCreateTaskUserQueue.add(robot.getPhone());
         }
+    }
+
+    // 完成后剔除帐号
+    @Override
+    public void release(String userName) {
+        handleAccountMap.remove(userName);
     }
 }

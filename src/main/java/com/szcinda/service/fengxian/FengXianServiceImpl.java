@@ -53,7 +53,7 @@ public class FengXianServiceImpl implements FengXianService {
     public void batchCreate(List<CreateFengXianDto> dtos) {
         Robot robot = robotRepository.findByPhone(dtos.get(0).getOwner());
         for (CreateFengXianDto dto : dtos) {
-            if(robot!=null){
+            if (robot != null) {
                 dto.setCompany(robot.getCompany());
             }
             this.create(dto);
@@ -99,5 +99,21 @@ public class FengXianServiceImpl implements FengXianService {
             }
         }
         return PageResult.of(dtos, params.getPage(), params.getPageSize(), details.getTotalElements());
+    }
+
+    @Override
+    public void finish(String id) {
+        FengXian fengXian = fengXianRepository.findOne(id);
+        fengXian.setChuLiType("处理完成");
+        fengXian.setChuLiTime(LocalDateTime.now());
+        fengXianRepository.save(fengXian);
+    }
+
+    @Override
+    public void error(HandleErrorDto errorDto) {
+        FengXian fengXian = fengXianRepository.findOne(errorDto.getId());
+        fengXian.setChuLiType("处理失败");
+        fengXian.setChuLiTime(LocalDateTime.now());
+        fengXianRepository.save(fengXian);
     }
 }

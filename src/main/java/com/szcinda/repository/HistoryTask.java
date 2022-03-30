@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
-public class RobotTask  extends BaseEntity{
+public class HistoryTask extends BaseEntity{
     private String userName;
     private String company;
     private String pwd;

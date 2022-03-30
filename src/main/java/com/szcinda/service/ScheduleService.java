@@ -51,7 +51,7 @@ public class ScheduleService {
     public void run() throws Exception {
         // 清空历史任务
         robotSearchLocationList.clear();
-        List<Robot> robots = robotRepository.findByType("处理-位置监控");
+        List<Robot> robots = robotRepository.findByType(TypeStringUtils.robotType3);
         if (robots.size() > 0) {
             for (Robot robot : robots) {
                 //找处理、位置监控账号来处理位置监控的上传
@@ -59,7 +59,7 @@ public class ScheduleService {
                 robotPwdMap.put(robot.getPhone(), robot.getPwd());
                 if (robot.isRun()) {
                     CreateRobotTaskDto taskDto = new CreateRobotTaskDto();
-                    taskDto.setTaskType("位置监控");
+                    taskDto.setTaskType(TypeStringUtils.robotType3);
                     taskDto.setUserName(robot.getAccount2());
                     taskDto.setPwd(robot.getPwd2());
                     taskDto.setCompany(robot.getCompany());

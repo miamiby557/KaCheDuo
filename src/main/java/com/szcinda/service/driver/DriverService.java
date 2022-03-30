@@ -8,4 +8,8 @@ public interface DriverService {
     void delete(String id);
 
     List<DriverDto> query(DriverQuery query);
+
+    void connect(DriverConnectDto connectDto);
+
+    void savePic(DriverScreenShotDto shotDto);
 }

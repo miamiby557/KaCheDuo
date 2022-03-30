@@ -1,5 +1,6 @@
 package com.szcinda.controller;
 
+import com.szcinda.repository.HistoryTask;
 import com.szcinda.repository.RobotTask;
 import com.szcinda.service.PageResult;
 import com.szcinda.service.robotTask.RobotTaskQuery;
@@ -34,8 +35,13 @@ public class RobotTaskController {
     }
 
     @PostMapping("query")
-    public PageResult<RobotTask> query(@RequestBody RobotTaskQuery params) {
+    public PageResult<HistoryTask> query(@RequestBody RobotTaskQuery params) {
         return robotTaskService.query(params);
+    }
+
+    @PostMapping("queryRunningTask")
+    public Result<List<RobotTask>> queryRunningTask(@RequestBody RobotTaskQuery params) {
+        return Result.success(robotTaskService.queryRunningTask(params));
     }
 
     @GetMapping("create/{userName}")
