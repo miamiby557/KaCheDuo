@@ -68,8 +68,8 @@ public class DriverController {
         return Result.success();
     }
 
-    @PostMapping("savePic/{fxId}")
-    public Result<String> savePic(@RequestParam("file") MultipartFile file, @PathVariable String fxId) throws Exception {
+    @PostMapping("savePic/{fxId}/{screenTaskId}")
+    public Result<String> savePic(@RequestParam("file") MultipartFile file, @PathVariable String fxId, @PathVariable String screenTaskId) throws Exception {
         //保存文件
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         String dataStr = LocalDateTime.now().format(dateTimeFormatter);
@@ -85,6 +85,7 @@ public class DriverController {
             fos.write(file.getBytes()); // 写入文件
             DriverScreenShotDto screenShotDto = new DriverScreenShotDto();
             screenShotDto.setFxId(fxId);
+            screenShotDto.setScreenTaskId(screenTaskId);
             screenShotDto.setFilePath(dataStr + File.separator + fileName);
             driverService.savePic(screenShotDto);
             return Result.success();

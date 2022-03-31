@@ -8,4 +8,5 @@ import java.io.Serializable;
 public class DriverConnectDto implements Serializable {
     private String vehicleNo;
     private String wechat;
+    private String ownerWechat;
 }

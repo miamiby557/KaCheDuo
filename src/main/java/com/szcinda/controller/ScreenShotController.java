@@ -3,12 +3,10 @@ package com.szcinda.controller;
 import com.szcinda.repository.HistoryScreenShotTask;
 import com.szcinda.repository.ScreenShotTask;
 import com.szcinda.service.PageResult;
+import com.szcinda.service.screenShotTask.ScreenShotTaskErrorDto;
 import com.szcinda.service.screenShotTask.ScreenShotTaskParams;
 import com.szcinda.service.screenShotTask.ScreenShotTaskService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -30,5 +28,16 @@ public class ScreenShotController {
     @PostMapping("queryRunningTask")
     public Result<List<ScreenShotTask>> queryRunningTask(@RequestBody ScreenShotTaskParams params) {
         return Result.success(screenShotTaskService.queryRunning(params));
+    }
+
+    @GetMapping("getOneJob/{ownerWechat}")
+    public Result<ScreenShotTask> getOneJob(@PathVariable String ownerWechat) {
+        return Result.success(screenShotTaskService.findOneMission(ownerWechat));
+    }
+
+    @PostMapping("error")
+    public Result<String> screenShotError(@RequestBody ScreenShotTaskErrorDto errorDto) {
+        screenShotTaskService.error(errorDto);
+        return Result.success();
     }
 }

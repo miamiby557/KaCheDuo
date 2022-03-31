@@ -36,23 +36,13 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
 
-    @Override
-    public void finish(String id) {
-        ScreenShotTask screenShotTask = screenShotTaskRepository.findOne(id);
-        HistoryScreenShotTask historyScreenShotTask = new HistoryScreenShotTask();
-        BeanUtils.copyProperties(screenShotTask, historyScreenShotTask);
-        historyScreenShotTask.setId(snowFlakeFactory.nextId("HST"));
-        historyScreenShotTask.setType(TypeStringUtils.screen_status1);
-        screenShotTaskRepository.delete(screenShotTask);
-        historyScreenShotTaskRepository.save(historyScreenShotTask);
-    }
 
     @Override
     public void error(ScreenShotTaskErrorDto dto) {
         ScreenShotTask screenShotTask = screenShotTaskRepository.findOne(dto.getId());
         HistoryScreenShotTask historyScreenShotTask = new HistoryScreenShotTask();
         BeanUtils.copyProperties(screenShotTask, historyScreenShotTask);
-        historyScreenShotTask.setId(snowFlakeFactory.nextId("HST"));
+        historyScreenShotTask.setId(snowFlakeFactory.nextId("HT"));
         historyScreenShotTask.setType(TypeStringUtils.screen_status2);
         historyScreenShotTask.setMessage(dto.getMessage());
         screenShotTaskRepository.delete(screenShotTask);
@@ -77,7 +67,7 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
                 predicates.add(timeEnd);
             }
             List<String> phones = robots.stream().map(Robot::getPhone).collect(Collectors.toList());
-            Expression<String> exp2 = root.get("userName");
+            Expression<String> exp2 = root.get("owner");
             predicates.add(exp2.in(phones));
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         });
@@ -103,7 +93,7 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
                 predicates.add(timeEnd);
             }
             List<String> phones = robots.stream().map(Robot::getPhone).collect(Collectors.toList());
-            Expression<String> exp2 = root.get("userName");
+            Expression<String> exp2 = root.get("owner");
             predicates.add(exp2.in(phones));
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         });
@@ -111,5 +101,10 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
         Pageable pageable = new PageRequest(params.getPage() - 1, params.getPageSize(), order);
         Page<HistoryScreenShotTask> details = historyScreenShotTaskRepository.findAll(specification, pageable);
         return PageResult.of(details.getContent(), params.getPage(), params.getPageSize(), details.getTotalElements());
+    }
+
+    @Override
+    public ScreenShotTask findOneMission(String ownerWechat) {
+        return screenShotTaskRepository.findFirstByOwnerWechat(ownerWechat);
     }
 }

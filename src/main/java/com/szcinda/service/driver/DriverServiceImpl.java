@@ -23,11 +23,17 @@ public class DriverServiceImpl implements DriverService {
     private final SnowFlakeFactory snowFlakeFactory;
     private final FengXianRepository fengXianRepository;
     private final RobotTaskRepository robotTaskRepository;
+    private final ScreenShotTaskRepository screenShotTaskRepository;
+    private final HistoryScreenShotTaskRepository historyScreenShotTaskRepository;
 
-    public DriverServiceImpl(DriverRepository driverRepository, FengXianRepository fengXianRepository, RobotTaskRepository robotTaskRepository) {
+    public DriverServiceImpl(DriverRepository driverRepository, FengXianRepository fengXianRepository,
+                             RobotTaskRepository robotTaskRepository, ScreenShotTaskRepository screenShotTaskRepository,
+                             HistoryScreenShotTaskRepository historyScreenShotTaskRepository) {
         this.driverRepository = driverRepository;
         this.fengXianRepository = fengXianRepository;
         this.robotTaskRepository = robotTaskRepository;
+        this.screenShotTaskRepository = screenShotTaskRepository;
+        this.historyScreenShotTaskRepository = historyScreenShotTaskRepository;
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
 
@@ -90,6 +96,7 @@ public class DriverServiceImpl implements DriverService {
         Driver driver = driverRepository.findByVehicleNo(connectDto.getVehicleNo());
         if (driver != null) {
             driver.setWechat(connectDto.getWechat());
+            driver.setOwnerWechat(connectDto.getOwnerWechat());
             driverRepository.save(driver);
         }
     }
@@ -101,6 +108,14 @@ public class DriverServiceImpl implements DriverService {
             fengXian.setMessageSendTime(LocalDateTime.now().toString().replace('T', ' '));
             fengXian.setFilePath(shotDto.getFilePath());
             fengXianRepository.save(fengXian);
+            // 删除截图任务， 生成一条历史截图任务
+            ScreenShotTask screenShotTask = screenShotTaskRepository.findOne(shotDto.getScreenTaskId());
+            HistoryScreenShotTask historyScreenShotTask = new HistoryScreenShotTask();
+            BeanUtils.copyProperties(screenShotTask, historyScreenShotTask);
+            historyScreenShotTask.setType(TypeStringUtils.screen_status1);
+            historyScreenShotTask.setId(snowFlakeFactory.nextId("HT"));
+            historyScreenShotTaskRepository.save(historyScreenShotTask);
+            screenShotTaskRepository.delete(screenShotTask);
             // 创建一个处理任务
             CopyOnWriteArrayList<Robot> copyOnWriteRobots = ScheduleService.copyOnWriteRobots;
             RobotTask task = new RobotTask();

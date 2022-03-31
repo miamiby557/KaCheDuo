@@ -7,5 +7,6 @@ import java.io.Serializable;
 @Data
 public class DriverScreenShotDto implements Serializable {
     private String fxId;
+    private String screenTaskId;
     private String filePath;
 }
