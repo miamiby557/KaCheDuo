@@ -14,5 +14,6 @@ public class Driver extends BaseEntity {
     private String vehicleNo;
     private String company;
     private String wechat;
+    private String ownerWechat;// 来源微信号，就是那个微信下的好友
     private String owner;
 }

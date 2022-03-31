@@ -91,7 +91,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                 predicates.add(exp.in(statusInList));
             }
             List<String> phones = robots.stream().map(Robot::getPhone).collect(Collectors.toList());
-            Expression<String> exp = root.get("userName");
+            Expression<String> exp = root.get("owner");
             predicates.add(exp.in(phones));
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         });
@@ -132,7 +132,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             Expression<String> exp = root.get("taskStatus");
             predicates.add(exp.in(statusInList));
             List<String> phones = robots.stream().map(Robot::getPhone).collect(Collectors.toList());
-            Expression<String> exp2 = root.get("userName");
+            Expression<String> exp2 = root.get("owner");
             predicates.add(exp2.in(phones));
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         });

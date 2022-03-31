@@ -98,11 +98,11 @@ public class DriverServiceImpl implements DriverService {
     public void savePic(DriverScreenShotDto shotDto) {
         FengXian fengXian = fengXianRepository.findOne(shotDto.getFxId());
         if (fengXian != null) {
-            CopyOnWriteArrayList<Robot> copyOnWriteRobots = ScheduleService.copyOnWriteRobots;
             fengXian.setMessageSendTime(LocalDateTime.now().toString().replace('T', ' '));
             fengXian.setFilePath(shotDto.getFilePath());
             fengXianRepository.save(fengXian);
-            // 创建一个任务
+            // 创建一个处理任务
+            CopyOnWriteArrayList<Robot> copyOnWriteRobots = ScheduleService.copyOnWriteRobots;
             RobotTask task = new RobotTask();
             task.setId(snowFlakeFactory.nextId("RT"));
             task.setTaskStatus(TypeStringUtils.robotType1);
