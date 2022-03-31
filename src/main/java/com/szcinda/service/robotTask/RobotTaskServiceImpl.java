@@ -41,7 +41,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
     private static final ReentrantLock lock = new ReentrantLock(true);
 
     // 正在处理的帐号
-    private final static ConcurrentHashMap<String, Object> handleAccountMap = new ConcurrentHashMap<>();
+    public final static ConcurrentHashMap<String, Object> handleAccountMap = new ConcurrentHashMap<>();
 
     private static final ConcurrentLinkedQueue<String> canCreateTaskUserQueue = new ConcurrentLinkedQueue<>();
 

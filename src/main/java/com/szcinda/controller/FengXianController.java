@@ -3,6 +3,7 @@ package com.szcinda.controller;
 import com.szcinda.service.PageResult;
 import com.szcinda.service.ScheduleService;
 import com.szcinda.service.fengxian.*;
+import com.szcinda.service.robotTask.RobotTaskServiceImpl;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -50,6 +51,10 @@ public class FengXianController {
     @GetMapping("canRunChuLiAndLocation/{phone}")
     public Result<String> canRunChuLiAndLocation(@PathVariable String phone) {
         boolean canRun = scheduleService.canRunChuLiAndLocation(phone);
+        if (canRun) {
+            // 再检查一下是否账号正在处理,如果在集合里面，则不允许运行
+            canRun = !RobotTaskServiceImpl.handleAccountMap.containsKey(phone);
+        }
         if (canRun) {
             String pwd = scheduleService.getPwd(phone);
             return Result.success(pwd);
