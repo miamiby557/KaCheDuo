@@ -13,7 +13,7 @@ public interface ScreenShotTaskService {
 
     List<ScreenShotTask> queryRunning(ScreenShotTaskParams params);
 
-    PageResult<HistoryScreenShotTask> query(ScreenShotTaskParams params);
+    PageResult<HistoryScreenShotTaskDto> query(ScreenShotTaskParams params);
 
     ScreenShotTask findOneMission(String ownerWechat);
 

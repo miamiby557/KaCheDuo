@@ -5,6 +5,7 @@ import com.szcinda.service.PageResult;
 import com.szcinda.service.SnowFlakeFactory;
 import com.szcinda.service.TypeStringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -13,9 +14,13 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import sun.misc.BASE64Encoder;
 
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +36,9 @@ public class FengXianServiceImpl implements FengXianService {
     private final RobotRepository robotRepository;
     private final DriverRepository driverRepository;
     private final ScreenShotTaskRepository screenShotTaskRepository;
+
+    @Value("${file.save.path}")
+    private String savePath;
 
     public FengXianServiceImpl(FengXianRepository fengXianRepository, RobotRepository robotRepository, DriverRepository driverRepository,
                                ScreenShotTaskRepository screenShotTaskRepository) {
@@ -139,6 +147,27 @@ public class FengXianServiceImpl implements FengXianService {
             for (FengXian fengXian : details.getContent()) {
                 ChuZhiDetailDto dto = new ChuZhiDetailDto();
                 BeanUtils.copyProperties(fengXian, dto);
+                // 图片转base64
+                if (StringUtils.hasText(fengXian.getFilePath())) {
+                    File saveFile = new File(savePath, fengXian.getFilePath());
+                    FileInputStream inputFile = null;
+                    try {
+                        inputFile = new FileInputStream(saveFile);
+                        byte[] buffer = new byte[(int) saveFile.length()];
+                        inputFile.read(buffer);
+                        inputFile.close();
+                        dto.setBase64(new BASE64Encoder().encode(buffer));
+                    } catch (Exception ignored) {
+
+                    } finally {
+                        assert inputFile != null;
+                        try {
+                            inputFile.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
                 dtos.add(dto);
             }
         }

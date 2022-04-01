@@ -5,6 +5,7 @@ import com.szcinda.service.PageResult;
 import com.szcinda.service.SnowFlakeFactory;
 import com.szcinda.service.TypeStringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -13,9 +14,14 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import sun.misc.BASE64Encoder;
 
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,11 +33,17 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
     private final ScreenShotTaskRepository screenShotTaskRepository;
     private final HistoryScreenShotTaskRepository historyScreenShotTaskRepository;
     private final SnowFlakeFactory snowFlakeFactory;
+    private final FengXianRepository fengXianRepository;
     private final RobotRepository robotRepository;
 
-    public ScreenShotTaskServiceImpl(ScreenShotTaskRepository screenShotTaskRepository, HistoryScreenShotTaskRepository historyScreenShotTaskRepository, RobotRepository robotRepository) {
+    @Value("${file.save.path}")
+    private String savePath;
+
+    public ScreenShotTaskServiceImpl(ScreenShotTaskRepository screenShotTaskRepository, HistoryScreenShotTaskRepository historyScreenShotTaskRepository,
+                                     FengXianRepository fengXianRepository, RobotRepository robotRepository) {
         this.screenShotTaskRepository = screenShotTaskRepository;
         this.historyScreenShotTaskRepository = historyScreenShotTaskRepository;
+        this.fengXianRepository = fengXianRepository;
         this.robotRepository = robotRepository;
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
@@ -76,7 +88,7 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
     }
 
     @Override
-    public PageResult<HistoryScreenShotTask> query(ScreenShotTaskParams params) {
+    public PageResult<HistoryScreenShotTaskDto> query(ScreenShotTaskParams params) {
         List<Robot> robots = robotRepository.findByOwner(params.getOwner());
         Specification<HistoryScreenShotTask> specification = ((root, criteriaQuery, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -100,7 +112,42 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
         Sort order = new Sort(Sort.Direction.DESC, "createTime");
         Pageable pageable = new PageRequest(params.getPage() - 1, params.getPageSize(), order);
         Page<HistoryScreenShotTask> details = historyScreenShotTaskRepository.findAll(specification, pageable);
-        return PageResult.of(details.getContent(), params.getPage(), params.getPageSize(), details.getTotalElements());
+        List<HistoryScreenShotTaskDto> dtos = new ArrayList<>();
+        if (details.getContent() != null) {
+            List<String> fxIds = details.getContent().stream().filter(item -> StringUtils.hasText(item.getFxId())).map(HistoryScreenShotTask::getFxId).collect(Collectors.toList());
+            List<FengXian> fengXianList = fengXianRepository.findAll(fxIds);
+            for (HistoryScreenShotTask historyScreenShotTask : details.getContent()) {
+                HistoryScreenShotTaskDto taskDto = new HistoryScreenShotTaskDto();
+                BeanUtils.copyProperties(historyScreenShotTask, taskDto);
+                // 把图片转成base64
+                fengXianList.stream().filter(fx -> fx.getId().equals(historyScreenShotTask.getFxId()))
+                        .findFirst()
+                        .ifPresent(fx -> {
+                            if (StringUtils.hasText(fx.getFilePath())) {
+                                File saveFile = new File(savePath, fx.getFilePath());
+                                FileInputStream inputFile = null;
+                                try {
+                                    inputFile = new FileInputStream(saveFile);
+                                    byte[] buffer = new byte[(int) saveFile.length()];
+                                    inputFile.read(buffer);
+                                    inputFile.close();
+                                    taskDto.setFileBase64(new BASE64Encoder().encode(buffer));
+                                } catch (Exception ignored) {
+
+                                } finally {
+                                    assert inputFile != null;
+                                    try {
+                                        inputFile.close();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                        });
+                dtos.add(taskDto);
+            }
+        }
+        return PageResult.of(dtos, params.getPage(), params.getPageSize(), details.getTotalElements());
     }
 
     @Override
@@ -117,6 +164,13 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
     public void finishSend(String screenShotId) {
         ScreenShotTask screenShotTask = screenShotTaskRepository.findOne(screenShotId);
         screenShotTask.setStatus(TypeStringUtils.wechat_status1);
+        if (StringUtils.hasText(screenShotTask.getFxId())) {
+            FengXian fengXian = fengXianRepository.findOne(screenShotTask.getFxId());
+            if (fengXian != null) {
+                fengXian.setMessageSendTime(LocalDateTime.now().toString().replace('T', ' '));
+                fengXianRepository.save(fengXian);
+            }
+        }
         screenShotTaskRepository.save(screenShotTask);
     }
 }

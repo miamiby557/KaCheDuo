@@ -1,8 +1,8 @@
 package com.szcinda.controller;
 
-import com.szcinda.repository.HistoryScreenShotTask;
 import com.szcinda.repository.ScreenShotTask;
 import com.szcinda.service.PageResult;
+import com.szcinda.service.screenShotTask.HistoryScreenShotTaskDto;
 import com.szcinda.service.screenShotTask.ScreenShotTaskErrorDto;
 import com.szcinda.service.screenShotTask.ScreenShotTaskParams;
 import com.szcinda.service.screenShotTask.ScreenShotTaskService;
@@ -21,7 +21,7 @@ public class ScreenShotController {
     }
 
     @PostMapping("query")
-    public PageResult<HistoryScreenShotTask> query(@RequestBody ScreenShotTaskParams params) {
+    public PageResult<HistoryScreenShotTaskDto> query(@RequestBody ScreenShotTaskParams params) {
         return screenShotTaskService.query(params);
     }
 
@@ -42,7 +42,7 @@ public class ScreenShotController {
     }
 
     @GetMapping("finishSend/{screenShotId}")
-    public Result<String> finishSend(@PathVariable String screenShotId){
+    public Result<String> finishSend(@PathVariable String screenShotId) {
         screenShotTaskService.finishSend(screenShotId);
         return Result.success();
     }

@@ -107,7 +107,7 @@ public class DriverServiceImpl implements DriverService {
     public void savePic(DriverScreenShotDto shotDto) {
         FengXian fengXian = fengXianRepository.findOne(shotDto.getFxId());
         if (fengXian != null) {
-            fengXian.setMessageSendTime(LocalDateTime.now().toString().replace('T', ' '));
+//            fengXian.setMessageSendTime(LocalDateTime.now().toString().replace('T', ' '));
             fengXian.setFilePath(shotDto.getFilePath());
             fengXianRepository.save(fengXian);
             // 删除截图任务， 生成一条历史截图任务
@@ -149,6 +149,14 @@ public class DriverServiceImpl implements DriverService {
         if (screenShotTasks.size() > 0) {
             for (ScreenShotTask screenShotTask : screenShotTasks) {
                 screenShotTask.setStatus(TypeStringUtils.wechat_status2);
+                if (StringUtils.hasText(screenShotTask.getFxId())) {
+                    FengXian fengXian = fengXianRepository.findOne(screenShotTask.getFxId());
+                    if (fengXian != null) {
+                        fengXian.setMessageReceiveTime(LocalDateTime.now().toString().replace('T', ' '));
+                        fengXianRepository.save(fengXian);
+                    }
+                }
+
             }
             screenShotTaskRepository.save(screenShotTasks);
         }

@@ -28,6 +28,7 @@ public class ChuZhiDetailDto implements Serializable {
     private String messageReceiveTime;// 微信回复时间
     private LocalDateTime chuLiTime;// 处理时间
     private String filePath;//处理图片相对路径
+    private String base64;
     private String callTime;//外呼时间
     private String called;//是否接通   是、否
     private String hangUpTime;//接通时间
