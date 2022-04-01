@@ -25,15 +25,17 @@ public class DriverServiceImpl implements DriverService {
     private final RobotTaskRepository robotTaskRepository;
     private final ScreenShotTaskRepository screenShotTaskRepository;
     private final HistoryScreenShotTaskRepository historyScreenShotTaskRepository;
+    private final ScheduleService scheduleService;
 
     public DriverServiceImpl(DriverRepository driverRepository, FengXianRepository fengXianRepository,
                              RobotTaskRepository robotTaskRepository, ScreenShotTaskRepository screenShotTaskRepository,
-                             HistoryScreenShotTaskRepository historyScreenShotTaskRepository) {
+                             HistoryScreenShotTaskRepository historyScreenShotTaskRepository, ScheduleService scheduleService) {
         this.driverRepository = driverRepository;
         this.fengXianRepository = fengXianRepository;
         this.robotTaskRepository = robotTaskRepository;
         this.screenShotTaskRepository = screenShotTaskRepository;
         this.historyScreenShotTaskRepository = historyScreenShotTaskRepository;
+        this.scheduleService = scheduleService;
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
 
@@ -117,22 +119,23 @@ public class DriverServiceImpl implements DriverService {
             historyScreenShotTaskRepository.save(historyScreenShotTask);
             screenShotTaskRepository.delete(screenShotTask);
             // 创建一个处理任务
-            CopyOnWriteArrayList<Robot> copyOnWriteRobots = ScheduleService.copyOnWriteRobots;
+            List<Robot> copyOnWriteRobots = scheduleService.queryAllRobotsFromCopyOnWriteRobots();
             RobotTask task = new RobotTask();
             task.setId(snowFlakeFactory.nextId("RT"));
-            task.setTaskStatus(TypeStringUtils.robotType1);
+            task.setTaskStatus(TypeStringUtils.taskStatus1);
             task.setTaskType(TypeStringUtils.robotType3);
             task.setFxId(fengXian.getId());
             task.setVehicleNo(fengXian.getVehicleNo());
             task.setHappenTime(fengXian.getHappenTime());
-            for (Robot robot : copyOnWriteRobots) {
-                if (robot.getPhone().equals(fengXian.getOwner()) && TypeStringUtils.robotType3.equals(robot.getType())) {
-                    task.setUserName(robot.getPhone());
-                    task.setPwd(robot.getPwd());
-                    task.setCompany(robot.getCompany());
-                    break;
-                }
-            }
+            // 过滤出处置账号所属的主账号下的处理账号
+            copyOnWriteRobots.stream().filter(item -> item.getPhone().equals(fengXian.getOwner()))
+                    .findFirst().flatMap(runRobot -> copyOnWriteRobots.stream().filter(item -> item.getId().equals(runRobot.getParentId()))
+                    .findFirst().flatMap(masterRobot -> copyOnWriteRobots.stream().filter(item -> StringUtils.hasText(item.getParentId()) && item.getParentId().equals(masterRobot.getId()))
+                            .findFirst())).ifPresent(chuLiRobot -> {
+                task.setUserName(chuLiRobot.getPhone());
+                task.setPwd(chuLiRobot.getPwd());
+                task.setCompany(chuLiRobot.getCompany());
+            });
             if (StringUtils.hasText(task.getUserName())) {
                 robotTaskRepository.save(task);
             }
