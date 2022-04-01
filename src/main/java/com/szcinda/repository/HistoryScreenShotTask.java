@@ -11,6 +11,7 @@ import javax.persistence.Entity;
 public class HistoryScreenShotTask extends BaseEntity{
     private String fxId;
     private String wechat;
+    private String wxid;
     private String vehicleNo;
     private String ownerWechat;
     private String type;

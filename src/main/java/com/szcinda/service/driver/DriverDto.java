@@ -12,5 +12,6 @@ public class DriverDto implements Serializable {
     private String vehicleNo;
     private String company;
     private String wechat;
+    private String wxid;
     private String owner;
 }
