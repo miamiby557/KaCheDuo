@@ -70,4 +70,10 @@ public class FengXianController {
         }
         return Result.fail("暂停监控");
     }
+
+    @GetMapping("generateScreenShotMissions")
+    public Result<String> generateScreenShotMissions(){
+        fengXianService.generateScreenShotMissions();
+        return Result.success();
+    }
 }

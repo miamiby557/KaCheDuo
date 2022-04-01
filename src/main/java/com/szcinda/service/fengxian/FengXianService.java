@@ -16,4 +16,6 @@ public interface FengXianService {
     void finish(String id);
 
     void error(HandleErrorDto errorDto);
+
+    void generateScreenShotMissions();
 }

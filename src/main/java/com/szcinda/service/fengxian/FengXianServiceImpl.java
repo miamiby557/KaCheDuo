@@ -68,6 +68,7 @@ public class FengXianServiceImpl implements FengXianService {
         FengXian fengXian = fengXianRepository.findByVehicleNoAndHappenTime(chuZhiDto.getVehicleNo(), chuZhiDto.getHappenTime());
         if (fengXian != null) {
             fengXian.setDisposeTime(LocalDateTime.now());
+            fengXian.setChuLiType(TypeStringUtils.fxHandleStatus1);
             fengXianRepository.save(fengXian);
             // 创建一个截图的任务
             Driver driver = driverRepository.findByVehicleNo(fengXian.getVehicleNo());
@@ -81,6 +82,29 @@ public class FengXianServiceImpl implements FengXianService {
                 screenShotTask.setOwner(fengXian.getOwner());
                 screenShotTask.setContent(TypeStringUtils.getWechatContent(fengXian.getDangerType()));
                 screenShotTaskRepository.save(screenShotTask);
+            }
+        }
+    }
+
+
+    @Override
+    public void generateScreenShotMissions() {
+        List<FengXian> fengXianList = fengXianRepository.findByChuLiType(TypeStringUtils.fxHandleStatus1);
+        if (fengXianList.size() > 0) {
+            for (FengXian fengXian : fengXianList) {
+                // 创建一个截图的任务
+                Driver driver = driverRepository.findByVehicleNo(fengXian.getVehicleNo());
+                if (driver != null && StringUtils.hasText(driver.getWechat())) {
+                    ScreenShotTask screenShotTask = new ScreenShotTask();
+                    screenShotTask.setId(snowFlakeFactory.nextId("ST"));
+                    screenShotTask.setFxId(fengXian.getId());
+                    screenShotTask.setWechat(driver.getWechat());
+                    screenShotTask.setVehicleNo(fengXian.getVehicleNo());
+                    screenShotTask.setOwnerWechat(driver.getOwnerWechat());
+                    screenShotTask.setOwner(fengXian.getOwner());
+                    screenShotTask.setContent(TypeStringUtils.getWechatContent(fengXian.getDangerType()));
+                    screenShotTaskRepository.save(screenShotTask);
+                }
             }
         }
     }
