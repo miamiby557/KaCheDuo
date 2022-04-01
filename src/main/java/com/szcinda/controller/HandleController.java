@@ -30,6 +30,13 @@ public class HandleController {
         return Result.success();
     }
 
+    // 锁定账号，不要同时处理和位置监控，因为用的是同一个账号，会互踢
+    @GetMapping("lock/{userName}")
+    public Result<String> lock(@PathVariable String userName) {
+        robotTaskService.lock(userName);
+        return Result.success();
+    }
+
 
     @PostMapping("downloadFile")
     public void downloadFile(@RequestBody DownPrams downPrams, HttpServletResponse response) {

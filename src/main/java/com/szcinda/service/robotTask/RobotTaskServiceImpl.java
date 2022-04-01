@@ -36,6 +36,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
     private final HistoryTaskRepository historyTaskRepository;
     private final SnowFlakeFactory snowFlakeFactory;
     private final RobotRepository robotRepository;
+    private final FengXianRepository fengXianRepository;
 
 
     private static final ReentrantLock lock = new ReentrantLock(true);
@@ -45,10 +46,11 @@ public class RobotTaskServiceImpl implements RobotTaskService {
 
     private static final ConcurrentLinkedQueue<String> canCreateTaskUserQueue = new ConcurrentLinkedQueue<>();
 
-    public RobotTaskServiceImpl(RobotTaskRepository robotTaskRepository, HistoryTaskRepository historyTaskRepository, RobotRepository robotRepository) {
+    public RobotTaskServiceImpl(RobotTaskRepository robotTaskRepository, HistoryTaskRepository historyTaskRepository, RobotRepository robotRepository, FengXianRepository fengXianRepository) {
         this.robotTaskRepository = robotTaskRepository;
         this.historyTaskRepository = historyTaskRepository;
         this.robotRepository = robotRepository;
+        this.fengXianRepository = fengXianRepository;
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
 
@@ -173,6 +175,13 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         BeanUtils.copyProperties(task, historyTask);
         robotTaskRepository.delete(task);
         historyTaskRepository.save(historyTask);
+        if(StringUtils.hasText(task.getFxId())){
+            // 更新处理
+            FengXian fengXian = fengXianRepository.findOne(task.getFxId());
+            fengXian.setChuLiTime(LocalDateTime.now());
+            fengXian.setChuLiType(TypeStringUtils.fxHandleStatus3);
+            fengXianRepository.save(fengXian);
+        }
         // 从集合中删除正在运行的帐号
         handleAccountMap.remove(task.getUserName());
     }
@@ -186,6 +195,13 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         BeanUtils.copyProperties(task, historyTask);
         robotTaskRepository.delete(task);
         historyTaskRepository.save(historyTask);
+        if(StringUtils.hasText(task.getFxId())){
+            // 更新处理
+            FengXian fengXian = fengXianRepository.findOne(task.getFxId());
+            fengXian.setChuLiTime(LocalDateTime.now());
+            fengXian.setChuLiType(TypeStringUtils.fxHandleStatus2);
+            fengXianRepository.save(fengXian);
+        }
         // 从集合中删除正在运行的帐号
         handleAccountMap.remove(task.getUserName());
     }
@@ -203,7 +219,6 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                         // 过滤不是正在运行中的帐号，避免帐号冲突
                         if (!handleAccountMap.containsKey(robotTask.getUserName())) {
                             filterTasks.add(robotTask);
-                            handleAccountMap.put(robotTask.getUserName(), true);
                         }
                     }
                 }
@@ -316,5 +331,10 @@ public class RobotTaskServiceImpl implements RobotTaskService {
     @Override
     public void release(String userName) {
         handleAccountMap.remove(userName);
+    }
+
+    @Override
+    public void lock(String userName) {
+        handleAccountMap.put(userName, true);
     }
 }

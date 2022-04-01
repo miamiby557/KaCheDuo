@@ -126,6 +126,7 @@ public class DriverServiceImpl implements DriverService {
             task.setFxId(fengXian.getId());
             task.setVehicleNo(fengXian.getVehicleNo());
             task.setHappenTime(fengXian.getHappenTime());
+            task.setFilePath(shotDto.getFilePath());
             // 过滤出处置账号所属的主账号下的处理账号
             copyOnWriteRobots.stream().filter(item -> item.getPhone().equals(fengXian.getOwner()))
                     .findFirst().flatMap(runRobot -> copyOnWriteRobots.stream().filter(item -> item.getId().equals(runRobot.getParentId()))

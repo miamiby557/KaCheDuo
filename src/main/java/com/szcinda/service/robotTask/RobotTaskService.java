@@ -24,4 +24,6 @@ public interface RobotTaskService {
     void createAllUserNameTask();
 
     void release(String userName);
+
+    void lock(String userName);
 }
