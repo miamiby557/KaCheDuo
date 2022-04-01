@@ -14,7 +14,6 @@ import javax.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 @Transactional
@@ -139,6 +138,17 @@ public class DriverServiceImpl implements DriverService {
             if (StringUtils.hasText(task.getUserName())) {
                 robotTaskRepository.save(task);
             }
+        }
+    }
+
+    @Override
+    public void confirm(String wechat) {
+        List<ScreenShotTask> screenShotTasks = screenShotTaskRepository.findByWechatAndStatus(wechat, TypeStringUtils.wechat_status1);
+        if (screenShotTasks.size() > 0) {
+            for (ScreenShotTask screenShotTask : screenShotTasks) {
+                screenShotTask.setStatus(TypeStringUtils.wechat_status2);
+            }
+            screenShotTaskRepository.save(screenShotTasks);
         }
     }
 }

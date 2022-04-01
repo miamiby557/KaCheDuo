@@ -105,6 +105,6 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
 
     @Override
     public ScreenShotTask findOneMission(String ownerWechat) {
-        return screenShotTaskRepository.findFirstByOwnerWechat(ownerWechat);
+        return screenShotTaskRepository.findFirstByOwnerWechatAndStatus(ownerWechat, TypeStringUtils.wechat_status2);
     }
 }

@@ -68,6 +68,12 @@ public class DriverController {
         return Result.success();
     }
 
+    @GetMapping("confirm/{wechat}")
+    public Result<String> confirm(@PathVariable String wechat) {
+        driverService.confirm(wechat);
+        return Result.success();
+    }
+
     @PostMapping("savePic/{fxId}/{screenTaskId}")
     public Result<String> savePic(@RequestParam("file") MultipartFile file, @PathVariable String fxId, @PathVariable String screenTaskId) throws Exception {
         //保存文件
