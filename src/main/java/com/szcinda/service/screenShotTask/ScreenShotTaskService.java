@@ -16,4 +16,8 @@ public interface ScreenShotTaskService {
     PageResult<HistoryScreenShotTask> query(ScreenShotTaskParams params);
 
     ScreenShotTask findOneMission(String ownerWechat);
+
+    ScreenShotTask findOneSendMission(String ownerWechat);
+
+    void finishSend(String screenShotId);
 }

@@ -29,6 +29,7 @@ public class TypeStringUtils {
 
     public static final String wechat_status1 = "待回复";
     public static final String wechat_status2 = "已回复";
+    public static final String wechat_status3 = "待发送";
 
 
     public static String getWechatContent(String type) {

@@ -35,6 +35,18 @@ public class ScreenShotController {
         return Result.success(screenShotTaskService.findOneMission(ownerWechat));
     }
 
+    // 获取一条发送的任务
+    @GetMapping("getOneSendJob/{ownerWechat}")
+    public Result<ScreenShotTask> getOneSendJob(@PathVariable String ownerWechat) {
+        return Result.success(screenShotTaskService.findOneSendMission(ownerWechat));
+    }
+
+    @GetMapping("finishSend/{screenShotId}")
+    public Result<String> finishSend(@PathVariable String screenShotId){
+        screenShotTaskService.finishSend(screenShotId);
+        return Result.success();
+    }
+
     @PostMapping("error")
     public Result<String> screenShotError(@RequestBody ScreenShotTaskErrorDto errorDto) {
         screenShotTaskService.error(errorDto);

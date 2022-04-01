@@ -102,6 +102,7 @@ public class FengXianServiceImpl implements FengXianService {
                     screenShotTask.setWechat(driver.getWechat());
                     screenShotTask.setVehicleNo(fengXian.getVehicleNo());
                     screenShotTask.setOwnerWechat(driver.getOwnerWechat());
+                    screenShotTask.setStatus(TypeStringUtils.wechat_status3);
                     screenShotTask.setOwner(fengXian.getOwner());
                     screenShotTask.setContent(TypeStringUtils.getWechatContent(fengXian.getDangerType()));
                     screenShotTaskRepository.save(screenShotTask);
