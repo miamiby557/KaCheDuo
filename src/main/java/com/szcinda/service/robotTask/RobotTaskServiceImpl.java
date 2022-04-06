@@ -329,6 +329,8 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             robotTaskRepository.save(task);
         } else {
             task.setTaskStatus(TypeStringUtils.taskStatus1);
+            // 如果任务是处理、位置监控。把账号从列表中清空
+            RobotTaskServiceImpl.handleAccountMap.remove(task.getUserName());
             robotTaskRepository.save(task);
             // 只有处置类型的可以删除
             if(TypeStringUtils.robotType2.equals(task.getTaskType())){
