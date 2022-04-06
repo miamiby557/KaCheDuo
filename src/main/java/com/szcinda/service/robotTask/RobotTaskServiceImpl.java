@@ -330,10 +330,12 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         } else {
             task.setTaskStatus(TypeStringUtils.taskStatus1);
             robotTaskRepository.save(task);
-            // 其他相同任务丢弃
-            for (RobotTask robotTask : tasks) {
-                if (!task.getId().equals(robotTask.getId())) {
-                    robotTaskRepository.delete(robotTask);
+            if(TypeStringUtils.robotType2.equals(task.getTaskType())){
+                // 其他相同任务丢弃
+                for (RobotTask robotTask : tasks) {
+                    if (!task.getId().equals(robotTask.getId())) {
+                        robotTaskRepository.delete(robotTask);
+                    }
                 }
             }
         }
