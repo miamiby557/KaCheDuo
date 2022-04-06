@@ -125,6 +125,9 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
                         .ifPresent(fx -> {
                             if (StringUtils.hasText(fx.getFilePath())) {
                                 File saveFile = new File(savePath, fx.getFilePath());
+                                if (!saveFile.exists()) {
+                                    return;
+                                }
                                 FileInputStream inputFile = null;
                                 try {
                                     inputFile = new FileInputStream(saveFile);
@@ -138,7 +141,7 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
                                     assert inputFile != null;
                                     try {
                                         inputFile.close();
-                                    } catch (IOException e) {
+                                    } catch (Exception e) {
                                         e.printStackTrace();
                                     }
                                 }
