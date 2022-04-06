@@ -42,7 +42,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
     private static final ReentrantLock lock = new ReentrantLock(true);
 
     // 正在处理的帐号
-    public final static ConcurrentHashMap<String, Object> handleAccountMap = new ConcurrentHashMap<>();
+    public final static ConcurrentHashMap<String, LocalDateTime> handleAccountMap = new ConcurrentHashMap<>();
 
     private static final ConcurrentLinkedQueue<String> canCreateTaskUserQueue = new ConcurrentLinkedQueue<>();
 
@@ -300,6 +300,21 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                 }
             }
         }
+        LocalDateTime now = LocalDateTime.now();
+        // 处理假死的处理账号
+        List<String> needDeleteUserNames = new ArrayList<>();
+        handleAccountMap.forEach((userName, localDateTime) -> {
+            Duration duration = Duration.between(now, localDateTime);
+            long minutes = Math.abs(duration.toMinutes());//相差的分钟数
+            if (minutes > 5) {
+                needDeleteUserNames.add(userName);
+            }
+        });
+        if (needDeleteUserNames.size() > 0) {
+            for (String needDeleteUserName : needDeleteUserNames) {
+                handleAccountMap.remove(needDeleteUserName);
+            }
+        }
     }
 
     @Override
@@ -340,6 +355,6 @@ public class RobotTaskServiceImpl implements RobotTaskService {
 
     @Override
     public void lock(String userName) {
-        handleAccountMap.put(userName, true);
+        handleAccountMap.put(userName, LocalDateTime.now());
     }
 }
