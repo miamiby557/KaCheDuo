@@ -161,4 +161,12 @@ public class DriverServiceImpl implements DriverService {
             screenShotTaskRepository.save(screenShotTasks);
         }
     }
+
+    @Override
+    public void update(DriverUpdateDto updateDto) {
+        Driver driver = driverRepository.findOne(updateDto.getId());
+        driver.setWechat(updateDto.getWechat());
+        driver.setWxid(updateDto.getWxid());
+        driverRepository.save(driver);
+    }
 }

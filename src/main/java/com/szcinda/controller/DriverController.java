@@ -61,6 +61,12 @@ public class DriverController {
         return Result.success(driverService.query(query));
     }
 
+    @PostMapping("update")
+    public Result<String> update(@RequestBody DriverUpdateDto updateDto) {
+        driverService.update(updateDto);
+        return Result.success();
+    }
+
 
     @PostMapping("connect")
     public Result<String> connect(@RequestBody DriverConnectDto connectDto) {

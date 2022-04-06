@@ -14,4 +14,6 @@ public interface DriverService {
     void savePic(DriverScreenShotDto shotDto);
 
     void confirm(String wechat);
+
+    void update(DriverUpdateDto updateDto);
 }
