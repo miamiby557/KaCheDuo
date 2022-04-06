@@ -191,7 +191,7 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
             for (ScreenShotTask screenShotTask : noRepeatList) {
                 Duration duration = Duration.between(now, screenShotTask.getCreateTime());
                 long minutes = Math.abs(duration.toMinutes());//相差的分钟数
-                if (minutes > 60) {
+                if (minutes > 30) {
                     //需要截图并处理，不等司机回复
                     screenShotTask.setStatus(TypeStringUtils.wechat_status4);
                     screenShotTaskRepository.save(screenShotTask);
