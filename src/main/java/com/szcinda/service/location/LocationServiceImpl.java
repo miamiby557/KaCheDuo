@@ -6,6 +6,7 @@ import com.szcinda.repository.Robot;
 import com.szcinda.repository.RobotRepository;
 import com.szcinda.service.PageResult;
 import com.szcinda.service.SnowFlakeFactory;
+import com.szcinda.service.robotTask.RobotTaskServiceImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -54,6 +55,9 @@ public class LocationServiceImpl implements LocationService {
                 }
                 this.create(dto);
             }
+            // 删除正在运行的账号
+            String owner = dtos.get(0).getOwner();
+            RobotTaskServiceImpl.handleAccountMap.remove(owner);
         }
 
     }

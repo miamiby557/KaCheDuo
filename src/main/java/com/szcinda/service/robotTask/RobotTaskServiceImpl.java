@@ -300,7 +300,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                 }
             }
         }
-        LocalDateTime now = LocalDateTime.now();
+        /*LocalDateTime now = LocalDateTime.now();
         // 处理假死的处理账号
         List<String> needDeleteUserNames = new ArrayList<>();
         handleAccountMap.forEach((userName, localDateTime) -> {
@@ -314,7 +314,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             for (String needDeleteUserName : needDeleteUserNames) {
                 handleAccountMap.remove(needDeleteUserName);
             }
-        }
+        }*/
     }
 
     @Override
