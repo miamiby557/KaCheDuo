@@ -330,6 +330,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         } else {
             task.setTaskStatus(TypeStringUtils.taskStatus1);
             robotTaskRepository.save(task);
+            // 只有处置类型的可以删除
             if(TypeStringUtils.robotType2.equals(task.getTaskType())){
                 // 其他相同任务丢弃
                 for (RobotTask robotTask : tasks) {
