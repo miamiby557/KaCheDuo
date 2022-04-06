@@ -175,7 +175,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         BeanUtils.copyProperties(task, historyTask);
         robotTaskRepository.delete(task);
         historyTaskRepository.save(historyTask);
-        if(StringUtils.hasText(task.getFxId())){
+        if (StringUtils.hasText(task.getFxId())) {
             // 更新处理
             FengXian fengXian = fengXianRepository.findOne(task.getFxId());
             fengXian.setChuLiTime(LocalDateTime.now());
@@ -195,7 +195,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         BeanUtils.copyProperties(task, historyTask);
         robotTaskRepository.delete(task);
         historyTaskRepository.save(historyTask);
-        if(StringUtils.hasText(task.getFxId())){
+        if (StringUtils.hasText(task.getFxId())) {
             // 更新处理
             FengXian fengXian = fengXianRepository.findOne(task.getFxId());
             fengXian.setChuLiTime(LocalDateTime.now());
@@ -285,7 +285,12 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                 LocalDateTime time = task.getCreateTime();
                 Duration duration = Duration.between(now, time);
                 long minutes = Math.abs(duration.toMinutes());//相差的分钟数
-                if (minutes >= 15) {
+                long minNumber = 15;
+                if (TypeStringUtils.robotType3.equals(task.getTaskType())) {
+                    // 如果是位置监控，需要的时间长
+                    minNumber = 60;
+                }
+                if (minutes >= minNumber) {
                     taskIds.add(task.getId());
                 }
             }
