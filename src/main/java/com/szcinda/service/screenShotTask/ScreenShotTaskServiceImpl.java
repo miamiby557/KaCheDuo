@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -20,9 +21,10 @@ import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -155,16 +157,19 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
 
     @Override
     public ScreenShotTask findOneMission(String ownerWechat) {
-        return screenShotTaskRepository.findFirstByOwnerWechatAndStatus(ownerWechat, TypeStringUtils.wechat_status2);
+        // 找一条已回复或者超时未回复的截图处理
+        return screenShotTaskRepository.findFirstByOwnerWechatAndStatusIn(ownerWechat, Arrays.asList(TypeStringUtils.wechat_status2, TypeStringUtils.wechat_status4));
     }
 
     @Override
     public ScreenShotTask findOneSendMission(String ownerWechat) {
+        // 找一条待发送的任务进行发送
         return screenShotTaskRepository.findFirstByOwnerWechatAndStatus(ownerWechat, TypeStringUtils.wechat_status3);
     }
 
     @Override
     public void finishSend(String screenShotId) {
+        // 完成发送任务，设置处置的发送时间
         ScreenShotTask screenShotTask = screenShotTaskRepository.findOne(screenShotId);
         screenShotTask.setStatus(TypeStringUtils.wechat_status1);
         if (StringUtils.hasText(screenShotTask.getFxId())) {
@@ -176,4 +181,23 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
         }
         screenShotTaskRepository.save(screenShotTask);
     }
+
+    // 1小时内如果没有收到回复，则把当前任务设为超时未回复，需要截图做处理
+    @Scheduled(cron = "0 */2 * * * ?")
+    public void checkIsNoRepeatInOneHour() {
+        List<ScreenShotTask> noRepeatList = screenShotTaskRepository.findByStatus(TypeStringUtils.wechat_status1);
+        if (noRepeatList != null) {
+            LocalDateTime now = LocalDateTime.now();
+            for (ScreenShotTask screenShotTask : noRepeatList) {
+                Duration duration = Duration.between(now, screenShotTask.getCreateTime());
+                long minutes = Math.abs(duration.toMinutes());//相差的分钟数
+                if (minutes > 60) {
+                    //需要截图并处理，不等司机回复
+                    screenShotTask.setStatus(TypeStringUtils.wechat_status4);
+                    screenShotTaskRepository.save(screenShotTask);
+                }
+            }
+        }
+    }
+
 }
