@@ -42,4 +42,13 @@ public class LocationController {
         }
         return Result.fail("机器人不在列表中，不需要运行位置监控流程");
     }
+
+    @GetMapping("runOnce")
+    public Result<String> runOnce(){
+        try{
+            scheduleService.run();
+        }catch (Exception ignored){
+        }
+        return Result.success();
+    }
 }

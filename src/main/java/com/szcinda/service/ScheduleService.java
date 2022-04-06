@@ -60,8 +60,8 @@ public class ScheduleService {
                 if (robot.isRun()) {
                     CreateRobotTaskDto taskDto = new CreateRobotTaskDto();
                     taskDto.setTaskType(TypeStringUtils.robotType3);
-                    taskDto.setUserName(robot.getAccount2());
-                    taskDto.setPwd(robot.getPwd2());
+                    taskDto.setUserName(robot.getPhone());
+                    taskDto.setPwd(robot.getPwd());
                     taskDto.setCompany(robot.getCompany());
                     robotTaskService.create(taskDto);
                 }

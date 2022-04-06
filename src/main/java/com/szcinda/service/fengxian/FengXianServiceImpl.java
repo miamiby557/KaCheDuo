@@ -152,6 +152,9 @@ public class FengXianServiceImpl implements FengXianService {
                     File saveFile = new File(savePath, fengXian.getFilePath());
                     FileInputStream inputFile = null;
                     try {
+                        if(!saveFile.exists()){
+                            continue;
+                        }
                         inputFile = new FileInputStream(saveFile);
                         byte[] buffer = new byte[(int) saveFile.length()];
                         inputFile.read(buffer);
