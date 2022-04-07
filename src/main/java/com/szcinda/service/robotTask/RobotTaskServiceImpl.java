@@ -307,21 +307,6 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                 }
             }
         }
-        /*LocalDateTime now = LocalDateTime.now();
-        // 处理假死的处理账号
-        List<String> needDeleteUserNames = new ArrayList<>();
-        handleAccountMap.forEach((userName, localDateTime) -> {
-            Duration duration = Duration.between(now, localDateTime);
-            long minutes = Math.abs(duration.toMinutes());//相差的分钟数
-            if (minutes > 5) {
-                needDeleteUserNames.add(userName);
-            }
-        });
-        if (needDeleteUserNames.size() > 0) {
-            for (String needDeleteUserName : needDeleteUserNames) {
-                handleAccountMap.remove(needDeleteUserName);
-            }
-        }*/
     }
 
     @Override
@@ -336,9 +321,8 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             robotTaskRepository.save(task);
         } else {
             task.setTaskStatus(TypeStringUtils.taskStatus1);
-            // 如果任务是处理、位置监控。把账号从列表中清空
-            RobotTaskServiceImpl.handleAccountMap.remove(task.getUserName());
             robotTaskRepository.save(task);
+            workRobotRepository.deleteByUserName(task.getUserName());
             // 只有处置类型的可以删除
             if (TypeStringUtils.robotType2.equals(task.getTaskType())) {
                 // 其他相同任务丢弃
@@ -362,13 +346,11 @@ public class RobotTaskServiceImpl implements RobotTaskService {
     // 完成后剔除帐号
     @Override
     public void release(String userName) {
-//        handleAccountMap.remove(userName);
         workRobotRepository.deleteByUserName(userName);
     }
 
     @Override
     public void lock(String userName) {
-//        handleAccountMap.put(userName, LocalDateTime.now());
         WorkRobot workRobot = workRobotRepository.findByUserName(userName);
         if (workRobot == null) {
             workRobot = new WorkRobot();
