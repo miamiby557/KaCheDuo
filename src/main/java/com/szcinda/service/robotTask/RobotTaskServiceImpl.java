@@ -37,6 +37,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
     private final SnowFlakeFactory snowFlakeFactory;
     private final RobotRepository robotRepository;
     private final FengXianRepository fengXianRepository;
+    private final WorkRobotRepository workRobotRepository;
 
 
     private static final ReentrantLock lock = new ReentrantLock(true);
@@ -46,11 +47,12 @@ public class RobotTaskServiceImpl implements RobotTaskService {
 
     private static final ConcurrentLinkedQueue<String> canCreateTaskUserQueue = new ConcurrentLinkedQueue<>();
 
-    public RobotTaskServiceImpl(RobotTaskRepository robotTaskRepository, HistoryTaskRepository historyTaskRepository, RobotRepository robotRepository, FengXianRepository fengXianRepository) {
+    public RobotTaskServiceImpl(RobotTaskRepository robotTaskRepository, HistoryTaskRepository historyTaskRepository, RobotRepository robotRepository, FengXianRepository fengXianRepository, WorkRobotRepository workRobotRepository) {
         this.robotTaskRepository = robotTaskRepository;
         this.historyTaskRepository = historyTaskRepository;
         this.robotRepository = robotRepository;
         this.fengXianRepository = fengXianRepository;
+        this.workRobotRepository = workRobotRepository;
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
 
@@ -183,7 +185,8 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             fengXianRepository.save(fengXian);
         }
         // 从集合中删除正在运行的帐号
-        handleAccountMap.remove(task.getUserName());
+//        handleAccountMap.remove(task.getUserName());
+        workRobotRepository.deleteByUserName(task.getUserName());
     }
 
     @Override
@@ -203,7 +206,8 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             fengXianRepository.save(fengXian);
         }
         // 从集合中删除正在运行的帐号
-        handleAccountMap.remove(task.getUserName());
+//        handleAccountMap.remove(task.getUserName());
+        workRobotRepository.deleteByUserName(task.getUserName());
     }
 
     @Override
@@ -211,13 +215,16 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         try {
             if (lock.tryLock(3, TimeUnit.SECONDS)) {
                 List<RobotTask> filterTasks = new ArrayList<>();
+                // 获取正在工作的处理账号
+                List<WorkRobot> workRobots = workRobotRepository.findAll();
                 List<RobotTask> robotTasks = robotTaskRepository.findByTaskStatus(TypeStringUtils.taskStatus1);
                 for (RobotTask robotTask : robotTasks) {
                     if (TypeStringUtils.robotType2.equals(robotTask.getTaskType())) {
                         filterTasks.add(robotTask);
                     } else if (TypeStringUtils.robotType3.equals(robotTask.getTaskType())) {
                         // 过滤不是正在运行中的帐号，避免帐号冲突
-                        if (!handleAccountMap.containsKey(robotTask.getUserName())) {
+                        boolean noWork = workRobots.stream().noneMatch(item -> item.getUserName().equals(robotTask.getUserName()));
+                        if (noWork) {
                             filterTasks.add(robotTask);
                         }
                     }
@@ -333,7 +340,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             RobotTaskServiceImpl.handleAccountMap.remove(task.getUserName());
             robotTaskRepository.save(task);
             // 只有处置类型的可以删除
-            if(TypeStringUtils.robotType2.equals(task.getTaskType())){
+            if (TypeStringUtils.robotType2.equals(task.getTaskType())) {
                 // 其他相同任务丢弃
                 for (RobotTask robotTask : tasks) {
                     if (!task.getId().equals(robotTask.getId())) {
@@ -355,11 +362,19 @@ public class RobotTaskServiceImpl implements RobotTaskService {
     // 完成后剔除帐号
     @Override
     public void release(String userName) {
-        handleAccountMap.remove(userName);
+//        handleAccountMap.remove(userName);
+        workRobotRepository.deleteByUserName(userName);
     }
 
     @Override
     public void lock(String userName) {
-        handleAccountMap.put(userName, LocalDateTime.now());
+//        handleAccountMap.put(userName, LocalDateTime.now());
+        WorkRobot workRobot = workRobotRepository.findByUserName(userName);
+        if (workRobot == null) {
+            workRobot = new WorkRobot();
+            workRobot.setId(snowFlakeFactory.nextId("WB"));
+            workRobot.setUserName(userName);
+            workRobotRepository.save(workRobot);
+        }
     }
 }

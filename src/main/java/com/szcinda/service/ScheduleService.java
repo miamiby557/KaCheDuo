@@ -2,6 +2,8 @@ package com.szcinda.service;
 
 import com.szcinda.repository.Robot;
 import com.szcinda.repository.RobotRepository;
+import com.szcinda.repository.WorkRobot;
+import com.szcinda.repository.WorkRobotRepository;
 import com.szcinda.service.robotTask.CreateRobotTaskDto;
 import com.szcinda.service.robotTask.RobotTaskService;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,6 +23,7 @@ public class ScheduleService {
 
     private final RobotRepository robotRepository;
     private final RobotTaskService robotTaskService;
+    private final WorkRobotRepository workRobotRepository;
 
     // 需要运行位置监控的机器人名称列表
     public static List<String> robotSearchLocationList = new ArrayList<>();
@@ -41,9 +44,10 @@ public class ScheduleService {
     // 系统所有登录帐号的列表，避免前端的定时器每次请求都到数据库 CopyOnWriteArrayList适合读多写少的并发场景
     public static CopyOnWriteArrayList<Robot> copyOnWriteRobots = new CopyOnWriteArrayList<>();
 
-    public ScheduleService(RobotRepository robotRepository, RobotTaskService robotTaskService) {
+    public ScheduleService(RobotRepository robotRepository, RobotTaskService robotTaskService, WorkRobotRepository workRobotRepository) {
         this.robotRepository = robotRepository;
         this.robotTaskService = robotTaskService;
+        this.workRobotRepository = workRobotRepository;
     }
 
     // 每日0时、8时、16时循环一次
@@ -215,16 +219,18 @@ public class ScheduleService {
     }
 
     public boolean canRunChuLiAndLocation(String phone) {
-        if (robotChuZhiMap.containsKey(phone)) {
-            return robotChuZhiMap.get(phone);
-        } else {
-            Robot robot = robotRepository.findByPhone(phone);
-            if (robot != null) {
-                robotChuZhiMap.put(robot.getPhone(), robot.isRun());
-                return robot.isRun();
-            }
-        }
-        return false;
+//        if (robotChuZhiMap.containsKey(phone)) {
+//            return robotChuZhiMap.get(phone);
+//        } else {
+//            Robot robot = robotRepository.findByPhone(phone);
+//            if (robot != null) {
+//                robotChuZhiMap.put(robot.getPhone(), robot.isRun());
+//                return robot.isRun();
+//            }
+//        }
+//        return false;
+        WorkRobot workRobot = workRobotRepository.findByUserName(phone);
+        return workRobot == null;
     }
 
     public String getPwd(String phone) {

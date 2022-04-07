@@ -134,6 +134,10 @@ public class FengXianServiceImpl implements FengXianService {
                 Predicate happenTime = criteriaBuilder.like(root.get("happenTime"), params.getHappenTime() + "%");
                 predicates.add(happenTime);
             }
+            if (!StringUtils.isEmpty(params.getUserName())) {
+                Predicate owner = criteriaBuilder.equal(root.get("owner"), params.getUserName());
+                predicates.add(owner);
+            }
             List<String> phones = robots.stream().map(Robot::getPhone).collect(Collectors.toList());
             Expression<String> exp = root.get("owner");
             predicates.add(exp.in(phones));
@@ -152,7 +156,7 @@ public class FengXianServiceImpl implements FengXianService {
                     File saveFile = new File(savePath, fengXian.getFilePath());
                     FileInputStream inputFile = null;
                     try {
-                        if(!saveFile.exists()){
+                        if (!saveFile.exists()) {
                             continue;
                         }
                         inputFile = new FileInputStream(saveFile);
