@@ -16,6 +16,7 @@ public class HistoryScreenShotTask extends BaseEntity{
     private String ownerWechat;
     private String type;
     private String content;
+    private String happenTime;
     private String message;
     private String owner;// 所属账户
 }

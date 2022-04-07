@@ -90,6 +90,7 @@ public class FengXianServiceImpl implements FengXianService {
                 screenShotTask.setOwnerWechat(driver.getOwnerWechat());
                 screenShotTask.setOwner(fengXian.getOwner());
                 screenShotTask.setWxid(driver.getWxid());
+                screenShotTask.setHappenTime(fengXian.getHappenTime());
                 screenShotTask.setStatus(TypeStringUtils.wechat_status3);
                 screenShotTask.setContent(TypeStringUtils.getWechatContent(fengXian.getDangerType()));
                 screenShotTaskRepository.save(screenShotTask);
@@ -114,6 +115,7 @@ public class FengXianServiceImpl implements FengXianService {
                     screenShotTask.setOwnerWechat(driver.getOwnerWechat());
                     screenShotTask.setStatus(TypeStringUtils.wechat_status3);
                     screenShotTask.setOwner(fengXian.getOwner());
+                    screenShotTask.setHappenTime(fengXian.getHappenTime());
                     screenShotTask.setWxid(driver.getWxid());
                     screenShotTask.setContent(TypeStringUtils.getWechatContent(fengXian.getDangerType()));
                     screenShotTaskRepository.save(screenShotTask);
@@ -142,6 +144,7 @@ public class FengXianServiceImpl implements FengXianService {
                 screenShotTask.setOwnerWechat(driver.getOwnerWechat());
                 screenShotTask.setStatus(TypeStringUtils.wechat_status3);
                 screenShotTask.setOwner(fengXian.getOwner());
+                screenShotTask.setHappenTime(fengXian.getHappenTime());
                 screenShotTask.setWxid(driver.getWxid());
                 screenShotTask.setContent(TypeStringUtils.getWechatContent(fengXian.getDangerType()));
                 screenShotTaskRepository.save(screenShotTask);
