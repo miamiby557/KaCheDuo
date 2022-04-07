@@ -327,7 +327,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             if (TypeStringUtils.robotType2.equals(task.getTaskType())) {
                 // 其他相同任务丢弃
                 for (RobotTask robotTask : tasks) {
-                    if (!task.getId().equals(robotTask.getId())) {
+                    if (!task.getId().equals(robotTask.getId()) && TypeStringUtils.robotType2.equals(task.getTaskType())) {
                         robotTaskRepository.delete(robotTask);
                     }
                 }
