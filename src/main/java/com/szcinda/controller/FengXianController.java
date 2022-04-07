@@ -27,6 +27,14 @@ public class FengXianController {
         return Result.success();
     }
 
+    // 批量插入之前的未处理的数据
+    @PostMapping("batchCreateHandleList")
+    public Result<String> batchCreateHandleList(@RequestBody List<CreateFengXianDto> dtos) {
+        fengXianService.batchCreateHandle(dtos);
+        return Result.success();
+    }
+
+
     @PostMapping("query")
     public PageResult<ChuZhiDetailDto> query(@RequestBody ChuZhiQuery query) {
         return fengXianService.query(query);
@@ -72,7 +80,7 @@ public class FengXianController {
     }
 
     @GetMapping("generateScreenShotMissions")
-    public Result<String> generateScreenShotMissions(){
+    public Result<String> generateScreenShotMissions() {
         fengXianService.generateScreenShotMissions();
         return Result.success();
     }

@@ -21,4 +21,6 @@ public class CreateFengXianDto implements Serializable {
     private LocalDateTime gdCreateTime;// 两客创建时间
     private String owner;// 所属账户
     private String company;
+
+    private String chuLiType;
 }

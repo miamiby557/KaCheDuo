@@ -50,7 +50,7 @@ public class FengXianServiceImpl implements FengXianService {
     }
 
     @Override
-    public void create(CreateFengXianDto dto) {
+    public FengXian create(CreateFengXianDto dto) {
         FengXian fengXian = fengXianRepository.findByVehicleNoAndHappenTime(dto.getVehicleNo(), dto.getHappenTime());
         if (fengXian == null) {
             fengXian = new FengXian();
@@ -58,6 +58,7 @@ public class FengXianServiceImpl implements FengXianService {
             fengXian.setId(snowFlakeFactory.nextId("FX"));
             fengXianRepository.save(fengXian);
         }
+        return fengXian;
     }
 
     @Override
@@ -117,6 +118,33 @@ public class FengXianServiceImpl implements FengXianService {
                     screenShotTask.setContent(TypeStringUtils.getWechatContent(fengXian.getDangerType()));
                     screenShotTaskRepository.save(screenShotTask);
                 }
+            }
+        }
+    }
+
+    @Override
+    public void batchCreateHandle(List<CreateFengXianDto> dtos) {
+        Robot robot = robotRepository.findByPhone(dtos.get(0).getOwner());
+        for (CreateFengXianDto dto : dtos) {
+            if (robot != null) {
+                dto.setCompany(robot.getCompany());
+            }
+            dto.setChuLiType(TypeStringUtils.fxHandleStatus1);
+            FengXian fengXian = this.create(dto);
+            // 创建一个截图的任务
+            Driver driver = driverRepository.findByVehicleNo(fengXian.getVehicleNo());
+            if (driver != null && StringUtils.hasText(driver.getWechat())) {
+                ScreenShotTask screenShotTask = new ScreenShotTask();
+                screenShotTask.setId(snowFlakeFactory.nextId("ST"));
+                screenShotTask.setFxId(fengXian.getId());
+                screenShotTask.setWechat(driver.getWechat());
+                screenShotTask.setVehicleNo(fengXian.getVehicleNo());
+                screenShotTask.setOwnerWechat(driver.getOwnerWechat());
+                screenShotTask.setStatus(TypeStringUtils.wechat_status3);
+                screenShotTask.setOwner(fengXian.getOwner());
+                screenShotTask.setWxid(driver.getWxid());
+                screenShotTask.setContent(TypeStringUtils.getWechatContent(fengXian.getDangerType()));
+                screenShotTaskRepository.save(screenShotTask);
             }
         }
     }
