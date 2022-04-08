@@ -29,23 +29,53 @@ public class VoiceApi {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+
+    public static void main(String[] args) throws Exception {
+        try {
+//            sendVoiceCaptcha();
+            CallParams callParams = new CallParams();
+            callParams.setPhone("13427990185");
+            callParams.setDataId("test");
+            callParams.setTemplateId("27667");
+            Result<String> result = sendVoiceNotification(callParams);
+            System.out.println(result);
+//            sendClickToCall();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     /*语音通知DEMO*/
-    public static Result<String> sendVoiceNotification(CallParams callParams){
-        try{
+    public static Result<String> sendVoiceNotification(CallParams callParams) {
+        HttpURLConnection conn = null;
+        DataOutputStream output = null;
+        try {
             String timestamp = getTimeStamp();
             String sig = getSig(timestamp);
             String url = getUrl(sig);
             String authorization = getAuthorization(timestamp);
             String requestContent = getJsonRequestBody(callParams);
-            HttpURLConnection conn = getConnection(url, authorization, requestContent.length());
-            DataOutputStream output = new DataOutputStream(conn.getOutputStream());
+            conn = getConnection(url, authorization, requestContent.length());
+            output = new DataOutputStream(conn.getOutputStream());
             output.write(requestContent.getBytes(StandardCharsets.UTF_8));
             output.close();
+            printResponse(conn);
             return Result.success();
-        }catch (Exception exception){
-            return Result.fail("通话失败");
+        } catch (Exception ignored) {
+
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+            if (output != null) {
+                try {
+                    output.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
-//        printResponse(conn);
+        return Result.fail("通话失败");
     }
 
 

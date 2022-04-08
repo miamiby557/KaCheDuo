@@ -31,4 +31,5 @@ public class PhoneBill extends BaseEntity {
     private String templateId;
     private String status;
     private String message;
+    private int callTime;// 外呼次数
 }

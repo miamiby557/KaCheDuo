@@ -13,6 +13,7 @@ import org.springframework.util.StringUtils;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 
 @Service
 @Transactional
@@ -51,6 +52,7 @@ public class CallServiceImpl implements CallService {
         if (phoneBill == null) {
             return;
         }
+        phoneBill.setCallTime(phoneBill.getCallTime() + 1);
         BeanUtils.copyProperties(callbackData.getSubject(), phoneBill, "id", "caller");
         if (StringUtils.hasText(callbackData.getSubject().getCreateTime())) {
             phoneBill.setCallCreateTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.getLong(callbackData.getSubject().getCreateTime())), ZoneId.of("+8")));
@@ -66,6 +68,17 @@ public class CallServiceImpl implements CallService {
             phoneBill.setStatus(TypeStringUtils.phone_status1);
         } else if (callbackData.getSubject().getDirection() > 0 && callbackData.getSubject().getIvrTime() == 0) {
             phoneBill.setStatus(TypeStringUtils.phone_status3);
+            // 判断未接通，再拨打一次
+            if (phoneBill.getCallTime() < 2) {
+                CallParams params = new CallParams();
+                params.setDataId(phoneBill.getId());
+                params.setTemplateId(phoneBill.getTemplateId());
+                if (phoneBill.getParams() != null) {
+                    params.setParams(Arrays.asList(phoneBill.getParams().split(",")));
+                }
+                params.setPhone(phoneBill.getCalled());
+                this.call(params);
+            }
         } else if (callbackData.getSubject().getDirection() > 0 && callbackData.getSubject().getIvrTime() > 0) {
             phoneBill.setStatus(TypeStringUtils.phone_status4);
         }
