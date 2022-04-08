@@ -1,17 +1,17 @@
 package com.szcinda.service.callback;
 
 import com.szcinda.controller.Result;
-import com.szcinda.repository.PhoneBill;
-import com.szcinda.repository.PhoneBillRepository;
+import com.szcinda.repository.*;
 import com.szcinda.service.SnowFlakeFactory;
 import com.szcinda.service.TypeStringUtils;
-import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.*;
 import java.util.Arrays;
+import java.util.Collections;
 
 @Service
 @Transactional
@@ -19,11 +19,18 @@ public class CallServiceImpl implements CallService {
 
     private final PhoneBillRepository phoneBillRepository;
     private final SnowFlakeFactory snowFlakeFactory;
+    private final DriverRepository driverRepository;
+    private final RobotRepository robotRepository;
 
-    public CallServiceImpl(PhoneBillRepository phoneBillRepository) {
+    public CallServiceImpl(PhoneBillRepository phoneBillRepository, DriverRepository driverRepository, RobotRepository robotRepository) {
         this.phoneBillRepository = phoneBillRepository;
+        this.driverRepository = driverRepository;
+        this.robotRepository = robotRepository;
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
+
+    @Value("${charge.msg.id}")
+    private String chargeMsgId;
 
     @Override
     public void call(CallParams params) {
@@ -81,13 +88,27 @@ public class CallServiceImpl implements CallService {
             // 判断未接通，再拨打一次
             if (phoneBill.getCallTime() < 2) {
                 CallParams params = new CallParams();
-                params.setDataId(phoneBill.getId());
                 params.setTemplateId(phoneBill.getTemplateId());
                 if (phoneBill.getParams() != null) {
                     params.setParams(Arrays.asList(phoneBill.getParams().split(",")));
                 }
                 params.setPhone(phoneBill.getCalled());
                 this.call(params);
+            } else if (phoneBill.getCallTime() >= 2 && !chargeMsgId.equals(phoneBill.getTemplateId())) {
+                // 已经打了2次电话，并且不是打给负责人，则需要打给负责人
+                // 通过司机的公司名找到登录账号的负责人电话
+                Driver driver = driverRepository.findByPhone(phoneBill.getCalled());
+                if (driver != null) {
+                    String company = driver.getCompany();
+                    Robot robot = robotRepository.findByCompanyAndParentIdIsNull(company);
+                    if (robot != null && StringUtils.hasText(robot.getChargePhone())) {
+                        CallParams params = new CallParams();
+                        params.setTemplateId(chargeMsgId);
+                        params.setPhone(robot.getChargePhone());
+                        params.setParams(Collections.singletonList(driver.getVehicleNo()));
+                        this.call(params);
+                    }
+                }
             }
         } else if (callbackData.getSubject().getDirection() > 0 && callbackData.getSubject().getIvrTime() > 0) {
             phoneBill.setStatus(TypeStringUtils.phone_status4);

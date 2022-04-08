@@ -4,6 +4,8 @@ import com.szcinda.repository.*;
 import com.szcinda.service.PageResult;
 import com.szcinda.service.SnowFlakeFactory;
 import com.szcinda.service.TypeStringUtils;
+import com.szcinda.service.callback.CallParams;
+import com.szcinda.service.callback.CallService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -36,16 +38,25 @@ public class FengXianServiceImpl implements FengXianService {
     private final RobotRepository robotRepository;
     private final DriverRepository driverRepository;
     private final ScreenShotTaskRepository screenShotTaskRepository;
+    private final CallService callService;
 
     @Value("${file.save.path}")
     private String savePath;
 
+    @Value("${body.tired.id}")
+    private String tiredId;
+
+    @Value("${over.speed.id}")
+    private String overSpeedId;
+
+
     public FengXianServiceImpl(FengXianRepository fengXianRepository, RobotRepository robotRepository, DriverRepository driverRepository,
-                               ScreenShotTaskRepository screenShotTaskRepository) {
+                               ScreenShotTaskRepository screenShotTaskRepository, CallService callService) {
         this.fengXianRepository = fengXianRepository;
         this.robotRepository = robotRepository;
         this.driverRepository = driverRepository;
         this.screenShotTaskRepository = screenShotTaskRepository;
+        this.callService = callService;
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
 
@@ -94,6 +105,22 @@ public class FengXianServiceImpl implements FengXianService {
                 screenShotTask.setStatus(TypeStringUtils.wechat_status3);
                 screenShotTask.setContent(TypeStringUtils.getWechatContent(fengXian.getDangerType()));
                 screenShotTaskRepository.save(screenShotTask);
+                // 如果是生理疲劳或者超速，需要打电话
+                CallParams callParams = null;
+                if (TypeStringUtils.tired_status.equals(fengXian.getDangerType())) {
+                    callParams = new CallParams();
+                    callParams.setPhone(driver.getPhone());
+                    callParams.setTemplateId(tiredId);
+//                    callParams.setDataId(fengXian.getId());
+                } else if (TypeStringUtils.over_status.equals(fengXian.getDangerType())) {
+                    callParams = new CallParams();
+                    callParams.setPhone(driver.getPhone());
+                    callParams.setTemplateId(overSpeedId);
+//                    callParams.setDataId(fengXian.getId());
+                }
+                if (callParams != null) {
+                    callService.call(callParams);
+                }
             }
         }
     }

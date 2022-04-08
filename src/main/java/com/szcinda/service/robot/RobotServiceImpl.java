@@ -41,6 +41,8 @@ public class RobotServiceImpl implements RobotService {
         Assert.isTrue(robot == null, String.format("存在相同登录帐号【%s】，不允许创建", dto.getPhone()));
         robot = robotRepository.findByAccount2(dto.getAccount2());
         Assert.isTrue(robot == null, String.format("存在相同登录帐号【%s】，不允许创建", dto.getAccount2()));
+        robot = robotRepository.findByCompanyAndParentIdIsNull(dto.getCompany());
+        Assert.isTrue(robot == null, String.format("存在相同公司名称【%s】，不允许创建", dto.getAccount2()));
         // 判断子账号有没有创建过
         for (CreateRobotDto createRobotDto : dto.getSubRobotList()) {
             robot = robotRepository.findByPhone(createRobotDto.getPhone());
@@ -93,9 +95,13 @@ public class RobotServiceImpl implements RobotService {
         Assert.isTrue(dto.getSubRobotList().size() > 0, "必须添加至少一条子账号数据");
         Robot robot = robotRepository.findByPhone(dto.getPhone());
         Assert.isTrue(robot == null || robot.getId().equals(dto.getId()), String.format("存在相同登录帐号【%s】，不允许修改", dto.getPhone()));
+        robot = robotRepository.findByCompanyAndParentIdIsNull(dto.getCompany());
+        Assert.isTrue(robot == null || robot.getId().equals(dto.getId()), String.format("存在相同公司名称【%s】，不允许修改", dto.getPhone()));
         robot = robotRepository.findByAccount2(dto.getAccount2());
         Assert.isTrue(robot == null || robot.getId().equals(dto.getId()), String.format("存在相同登录帐号【%s】，不允许创建", dto.getAccount2()));
         robot = robotRepository.findById(dto.getId());
+        robot.setEmail(dto.getEmail());
+        robot.setChargePhone(dto.getChargePhone());
         robot.setPhone(dto.getPhone());
         robot.setPwd(dto.getPwd());
         robot.setCompany(dto.getCompany());

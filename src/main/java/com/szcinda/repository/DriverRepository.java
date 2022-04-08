@@ -8,4 +8,5 @@ import java.util.List;
 public interface DriverRepository extends JpaRepository<Driver, String>, JpaSpecificationExecutor<Driver> {
     Driver findByVehicleNo(String vehicleNo);
     List<Driver> findByOwner(String owner);
+    Driver findByPhone(String phone);
 }

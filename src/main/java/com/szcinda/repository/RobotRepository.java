@@ -6,11 +6,20 @@ import java.util.List;
 
 public interface RobotRepository extends JpaRepository<Robot, String> {
     List<Robot> findByOwnerAndParentIdIsNull(String owner);
+
     List<Robot> findByOwner(String owner);
+
     Robot findByPhone(String phone);
+
+    Robot findByCompanyAndParentIdIsNull(String company);
+
     Robot findByAccount2(String phone);
+
     Robot findById(String id);
+
     List<Robot> findByParentId(String id);
+
     List<Robot> findByParentIdIsNull();
+
     List<Robot> findByType(String type);
 }
