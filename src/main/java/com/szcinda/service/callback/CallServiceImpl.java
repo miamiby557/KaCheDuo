@@ -81,9 +81,9 @@ public class CallServiceImpl implements CallService {
             phoneBill.setReleaseTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.parseLong(callbackData.getSubject().getReleaseTime())), ZoneId.of("+8")));
         }
         // 如果总通话时长，包含ivr时间（duration）和 Ivr播放总时长（ivrTime）播放时间都是0，代表没有拨通
-        if (callbackData.getSubject().getDirection() == 0 && callbackData.getSubject().getIvrTime() == 0) {
+        if (callbackData.getSubject().getDuration() == 0 && callbackData.getSubject().getIvrTime() == 0) {
             phoneBill.setStatus(TypeStringUtils.phone_status1);
-        } else if (callbackData.getSubject().getDirection() > 0 && callbackData.getSubject().getIvrTime() == 0) {
+        } else if (callbackData.getSubject().getDuration() > 0 && callbackData.getSubject().getIvrTime() == 0) {
             phoneBill.setStatus(TypeStringUtils.phone_status3);
             // 判断未接通，再拨打一次
             if (phoneBill.getCallTime() < 2) {
@@ -110,7 +110,7 @@ public class CallServiceImpl implements CallService {
                     }
                 }
             }
-        } else if (callbackData.getSubject().getDirection() > 0 && callbackData.getSubject().getIvrTime() > 0) {
+        } else if (callbackData.getSubject().getDuration() > 0 && callbackData.getSubject().getIvrTime() > 0) {
             phoneBill.setStatus(TypeStringUtils.phone_status4);
         }
         phoneBillRepository.save(phoneBill);
