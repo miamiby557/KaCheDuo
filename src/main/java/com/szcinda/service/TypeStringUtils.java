@@ -32,6 +32,11 @@ public class TypeStringUtils {
     public static final String wechat_status3 = "待发送";
     public static final String wechat_status4 = "超时未回复";
 
+    public static final String phone_status1 = "未拨打";
+    public static final String phone_status2 = "已拨打";
+    public static final String phone_status3 = "未接通";
+    public static final String phone_status4 = "已接通";
+
 
     public static String getWechatContent(String type) {
         switch (type) {
