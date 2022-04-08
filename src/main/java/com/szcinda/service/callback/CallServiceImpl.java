@@ -10,9 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.Arrays;
 
 @Service
@@ -67,13 +65,13 @@ public class CallServiceImpl implements CallService {
         phoneBill.setDuration(callbackData.getSubject().getDuration());
         phoneBill.setCallout(callbackData.getSubject().getCallout());
         if (StringUtils.hasText(callbackData.getSubject().getCreateTime())) {
-            phoneBill.setCallCreateTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.getLong(callbackData.getSubject().getCreateTime())), ZoneId.of("+8")));
+            phoneBill.setCallCreateTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.parseLong(callbackData.getSubject().getCreateTime())), ZoneId.of("+8")));
         }
         if (StringUtils.hasText(callbackData.getSubject().getAnswerTime())) {
-            phoneBill.setAnswerTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.getLong(callbackData.getSubject().getAnswerTime())), ZoneId.of("+8")));
+            phoneBill.setAnswerTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.parseLong(callbackData.getSubject().getAnswerTime())), ZoneId.of("+8")));
         }
         if (StringUtils.hasText(callbackData.getSubject().getReleaseTime())) {
-            phoneBill.setReleaseTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.getLong(callbackData.getSubject().getReleaseTime())), ZoneId.of("+8")));
+            phoneBill.setReleaseTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.parseLong(callbackData.getSubject().getReleaseTime())), ZoneId.of("+8")));
         }
         // 如果总通话时长，包含ivr时间（duration）和 Ivr播放总时长（ivrTime）播放时间都是0，代表没有拨通
         if (callbackData.getSubject().getDirection() == 0 && callbackData.getSubject().getIvrTime() == 0) {
@@ -95,5 +93,13 @@ public class CallServiceImpl implements CallService {
             phoneBill.setStatus(TypeStringUtils.phone_status4);
         }
         phoneBillRepository.save(phoneBill);
+    }
+
+    public static void main(String[] args) {
+        String text = "1649415711206";
+        Long aLong = Long.parseLong(text);
+        ZonedDateTime zonedDateTime = Instant.ofEpochMilli(aLong).atZone(ZoneOffset.ofHours(8));
+        LocalDateTime localDateTime = zonedDateTime.toLocalDateTime();
+        System.out.println(localDateTime.toString());
     }
 }
