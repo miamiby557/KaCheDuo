@@ -46,6 +46,10 @@ public class RobotServiceImpl implements RobotService {
             robot = robotRepository.findByPhone(createRobotDto.getPhone());
             Assert.isTrue(robot == null, String.format("存在相同登录帐号【%s】，不允许创建", createRobotDto.getPhone()));
         }
+        // 做一下符号的容错
+        if(StringUtils.hasText(dto.getEmail())){
+            dto.setEmail(dto.getEmail().replace('，', ','));
+        }
         robot = new Robot();
         BeanUtils.copyProperties(dto, robot);
         robot.setId(snowFlakeFactory.nextId("RB"));
@@ -98,6 +102,10 @@ public class RobotServiceImpl implements RobotService {
         robot.setType("监控");
         robot.setAccount2(dto.getAccount2());
         robot.setPwd2(dto.getPwd2());
+        // 做一下符号的容错
+        if(StringUtils.hasText(robot.getEmail())){
+            robot.setEmail(robot.getEmail().replace('，', ','));
+        }
         robotRepository.save(robot);
         scheduleService.updateRobotFromCopyOnWriteRobots(robot);
         // 监控帐号

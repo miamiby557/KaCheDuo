@@ -9,6 +9,7 @@ import java.util.List;
 @Data
 public class CreateRobotDto implements Serializable {
     private String company;
+    private String email;
     private String phone;
     private String pwd;
     private String account2;//处理、位置监控 用到此账号
