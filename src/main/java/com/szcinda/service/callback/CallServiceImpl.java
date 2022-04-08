@@ -53,7 +53,19 @@ public class CallServiceImpl implements CallService {
             return;
         }
         phoneBill.setCallTime(phoneBill.getCallTime() + 1);
-        BeanUtils.copyProperties(callbackData.getSubject(), phoneBill, "id", "caller");
+        phoneBill.setCaller(callbackData.getSubject().getCaller());
+        phoneBill.setBusiness(callbackData.getSubject().getBusiness());
+        phoneBill.setTtsCount(callbackData.getSubject().getTtsCount());
+        phoneBill.setTtsLength(callbackData.getSubject().getTtsLength());
+        phoneBill.setIvrCount(callbackData.getSubject().getIvrCount());
+        phoneBill.setIvrTime(callbackData.getSubject().getIvrTime());
+        phoneBill.setCost(callbackData.getSubject().getCost());
+        phoneBill.setRecordFilename(callbackData.getSubject().getRecordFilename());
+        phoneBill.setRecordSize(callbackData.getSubject().getRecordSize());
+        phoneBill.setDtmf(callbackData.getSubject().getDtmf());
+        phoneBill.setDirection(callbackData.getSubject().getDirection());
+        phoneBill.setDuration(callbackData.getSubject().getDuration());
+        phoneBill.setCallout(callbackData.getSubject().getCallout());
         if (StringUtils.hasText(callbackData.getSubject().getCreateTime())) {
             phoneBill.setCallCreateTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.getLong(callbackData.getSubject().getCreateTime())), ZoneId.of("+8")));
         }
