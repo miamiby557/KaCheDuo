@@ -1,10 +1,15 @@
 package com.szcinda.service.driver;
 
 import com.szcinda.repository.*;
+import com.szcinda.service.PageResult;
 import com.szcinda.service.ScheduleService;
 import com.szcinda.service.SnowFlakeFactory;
 import com.szcinda.service.TypeStringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,7 +72,7 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
-    public List<DriverDto> query(DriverQuery query) {
+    public PageResult<DriverDto> query(DriverQuery query) {
         Specification<Driver> specification = ((root, criteriaQuery, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (!StringUtils.isEmpty(query.getName())) {
@@ -82,14 +87,16 @@ public class DriverServiceImpl implements DriverService {
             predicates.add(owner);
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         });
-        List<Driver> drivers = driverRepository.findAll(specification);
+        Sort order = new Sort(Sort.Direction.DESC, "createTime");
+        Pageable pageable = new PageRequest(query.getPage() - 1, query.getPageSize(), order);
+        Page<Driver> drivers = driverRepository.findAll(specification, pageable);
         List<DriverDto> driverDtos = new ArrayList<>();
         for (Driver driver : drivers) {
             DriverDto dto = new DriverDto();
             BeanUtils.copyProperties(driver, dto);
             driverDtos.add(dto);
         }
-        return driverDtos;
+        return PageResult.of(driverDtos, query.getPage(), query.getPageSize(), drivers.getTotalElements());
     }
 
     @Override

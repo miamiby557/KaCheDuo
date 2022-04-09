@@ -1,5 +1,7 @@
 package com.szcinda.service.driver;
 
+import com.szcinda.service.PageResult;
+
 import java.util.List;
 
 public interface DriverService {
@@ -7,7 +9,7 @@ public interface DriverService {
 
     void delete(String id);
 
-    List<DriverDto> query(DriverQuery query);
+    PageResult<DriverDto> query(DriverQuery query);
 
     void connect(DriverConnectDto connectDto);
 

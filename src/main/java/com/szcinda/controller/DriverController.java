@@ -2,6 +2,7 @@ package com.szcinda.controller;
 
 import com.alibaba.excel.EasyExcelFactory;
 import com.alibaba.excel.metadata.Sheet;
+import com.szcinda.service.PageResult;
 import com.szcinda.service.driver.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +14,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 @RestController
 @RequestMapping("driver")
@@ -57,8 +57,8 @@ public class DriverController {
     }
 
     @PostMapping("query")
-    public Result<List<DriverDto>> query(@RequestBody DriverQuery query) {
-        return Result.success(driverService.query(query));
+    public PageResult<DriverDto> query(@RequestBody DriverQuery query) {
+        return driverService.query(query);
     }
 
     @PostMapping("update")
