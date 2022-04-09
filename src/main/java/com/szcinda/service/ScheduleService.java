@@ -1,21 +1,24 @@
 package com.szcinda.service;
 
-import com.szcinda.repository.Robot;
-import com.szcinda.repository.RobotRepository;
-import com.szcinda.repository.WorkRobot;
-import com.szcinda.repository.WorkRobotRepository;
+import com.szcinda.repository.*;
 import com.szcinda.service.robotTask.CreateRobotTaskDto;
 import com.szcinda.service.robotTask.RobotTaskService;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import javax.persistence.criteria.Predicate;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 @Component
 public class ScheduleService {
@@ -24,6 +27,10 @@ public class ScheduleService {
     private final RobotRepository robotRepository;
     private final RobotTaskService robotTaskService;
     private final WorkRobotRepository workRobotRepository;
+    private final FengXianRepository fengXianRepository;
+    private final DriverRepository driverRepository;
+    private final SnowFlakeFactory snowFlakeFactory = SnowFlakeFactory.getInstance();
+    private final ScreenShotTaskRepository screenShotTaskRepository;
 
     // 需要运行位置监控的机器人名称列表
     public static List<String> robotSearchLocationList = new ArrayList<>();
@@ -44,10 +51,15 @@ public class ScheduleService {
     // 系统所有登录帐号的列表，避免前端的定时器每次请求都到数据库 CopyOnWriteArrayList适合读多写少的并发场景
     public static CopyOnWriteArrayList<Robot> copyOnWriteRobots = new CopyOnWriteArrayList<>();
 
-    public ScheduleService(RobotRepository robotRepository, RobotTaskService robotTaskService, WorkRobotRepository workRobotRepository) {
+    public ScheduleService(RobotRepository robotRepository, RobotTaskService robotTaskService,
+                           WorkRobotRepository workRobotRepository, FengXianRepository fengXianRepository,
+                           DriverRepository driverRepository, ScreenShotTaskRepository screenShotTaskRepository) {
         this.robotRepository = robotRepository;
         this.robotTaskService = robotTaskService;
         this.workRobotRepository = workRobotRepository;
+        this.fengXianRepository = fengXianRepository;
+        this.driverRepository = driverRepository;
+        this.screenShotTaskRepository = screenShotTaskRepository;
     }
 
     // 每日0时、8时、16时循环一次
@@ -219,16 +231,6 @@ public class ScheduleService {
     }
 
     public boolean canRunChuLiAndLocation(String phone) {
-//        if (robotChuZhiMap.containsKey(phone)) {
-//            return robotChuZhiMap.get(phone);
-//        } else {
-//            Robot robot = robotRepository.findByPhone(phone);
-//            if (robot != null) {
-//                robotChuZhiMap.put(robot.getPhone(), robot.isRun());
-//                return robot.isRun();
-//            }
-//        }
-//        return false;
         WorkRobot workRobot = workRobotRepository.findByUserName(phone);
         return workRobot == null;
     }
@@ -266,5 +268,55 @@ public class ScheduleService {
 
     public boolean canWatch(String id) {
         return mainRobotWatchMap.containsKey(id);
+    }
+
+    // 每天9点发送司机前一天违规内容
+    @Scheduled(cron = "0 0 9 * * ?")
+    public void sendMsgToDriver() {
+        LocalDate lastDate = LocalDate.now().minusDays(1);
+        Specification<FengXian> specification = ((root, criteriaQuery, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            Predicate createTimeStart = criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), lastDate.atStartOfDay());
+            predicates.add(createTimeStart);
+            Predicate createTimeEnd = criteriaBuilder.lessThan(root.get("createTime"), lastDate.plusDays(1).atStartOfDay());
+            predicates.add(createTimeEnd);
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        });
+        List<FengXian> fengXians = fengXianRepository.findAll(specification);
+        // 按照车牌进行分组
+        Map<String, List<FengXian>> listMap = fengXians.stream().collect(Collectors.groupingBy(FengXian::getVehicleNo));
+        Set<String> vehicleList = listMap.keySet();
+        List<Driver> drivers = driverRepository.findByVehicleNoIn(vehicleList);
+        listMap.forEach((vehicleNo, list) -> {
+            drivers.stream().filter(driver -> vehicleNo.equals(driver.getVehicleNo()) && StringUtils.hasText(driver.getWechat()))
+                    .findFirst()
+                    .ifPresent(driver -> {
+                        // 把消息汇总成一条发送
+                        List<String> msgList = new ArrayList<>();
+                        StringBuilder stringBuilder = new StringBuilder("卡车多物流科技提醒您，昨天存在以下违规内容：");
+                        msgList.add(stringBuilder.toString());
+                        int index = 1;
+                        for (FengXian fengXian : list) {
+                            stringBuilder = new StringBuilder();
+                            stringBuilder.append("第").append(index).append("条违规：").append("地点【").append(fengXian.getHappenPlace())
+                                    .append("】违规时间【").append(fengXian.getHappenTime()).append("】违规类型【").append(fengXian.getDangerType())
+                                    .append("】");
+                            msgList.add(stringBuilder.toString());
+                            index ++;
+                        }
+                        stringBuilder = new StringBuilder("请注意行车规范，杜绝此类行为再次发生。请您收到回复”确认“！");
+                        msgList.add(stringBuilder.toString());
+                        String totalMsg = String.join("\n", msgList);
+                        ScreenShotTask screenShotTask = new ScreenShotTask();
+                        screenShotTask.setId(snowFlakeFactory.nextId("ST"));
+                        screenShotTask.setWechat(driver.getWechat());
+                        screenShotTask.setVehicleNo(vehicleNo);
+                        screenShotTask.setOwnerWechat(driver.getOwnerWechat());
+                        screenShotTask.setWxid(driver.getWxid());
+                        screenShotTask.setStatus(TypeStringUtils.wechat_status3);
+                        screenShotTask.setContent(totalMsg);
+                        screenShotTaskRepository.save(screenShotTask);
+                    });
+        });
     }
 }

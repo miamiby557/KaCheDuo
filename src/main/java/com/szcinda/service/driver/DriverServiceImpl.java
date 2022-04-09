@@ -112,20 +112,20 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public void savePic(DriverScreenShotDto shotDto) {
-        FengXian fengXian = fengXianRepository.findOne(shotDto.getFxId());
-        if (fengXian != null) {
+        // 删除截图任务， 生成一条历史截图任务
+        ScreenShotTask screenShotTask = screenShotTaskRepository.findOne(shotDto.getScreenTaskId());
+        HistoryScreenShotTask historyScreenShotTask = new HistoryScreenShotTask();
+        BeanUtils.copyProperties(screenShotTask, historyScreenShotTask);
+        historyScreenShotTask.setType(TypeStringUtils.screen_status1);
+        historyScreenShotTask.setId(snowFlakeFactory.nextId("HT"));
+        historyScreenShotTaskRepository.save(historyScreenShotTask);
+        screenShotTaskRepository.delete(screenShotTask);
+        // 创建处理任务，把历史关于这个车牌号码未处理的都生成一个处理任务
+        List<Robot> copyOnWriteRobots = scheduleService.queryAllRobotsFromCopyOnWriteRobots();
+        List<FengXian> fengXianList = fengXianRepository.findByVehicleNoAndChuLiType(screenShotTask.getVehicleNo(), TypeStringUtils.fxHandleStatus1);
+        for (FengXian fengXian : fengXianList) {
             fengXian.setFilePath(shotDto.getFilePath());
             fengXianRepository.save(fengXian);
-            // 删除截图任务， 生成一条历史截图任务
-            ScreenShotTask screenShotTask = screenShotTaskRepository.findOne(shotDto.getScreenTaskId());
-            HistoryScreenShotTask historyScreenShotTask = new HistoryScreenShotTask();
-            BeanUtils.copyProperties(screenShotTask, historyScreenShotTask);
-            historyScreenShotTask.setType(TypeStringUtils.screen_status1);
-            historyScreenShotTask.setId(snowFlakeFactory.nextId("HT"));
-            historyScreenShotTaskRepository.save(historyScreenShotTask);
-            screenShotTaskRepository.delete(screenShotTask);
-            // 创建一个处理任务
-            List<Robot> copyOnWriteRobots = scheduleService.queryAllRobotsFromCopyOnWriteRobots();
             RobotTask task = new RobotTask();
             task.setId(snowFlakeFactory.nextId("RT"));
             task.setTaskStatus(TypeStringUtils.taskStatus1);
@@ -151,6 +151,7 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public void confirm(String wechat) {
+        // 把待回复的截图任务状态改为已回复
         List<ScreenShotTask> screenShotTasks = screenShotTaskRepository.findByWechatAndStatus(wechat, TypeStringUtils.wechat_status1);
         if (screenShotTasks.size() > 0) {
             for (ScreenShotTask screenShotTask : screenShotTasks) {
@@ -158,13 +159,23 @@ public class DriverServiceImpl implements DriverService {
                 if (StringUtils.hasText(screenShotTask.getFxId())) {
                     FengXian fengXian = fengXianRepository.findOne(screenShotTask.getFxId());
                     if (fengXian != null) {
+                        // 更新回复时间
                         fengXian.setMessageReceiveTime(LocalDateTime.now().toString().replace('T', ' '));
                         fengXianRepository.save(fengXian);
                     }
                 }
-
             }
             screenShotTaskRepository.save(screenShotTasks);
+        }
+        // 更新关于这个车牌的历史风险处置的回复时间
+        Driver driver = driverRepository.findByWechat(wechat);
+        if (driver != null && StringUtils.hasText(driver.getVehicleNo())) {
+            List<FengXian> fengXianList = fengXianRepository.findByVehicleNoAndChuLiType(driver.getVehicleNo(), TypeStringUtils.fxHandleStatus1);
+            for (FengXian fengXian : fengXianList) {
+                // 更新回复时间
+                fengXian.setMessageReceiveTime(LocalDateTime.now().toString().replace('T', ' '));
+            }
+            fengXianRepository.save(fengXianList);
         }
     }
 

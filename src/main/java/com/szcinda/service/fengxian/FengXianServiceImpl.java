@@ -90,8 +90,26 @@ public class FengXianServiceImpl implements FengXianService {
             fengXian.setDisposeTime(LocalDateTime.now());
             fengXian.setChuLiType(TypeStringUtils.fxHandleStatus1);
             fengXianRepository.save(fengXian);
+            // 如果是疲劳驾驶或者是超速报警，则需要打电话
+            // 如果是生理疲劳或者超速，需要打电话
+            Driver driver = driverRepository.findByVehicleNo(fengXian.getVehicleNo());
+            if (driver != null && StringUtils.hasText(driver.getPhone())) {
+                CallParams callParams = null;
+                if (TypeStringUtils.tired_status.equals(fengXian.getDangerType())) {
+                    callParams = new CallParams();
+                    callParams.setPhone(driver.getPhone());
+                    callParams.setTemplateId(tiredId);
+                } else if (TypeStringUtils.over_status.equals(fengXian.getDangerType())) {
+                    callParams = new CallParams();
+                    callParams.setPhone(driver.getPhone());
+                    callParams.setTemplateId(overSpeedId);
+                }
+                if (callParams != null) {
+                    callService.call(callParams);
+                }
+            }
             // 检查处理账号是否启用
-            Robot robot = robotRepository.findByPhone(fengXian.getOwner());
+            /*Robot robot = robotRepository.findByPhone(fengXian.getOwner());
             if (robot != null) {
                 robot = robotRepository.findByParentIdAndType(robot.getParentId(), TypeStringUtils.robotType3);
                 if (robot != null && robot.isRun()) {
@@ -126,8 +144,7 @@ public class FengXianServiceImpl implements FengXianService {
                         }
                     }
                 }
-            }
-
+            }*/
         }
     }
 

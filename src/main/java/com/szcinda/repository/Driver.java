@@ -15,6 +15,6 @@ public class Driver extends BaseEntity {
     private String company;
     private String wechat; // 微信号
     private String wxid; // 微信ID
-    private String ownerWechat;// 来源微信号，就是那个微信下的好友
+    private String ownerWechat;// 来源微信号，就是哪个微信下的好友
     private String owner;
 }
