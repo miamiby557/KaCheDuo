@@ -49,7 +49,7 @@ public class RobotServiceImpl implements RobotService {
             Assert.isTrue(robot == null, String.format("存在相同登录帐号【%s】，不允许创建", createRobotDto.getPhone()));
         }
         // 做一下符号的容错
-        if(StringUtils.hasText(dto.getEmail())){
+        if (StringUtils.hasText(dto.getEmail())) {
             dto.setEmail(dto.getEmail().replace('，', ','));
         }
         robot = new Robot();
@@ -109,7 +109,7 @@ public class RobotServiceImpl implements RobotService {
         robot.setAccount2(dto.getAccount2());
         robot.setPwd2(dto.getPwd2());
         // 做一下符号的容错
-        if(StringUtils.hasText(robot.getEmail())){
+        if (StringUtils.hasText(robot.getEmail())) {
             robot.setEmail(robot.getEmail().replace('，', ','));
         }
         robotRepository.save(robot);
@@ -177,10 +177,12 @@ public class RobotServiceImpl implements RobotService {
                 // 查找子账号
                 List<Robot> subRobots = robotRepository.findByParentId(robot.getId());
                 for (Robot subRobot : subRobots) {
-                    if("处理-位置监控".equals(subRobot.getType())){
+                    if ("处理-位置监控".equals(subRobot.getType())) {
                         dto.setAccount2(subRobot.getPhone());
                         dto.setPwd2(subRobot.getPwd());
-                    }else{
+                        dto.setId2(subRobot.getId());// 处理机器人的id
+                        dto.setRun2(subRobot.isRun()); // 机器人处理是否启动
+                    } else {
                         RobotDto subRobotDto = new RobotDto();
                         BeanUtils.copyProperties(subRobot, subRobotDto);
                         if (robotAliveMap.containsKey(subRobotDto.getPhone())) {

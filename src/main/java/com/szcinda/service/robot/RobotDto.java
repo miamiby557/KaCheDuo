@@ -17,8 +17,10 @@ public class RobotDto implements Serializable {
     private String pwd;
     private String account2;//处理、位置监控 用到此账号
     private String pwd2;
+    private String id2;
     private String owner;
     private boolean run;
+    private boolean run2;
     private LocalDateTime lastTime;
     private boolean alive;
     private String type;

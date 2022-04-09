@@ -22,4 +22,6 @@ public interface RobotRepository extends JpaRepository<Robot, String> {
     List<Robot> findByParentIdIsNull();
 
     List<Robot> findByType(String type);
+
+    Robot findByParentIdAndType(String parentId, String type);
 }

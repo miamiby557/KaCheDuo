@@ -43,7 +43,7 @@ public class SendMailService {
     private RobotRepository robotRepository;
 
 
-    @Scheduled(cron = "0 0 18 * * ?")
+    @Scheduled(cron = "0 0 8 * * ?")
     public void sendMail() throws Exception {
         List<Robot> robots = robotRepository.findAll();
         String checkTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH时mm分"));
@@ -102,6 +102,7 @@ public class SendMailService {
                 reportDtos.add(reportDto);
             });
             // 写入文件
+
             // 发送邮件
             // 删除临时文件
         }
