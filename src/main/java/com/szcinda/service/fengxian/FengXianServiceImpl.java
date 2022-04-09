@@ -244,7 +244,7 @@ public class FengXianServiceImpl implements FengXianService {
                         byte[] buffer = new byte[(int) saveFile.length()];
                         inputFile.read(buffer);
                         inputFile.close();
-                        dto.setBase64(new BASE64Encoder().encode(buffer));
+                        dto.setFileBase64(new BASE64Encoder().encode(buffer));
                     } catch (Exception ignored) {
 
                     } finally {
