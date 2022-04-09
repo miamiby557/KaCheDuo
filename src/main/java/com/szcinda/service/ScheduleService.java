@@ -144,8 +144,6 @@ public class ScheduleService {
             if (copyOnWriteRobot.getId().equals(robot.getId())) {
                 copyOnWriteRobot.setPhone(robot.getPhone());
                 copyOnWriteRobot.setPwd(robot.getPwd());
-                copyOnWriteRobot.setAccount2(robot.getAccount2());
-                copyOnWriteRobot.setPwd2(robot.getPwd2());
                 copyOnWriteRobot.setRun(robot.isRun());
             }
         }
