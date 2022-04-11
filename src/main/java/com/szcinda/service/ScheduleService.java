@@ -311,6 +311,7 @@ public class ScheduleService {
                         screenShotTask.setVehicleNo(vehicleNo);
                         screenShotTask.setOwnerWechat(driver.getOwnerWechat());
                         screenShotTask.setWxid(driver.getWxid());
+                        screenShotTask.setOwner(list.get(0).getOwner());
                         screenShotTask.setStatus(TypeStringUtils.wechat_status3);
                         screenShotTask.setContent(totalMsg);
                         screenShotTaskRepository.save(screenShotTask);
