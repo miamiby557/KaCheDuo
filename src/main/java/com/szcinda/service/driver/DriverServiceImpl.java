@@ -19,6 +19,7 @@ import javax.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -117,9 +118,21 @@ public class DriverServiceImpl implements DriverService {
         HistoryScreenShotTask historyScreenShotTask = new HistoryScreenShotTask();
         BeanUtils.copyProperties(screenShotTask, historyScreenShotTask);
         historyScreenShotTask.setType(TypeStringUtils.screen_status1);
+        historyScreenShotTask.setFilePath(shotDto.getFilePath());
         historyScreenShotTask.setId(snowFlakeFactory.nextId("HT"));
         historyScreenShotTaskRepository.save(historyScreenShotTask);
         screenShotTaskRepository.delete(screenShotTask);
+        // 把其他的关于这个车牌的违规也一起变成已截图，减少微信截图次数
+        List<ScreenShotTask> screenShotTasks = screenShotTaskRepository.findByVehicleNo(screenShotTask.getVehicleNo());
+        for (ScreenShotTask shotTask : screenShotTasks) {
+            historyScreenShotTask = new HistoryScreenShotTask();
+            BeanUtils.copyProperties(shotTask, historyScreenShotTask);
+            historyScreenShotTask.setType(TypeStringUtils.screen_status1);
+            historyScreenShotTask.setId(snowFlakeFactory.nextId("HT"));
+            historyScreenShotTask.setFilePath(shotDto.getFilePath());
+            historyScreenShotTaskRepository.save(historyScreenShotTask);
+            screenShotTaskRepository.delete(shotTask);
+        }
         // 创建处理任务，把历史关于这个车牌号码未处理的都生成一个处理任务
         List<Robot> copyOnWriteRobots = scheduleService.queryAllRobotsFromCopyOnWriteRobots();
         List<FengXian> fengXianList = fengXianRepository.findByVehicleNoAndChuLiType(screenShotTask.getVehicleNo(), TypeStringUtils.fxHandleStatus1);
@@ -188,5 +201,23 @@ public class DriverServiceImpl implements DriverService {
         driver.setWxid(updateDto.getWxid());
         driver.setOwnerWechat(updateDto.getOwnerWechat());
         driverRepository.save(driver);
+    }
+
+    @Override
+    public List<DriverDto> queryNoWechat(String owner) {
+        Specification<Driver> specification = ((root, criteriaQuery, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            Predicate ownerPre = criteriaBuilder.equal(root.get("owner"), owner);
+            predicates.add(ownerPre);
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        });
+        List<Driver> drivers = driverRepository.findAll(specification).stream().filter(driver -> StringUtils.isEmpty(driver.getWechat())).collect(Collectors.toList());
+        List<DriverDto> driverDtos = new ArrayList<>();
+        for (Driver driver : drivers) {
+            DriverDto dto = new DriverDto();
+            BeanUtils.copyProperties(driver, dto);
+            driverDtos.add(dto);
+        }
+        return driverDtos;
     }
 }

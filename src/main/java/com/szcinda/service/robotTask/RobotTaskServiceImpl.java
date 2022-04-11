@@ -208,22 +208,26 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         workRobotRepository.deleteByUserName(task.getUserName());
     }
 
+
+    // 把相同账号的处理任务放在一起，前端可以一起处理同一账号的任务，提高效率
     @Override
-    public List<RobotTask> getStandByList() {
+    public List<RobotTaskDto> getStandByList() {
         try {
             if (lock.tryLock(3, TimeUnit.SECONDS)) {
-                List<RobotTask> filterTasks = new ArrayList<>();
+                List<RobotTaskDto> filterTasks = new ArrayList<>();
                 // 获取正在工作的处理账号
                 List<WorkRobot> workRobots = workRobotRepository.findAll();
                 List<RobotTask> robotTasks = robotTaskRepository.findByTaskStatus(TypeStringUtils.taskStatus1);
                 for (RobotTask robotTask : robotTasks) {
                     if (TypeStringUtils.robotType2.equals(robotTask.getTaskType())) {
-                        filterTasks.add(robotTask);
+                        RobotTaskDto dto = new RobotTaskDto();
+                        BeanUtils.copyProperties(robotTask, dto);
+                        filterTasks.add(dto);
                     } else if (TypeStringUtils.robotType3.equals(robotTask.getTaskType())) {
                         // 过滤不是正在运行中的帐号，避免帐号冲突
                         boolean noWork = workRobots.stream().noneMatch(item -> item.getUserName().equals(robotTask.getUserName()));
                         if (noWork) {
-                            filterTasks.add(robotTask);
+                            addToSubTasks(filterTasks, robotTask);
                         }
                     }
                 }
@@ -237,6 +241,22 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             }
         }
         return null;
+    }
+
+    // 把相同账号的处理任务放在一起
+    private void addToSubTasks(List<RobotTaskDto> filterTasks, RobotTask robotTask) {
+        RobotTaskDto hasRecord = filterTasks.stream().filter(robotTaskDto -> robotTaskDto.getUserName().equals(robotTask.getUserName()))
+                .findFirst()
+                .orElse(null);
+        if (hasRecord != null) {
+            RobotTaskDto dto = new RobotTaskDto();
+            BeanUtils.copyProperties(robotTask, dto);
+            hasRecord.getSubTasks().add(dto);
+        } else {
+            RobotTaskDto dto = new RobotTaskDto();
+            BeanUtils.copyProperties(robotTask, dto);
+            filterTasks.add(dto);
+        }
     }
 
     @Override

@@ -121,34 +121,59 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
             for (HistoryScreenShotTask historyScreenShotTask : details.getContent()) {
                 HistoryScreenShotTaskDto taskDto = new HistoryScreenShotTaskDto();
                 BeanUtils.copyProperties(historyScreenShotTask, taskDto);
-                // 把图片转成base64
-                fengXianList.stream().filter(fx -> fx.getId().equals(historyScreenShotTask.getFxId()))
-                        .findFirst()
-                        .ifPresent(fx -> {
-                            if (StringUtils.hasText(fx.getFilePath())) {
-                                File saveFile = new File(savePath, fx.getFilePath());
-                                if (!saveFile.exists()) {
-                                    return;
-                                }
-                                FileInputStream inputFile = null;
-                                try {
-                                    inputFile = new FileInputStream(saveFile);
-                                    byte[] buffer = new byte[(int) saveFile.length()];
-                                    inputFile.read(buffer);
-                                    inputFile.close();
-                                    taskDto.setFileBase64(new BASE64Encoder().encode(buffer));
-                                } catch (Exception ignored) {
+                if(StringUtils.hasText(historyScreenShotTask.getFilePath())){
+                    File saveFile = new File(savePath, historyScreenShotTask.getFilePath());
+                    if (!saveFile.exists()) {
+                        continue;
+                    }
+                    FileInputStream inputFile = null;
+                    try {
+                        inputFile = new FileInputStream(saveFile);
+                        byte[] buffer = new byte[(int) saveFile.length()];
+                        inputFile.read(buffer);
+                        inputFile.close();
+                        taskDto.setFileBase64(new BASE64Encoder().encode(buffer));
+                    } catch (Exception ignored) {
 
-                                } finally {
-                                    assert inputFile != null;
+                    } finally {
+                        assert inputFile != null;
+                        try {
+                            inputFile.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }else{
+                    // 把图片转成base64
+                    fengXianList.stream().filter(fx -> fx.getId().equals(historyScreenShotTask.getFxId()))
+                            .findFirst()
+                            .ifPresent(fx -> {
+                                if (StringUtils.hasText(fx.getFilePath())) {
+                                    File saveFile = new File(savePath, fx.getFilePath());
+                                    if (!saveFile.exists()) {
+                                        return;
+                                    }
+                                    FileInputStream inputFile = null;
                                     try {
+                                        inputFile = new FileInputStream(saveFile);
+                                        byte[] buffer = new byte[(int) saveFile.length()];
+                                        inputFile.read(buffer);
                                         inputFile.close();
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
+                                        taskDto.setFileBase64(new BASE64Encoder().encode(buffer));
+                                    } catch (Exception ignored) {
+
+                                    } finally {
+                                        assert inputFile != null;
+                                        try {
+                                            inputFile.close();
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
                                     }
                                 }
-                            }
-                        });
+                            });
+                }
+
                 dtos.add(taskDto);
             }
         }

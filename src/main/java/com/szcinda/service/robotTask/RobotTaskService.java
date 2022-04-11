@@ -14,7 +14,7 @@ public interface RobotTaskService {
     void run(String id);
     void error(TaskErrorDto errorDto);
     void finish(String id);
-    List<RobotTask> getStandByList();
+    List<RobotTaskDto> getStandByList();
     boolean checkIsStandby(String userName);
 
     void createTask(String userName);

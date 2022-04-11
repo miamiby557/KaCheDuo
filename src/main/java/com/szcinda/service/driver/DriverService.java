@@ -1,5 +1,6 @@
 package com.szcinda.service.driver;
 
+import com.szcinda.repository.Driver;
 import com.szcinda.service.PageResult;
 
 import java.util.List;
@@ -18,4 +19,6 @@ public interface DriverService {
     void confirm(String wechat);
 
     void update(DriverUpdateDto updateDto);
+
+    List<DriverDto> queryNoWechat(String owner);
 }

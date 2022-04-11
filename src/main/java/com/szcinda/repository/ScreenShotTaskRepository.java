@@ -10,4 +10,5 @@ public interface ScreenShotTaskRepository extends JpaRepository<ScreenShotTask, 
     ScreenShotTask findFirstByOwnerWechatAndStatusIn(String ownerWechat, List<String> statusList);
     List<ScreenShotTask> findByWechatAndStatus(String vehicleNo, String status);
     List<ScreenShotTask> findByStatus(String status);
+    List<ScreenShotTask> findByVehicleNo(String vehicleNo);
 }
