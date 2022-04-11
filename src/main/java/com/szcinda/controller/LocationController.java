@@ -51,4 +51,13 @@ public class LocationController {
         }
         return Result.success();
     }
+
+    @GetMapping("runLastDateChuZhi")
+    public Result<String> runLastDateChuZhi(){
+        try{
+            scheduleService.sendMsgToDriver();
+        }catch (Exception ignored){
+        }
+        return Result.success();
+    }
 }
