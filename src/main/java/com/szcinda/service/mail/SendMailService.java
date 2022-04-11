@@ -2,6 +2,8 @@ package com.szcinda.service.mail;
 
 import com.szcinda.repository.*;
 import com.szcinda.service.report.ReportDto;
+import net.sf.jxls.transformer.XLSTransformer;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -12,15 +14,17 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
-import java.io.File;
+import java.io.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -62,6 +66,9 @@ public class SendMailService {
         List<Robot> mainRobotList = robots.stream().filter(item -> StringUtils.isEmpty(item.getParentId())).collect(Collectors.toList());
         for (Robot robot : mainRobotList) {
             String email = robot.getEmail();
+            if (StringUtils.isEmpty(email)) {
+                continue;
+            }
             String[] emailArray = email.split(",");
             List<Robot> subRobotList = robots.stream().filter(item -> robot.getId().equals(item.getParentId())).collect(Collectors.toList());
             List<String> userNameList = subRobotList.stream().map(Robot::getPhone).collect(Collectors.toList());
@@ -78,7 +85,7 @@ public class SendMailService {
                             String speed = l.getSpeed();
                             if (StringUtils.hasText(speed)) {
                                 speed = speed.toLowerCase().replace("km/h", "");
-                                if (((new BigDecimal(speed)).compareTo(BigDecimal.ZERO))> 0) {
+                                if (((new BigDecimal(speed)).compareTo(BigDecimal.ZERO)) > 0) {
                                     location = l;
                                     break;
                                 }
@@ -87,7 +94,7 @@ public class SendMailService {
 
                         }
                     }
-                    if(location == null){
+                    if (location == null) {
                         location = dataList.get(0);
                     }
                 } else {
@@ -99,12 +106,71 @@ public class SendMailService {
                 reportDto.setCheckTime(checkTime);
                 reportDto.setSpeed(location.getSpeed());
                 reportDto.setVehicleType("重型货车");
+                reportDto.setMessage("");
                 reportDtos.add(reportDto);
             });
             // 写入文件
+            String date = LocalDate.now().toString();
+            Map<String, Object> beans = new HashMap<>();
+            beans.put("date", date);
+            beans.put("time", checkTime);
+            beans.put("carCount", reportDtos.size());
+            beans.put("vehicleList", reportDtos);
+            InputStream is = null;
+            OutputStream os = null;
+            // 写出文件
+            String filePath = System.getProperty("user.dir") + File.separator + "GPS监控表.xls";
+            try {
+                // 获取模板文件
+                is = this.getClass().getClassLoader().getResourceAsStream("GPS监控表.xls");
+                // 实例化 XLSTransformer 对象
+                XLSTransformer xlsTransformer = new XLSTransformer();
+                // 获取 Workbook ，传入 模板 和 数据
+                Workbook workbook = xlsTransformer.transformXLS(is, beans);
+                os = new BufferedOutputStream(new FileOutputStream(filePath));
+                // 输出
+                workbook.write(os);
+                // 关闭和刷新管道，不然可能会出现表格数据不齐，打不开之类的问题
+            } catch (Exception ignored) {
 
+            } finally {
+                if (is != null) {
+                    is.close();
+                }
+                if (os != null) {
+                    os.flush();
+                    os.close();
+                }
+            }
+            File saveFile = new File(filePath);
+            if (!saveFile.exists()) {
+                continue;
+            }
             // 发送邮件
-            // 删除临时文件
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper;
+            for (String em : emailArray) {
+                try {
+                    helper = new MimeMessageHelper(message, true);
+                    //true代表支持多组件，如附件，图片等
+                    helper.setFrom(from);
+                    helper.setTo(em);
+                    helper.setSubject(date + "GPS监控表");
+                    helper.setText("详情见附件", false);
+                    FileSystemResource file = new FileSystemResource(saveFile);
+                    String fileName = file.getFilename();
+                    helper.addAttachment(fileName, file);//添加附件，可多次调用该方法添加多个附件
+                    mailSender.send(message);
+                    // 删除临时文件
+                    try {
+                        saveFile.delete();
+                    } catch (Exception ignored) {
+                    }
+                } catch (MessagingException e) {
+                    e.printStackTrace();
+                }
+            }
+
         }
     }
 
