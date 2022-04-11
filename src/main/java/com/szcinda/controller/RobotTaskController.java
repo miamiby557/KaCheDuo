@@ -3,6 +3,7 @@ package com.szcinda.controller;
 import com.szcinda.repository.HistoryTask;
 import com.szcinda.repository.RobotTask;
 import com.szcinda.service.PageResult;
+import com.szcinda.service.robotTask.RobotTaskDto;
 import com.szcinda.service.robotTask.RobotTaskQuery;
 import com.szcinda.service.robotTask.RobotTaskService;
 import com.szcinda.service.robotTask.TaskErrorDto;
@@ -21,7 +22,7 @@ public class RobotTaskController {
     }
 
     @GetMapping("getList")
-    public Result<List<RobotTask>> getList() {
+    public Result<List<RobotTaskDto>> getList() {
         return Result.success(robotTaskService.getStandByList());
     }
 
