@@ -302,7 +302,7 @@ public class ScheduleService {
                             msgList.add(stringBuilder.toString());
                             index ++;
                         }
-                        stringBuilder = new StringBuilder("请注意行车规范，杜绝此类行为再次发生。请您收到回复”确认“！");
+                        stringBuilder = new StringBuilder("请注意行车规范，杜绝此类行为再次发生。K请您收到回复”确认“！");
                         msgList.add(stringBuilder.toString());
                         String totalMsg = String.join("\n", msgList);
                         ScreenShotTask screenShotTask = new ScreenShotTask();
