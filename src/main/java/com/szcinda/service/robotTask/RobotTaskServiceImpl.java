@@ -185,7 +185,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             fengXianRepository.save(fengXian);
         }
         // 从集合中删除正在运行的帐号
-        workRobotRepository.deleteByUserName(task.getUserName());
+//        workRobotRepository.deleteByUserName(task.getUserName());
     }
 
     @Override
@@ -205,7 +205,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             fengXianRepository.save(fengXian);
         }
         // 从集合中删除正在运行的帐号
-        workRobotRepository.deleteByUserName(task.getUserName());
+//        workRobotRepository.deleteByUserName(task.getUserName());
     }
 
 
