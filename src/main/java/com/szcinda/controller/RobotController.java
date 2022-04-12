@@ -1,10 +1,8 @@
 package com.szcinda.controller;
 
+import com.szcinda.service.PageResult;
 import com.szcinda.service.ScheduleService;
-import com.szcinda.service.robot.CreateRobotDto;
-import com.szcinda.service.robot.RobotDto;
-import com.szcinda.service.robot.RobotService;
-import com.szcinda.service.robot.UpdateRobotDto;
+import com.szcinda.service.robot.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,9 +20,9 @@ public class RobotController {
     }
 
 
-    @GetMapping("query/{owner}")
-    public Result<List<RobotDto>> query(@PathVariable String owner) {
-        return Result.success(robotService.query(owner));
+    @PostMapping("query")
+    public PageResult<RobotDto> query(@RequestBody QueryRobotParams params) {
+        return robotService.query(params);
     }
 
     @GetMapping("alive/{id}/{phone}")

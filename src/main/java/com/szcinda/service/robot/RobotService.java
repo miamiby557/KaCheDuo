@@ -1,5 +1,7 @@
 package com.szcinda.service.robot;
 
+import com.szcinda.service.PageResult;
+
 import java.util.List;
 
 public interface RobotService {
@@ -7,7 +9,7 @@ public interface RobotService {
 
     void update(UpdateRobotDto dto);
 
-    List<RobotDto> query(String owner);
+    PageResult<RobotDto> query(QueryRobotParams params);
 
     List<RobotGroupDto> querySelf(String owner);
 

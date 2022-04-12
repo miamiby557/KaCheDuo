@@ -1,10 +1,11 @@
 package com.szcinda.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
 
-public interface RobotRepository extends JpaRepository<Robot, String> {
+public interface RobotRepository extends JpaRepository<Robot, String>, JpaSpecificationExecutor<Robot> {
     List<Robot> findByOwnerAndParentIdIsNull(String owner);
 
     List<Robot> findByOwner(String owner);

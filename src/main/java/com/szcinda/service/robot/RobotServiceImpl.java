@@ -1,18 +1,20 @@
 package com.szcinda.service.robot;
 
-import com.szcinda.repository.Robot;
-import com.szcinda.repository.RobotRepository;
-import com.szcinda.repository.User;
-import com.szcinda.repository.UserRepository;
-import com.szcinda.service.RobotAliveDto;
-import com.szcinda.service.ScheduleService;
-import com.szcinda.service.SnowFlakeFactory;
+import com.szcinda.repository.*;
+import com.szcinda.service.*;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import javax.persistence.criteria.Expression;
+import javax.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -160,10 +162,20 @@ public class RobotServiceImpl implements RobotService {
     }
 
     @Override
-    public List<RobotDto> query(String owner) {
-        List<Robot> robots = robotRepository.findByOwnerAndParentIdIsNull(owner);
+    public PageResult<RobotDto> query(QueryRobotParams params) {
+        Specification<Robot> specification = ((root, criteriaQuery, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            Predicate owner = criteriaBuilder.equal(root.get("owner"), params.getOwner());
+            predicates.add(owner);
+            Predicate parentId = criteriaBuilder.isNull(root.get("parentId"));
+            predicates.add(parentId);
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        });
+        Sort order = new Sort(Sort.Direction.DESC, "createTime");
+        Pageable pageable = new PageRequest(params.getPage() - 1, params.getPageSize(), order);
+        Page<Robot> robots = robotRepository.findAll(specification, pageable);
         List<RobotDto> robotDtos = new ArrayList<>();
-        if (robots.size() > 0) {
+        if (robots.getContent().size() > 0) {
             ConcurrentHashMap<String, RobotAliveDto> robotAliveMap = ScheduleService.robotAliveMap;
             for (Robot robot : robots) {
                 RobotDto dto = new RobotDto();
@@ -197,7 +209,7 @@ public class RobotServiceImpl implements RobotService {
                 robotDtos.add(dto);
             }
         }
-        return robotDtos;
+        return PageResult.of(robotDtos, params.getPage(), params.getPageSize(), robots.getTotalElements());
     }
 
 
