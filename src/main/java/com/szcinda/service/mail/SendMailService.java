@@ -84,7 +84,7 @@ public class SendMailService {
                         try {
                             String speed = l.getSpeed();
                             if (StringUtils.hasText(speed)) {
-                                speed = speed.toLowerCase().replace("km/h", "");
+                                speed = speed.toLowerCase().replace("km/h", "").trim();
                                 if (((new BigDecimal(speed)).compareTo(BigDecimal.ZERO)) > 0) {
                                     location = l;
                                     break;
