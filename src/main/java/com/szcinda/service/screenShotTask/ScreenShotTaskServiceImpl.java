@@ -37,16 +37,18 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
     private final SnowFlakeFactory snowFlakeFactory;
     private final FengXianRepository fengXianRepository;
     private final RobotRepository robotRepository;
+    private final RobotTaskRepository robotTaskRepository;
 
     @Value("${file.save.path}")
     private String savePath;
 
     public ScreenShotTaskServiceImpl(ScreenShotTaskRepository screenShotTaskRepository, HistoryScreenShotTaskRepository historyScreenShotTaskRepository,
-                                     FengXianRepository fengXianRepository, RobotRepository robotRepository) {
+                                     FengXianRepository fengXianRepository, RobotRepository robotRepository, RobotTaskRepository robotTaskRepository) {
         this.screenShotTaskRepository = screenShotTaskRepository;
         this.historyScreenShotTaskRepository = historyScreenShotTaskRepository;
         this.fengXianRepository = fengXianRepository;
         this.robotRepository = robotRepository;
+        this.robotTaskRepository = robotTaskRepository;
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
 
@@ -121,29 +123,29 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
             for (HistoryScreenShotTask historyScreenShotTask : details.getContent()) {
                 HistoryScreenShotTaskDto taskDto = new HistoryScreenShotTaskDto();
                 BeanUtils.copyProperties(historyScreenShotTask, taskDto);
-                if(StringUtils.hasText(historyScreenShotTask.getFilePath())){
+                if (StringUtils.hasText(historyScreenShotTask.getFilePath())) {
                     File saveFile = new File(savePath, historyScreenShotTask.getFilePath());
-                    if (!saveFile.exists()) {
-                        continue;
-                    }
-                    FileInputStream inputFile = null;
-                    try {
-                        inputFile = new FileInputStream(saveFile);
-                        byte[] buffer = new byte[(int) saveFile.length()];
-                        inputFile.read(buffer);
-                        inputFile.close();
-                        taskDto.setFileBase64(new BASE64Encoder().encode(buffer));
-                    } catch (Exception ignored) {
-
-                    } finally {
-                        assert inputFile != null;
+                    if (saveFile.exists()) {
+                        FileInputStream inputFile = null;
                         try {
+                            inputFile = new FileInputStream(saveFile);
+                            byte[] buffer = new byte[(int) saveFile.length()];
+                            inputFile.read(buffer);
                             inputFile.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            taskDto.setFileBase64(new BASE64Encoder().encode(buffer));
+                        } catch (Exception ignored) {
+
+                        } finally {
+                            assert inputFile != null;
+                            try {
+                                inputFile.close();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
-                }else{
+
+                } else {
                     // 把图片转成base64
                     fengXianList.stream().filter(fx -> fx.getId().equals(historyScreenShotTask.getFxId()))
                             .findFirst()
@@ -205,6 +207,20 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
             }
         }
         screenShotTaskRepository.save(screenShotTask);
+    }
+
+    @Override
+    public void reRunTask(String id) {
+        HistoryScreenShotTask historyScreenShotTask = historyScreenShotTaskRepository.findOne(id);
+        ScreenShotTask screenShotTask = new ScreenShotTask();
+        BeanUtils.copyProperties(historyScreenShotTask, screenShotTask, "id", "version");
+        screenShotTask.setId(snowFlakeFactory.nextId("ST"));
+        screenShotTask.setCreateTime(LocalDateTime.now());
+        screenShotTask.setStatus(TypeStringUtils.wechat_status2);
+        screenShotTaskRepository.save(screenShotTask);
+        // 并且把正在运行的关于这个车牌的处理任务都删除
+        List<RobotTask> robotTasks = robotTaskRepository.findByVehicleNoAndTaskTypeAndTaskStatus(historyScreenShotTask.getVehicleNo(), TypeStringUtils.robotType3, TypeStringUtils.taskStatus1);
+        robotTaskRepository.delete(robotTasks);
     }
 
     // 1小时内如果没有收到回复，则把当前任务设为超时未回复，需要截图做处理

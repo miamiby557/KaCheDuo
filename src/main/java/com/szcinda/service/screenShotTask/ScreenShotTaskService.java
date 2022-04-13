@@ -20,4 +20,6 @@ public interface ScreenShotTaskService {
     ScreenShotTask findOneSendMission(String ownerWechat);
 
     void finishSend(String screenShotId);
+
+    void reRunTask(String id);
 }

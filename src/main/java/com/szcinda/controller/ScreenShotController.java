@@ -30,6 +30,12 @@ public class ScreenShotController {
         return Result.success(screenShotTaskService.queryRunning(params));
     }
 
+    @GetMapping("shotAgain/{id}")
+    public Result<String> shotAgain(@PathVariable String id){
+        screenShotTaskService.reRunTask(id);
+        return Result.success();
+    }
+
     @GetMapping("getOneJob/{ownerWechat}")
     public Result<ScreenShotTask> getOneJob(@PathVariable String ownerWechat) {
         return Result.success(screenShotTaskService.findOneMission(ownerWechat));

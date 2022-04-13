@@ -12,8 +12,8 @@ public class ScreenShotTask extends BaseEntity{
     private String fxId;
     private String wechat;
     private String wxid;
-    private String ownerWechat;
     private String vehicleNo;
+    private String ownerWechat;
     private String happenTime;
     private String content;
     private String status; // 待回复

@@ -119,7 +119,7 @@ public class SendMailService {
             InputStream is = null;
             OutputStream os = null;
             // 写出文件
-            String filePath = System.getProperty("user.dir") + File.separator + "GPS监控表.xls";
+            String filePath = System.getProperty("user.dir") + File.separator + robot.getCompany() + "-GPS监控表.xls";
             try {
                 // 获取模板文件
                 is = this.getClass().getClassLoader().getResourceAsStream("GPS监控表.xls");
@@ -155,7 +155,7 @@ public class SendMailService {
                     //true代表支持多组件，如附件，图片等
                     helper.setFrom(from);
                     helper.setTo(em);
-                    helper.setSubject(date + "GPS监控表");
+                    helper.setSubject(date + "-" + robot.getCompany() + "-GPS监控表");
                     helper.setText("详情见附件", false);
                     FileSystemResource file = new FileSystemResource(saveFile);
                     String fileName = file.getFilename();

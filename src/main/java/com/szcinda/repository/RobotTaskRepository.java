@@ -7,6 +7,10 @@ import java.util.List;
 
 public interface RobotTaskRepository extends JpaRepository<RobotTask, String>, JpaSpecificationExecutor<RobotTask> {
     RobotTask findById(String id);
+
     List<RobotTask> findByTaskStatus(String taskStatus);
+
     List<RobotTask> findByUserNameAndTaskTypeAndTaskStatusIn(String userName, String taskType, List<String> status);
+
+    List<RobotTask> findByVehicleNoAndTaskTypeAndTaskStatus(String vehicleNo, String taskType, String taskStatus);
 }
