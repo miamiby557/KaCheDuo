@@ -232,30 +232,6 @@ public class FengXianServiceImpl implements FengXianService {
             for (FengXian fengXian : details.getContent()) {
                 ChuZhiDetailDto dto = new ChuZhiDetailDto();
                 BeanUtils.copyProperties(fengXian, dto);
-                // 图片转base64
-                if (StringUtils.hasText(fengXian.getFilePath())) {
-                    File saveFile = new File(savePath, fengXian.getFilePath());
-                    FileInputStream inputFile = null;
-                    try {
-                        if (!saveFile.exists()) {
-                            continue;
-                        }
-                        inputFile = new FileInputStream(saveFile);
-                        byte[] buffer = new byte[(int) saveFile.length()];
-                        inputFile.read(buffer);
-                        inputFile.close();
-                        dto.setFileBase64(new BASE64Encoder().encode(buffer));
-                    } catch (Exception ignored) {
-
-                    } finally {
-                        assert inputFile != null;
-                        try {
-                            inputFile.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
                 dtos.add(dto);
             }
         }
