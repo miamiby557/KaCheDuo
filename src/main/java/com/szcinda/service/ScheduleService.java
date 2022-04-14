@@ -350,6 +350,10 @@ public class ScheduleService {
                     index++;
                     hasDown = true;
                 }
+            }else{
+                stringBuilder.append(index).append(",").append(robot.getPhone()).append("\n");
+                index++;
+                hasDown = true;
             }
         }
         if (hasDown) {
