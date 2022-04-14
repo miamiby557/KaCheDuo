@@ -377,4 +377,15 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             workRobotRepository.save(workRobot);
         }
     }
+
+    @Override
+    public void reRunHistoryTask(String id) {
+        HistoryTask historyTask = historyTaskRepository.findOne(id);
+        RobotTask robotTask = new RobotTask();
+        BeanUtils.copyProperties(historyTask, robotTask, "id", "version");
+        robotTask.setTaskStatus(TypeStringUtils.taskStatus1);
+        robotTask.setId(snowFlakeFactory.nextId("RT"));
+        robotTask.setCreateTime(LocalDateTime.now());
+        robotTaskRepository.save(robotTask);
+    }
 }

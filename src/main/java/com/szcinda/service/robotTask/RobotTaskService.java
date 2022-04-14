@@ -26,4 +26,6 @@ public interface RobotTaskService {
     void release(String userName);
 
     void lock(String userName);
+
+    void reRunHistoryTask(String id);
 }

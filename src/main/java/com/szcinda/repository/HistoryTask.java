@@ -20,4 +20,5 @@ public class HistoryTask extends BaseEntity{
     private String fxId;
     private String vehicleNo;
     private String happenTime;
+    private String filePath;
 }

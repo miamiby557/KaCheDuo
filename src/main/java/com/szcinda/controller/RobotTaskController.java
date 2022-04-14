@@ -69,6 +69,12 @@ public class RobotTaskController {
         return Result.success();
     }
 
+    @GetMapping("reRunHistoryTask/{id}")
+    public Result<String> reRunHistoryTask(@PathVariable String id) {
+        robotTaskService.reRunHistoryTask(id);
+        return Result.success();
+    }
+
     @PostMapping("error")
     public Result<String> error(@RequestBody TaskErrorDto errorDto) {
         robotTaskService.error(errorDto);
