@@ -385,6 +385,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         BeanUtils.copyProperties(historyTask, robotTask, "id", "version");
         robotTask.setTaskStatus(TypeStringUtils.taskStatus1);
         robotTask.setId(snowFlakeFactory.nextId("RT"));
+        robotTask.setMessage(null);
         robotTask.setCreateTime(LocalDateTime.now());
         robotTaskRepository.save(robotTask);
     }

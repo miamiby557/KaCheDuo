@@ -118,12 +118,12 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
         Page<HistoryScreenShotTask> details = historyScreenShotTaskRepository.findAll(specification, pageable);
         List<HistoryScreenShotTaskDto> dtos = new ArrayList<>();
         if (details.getContent() != null) {
-            List<String> fxIds = details.getContent().stream().filter(item -> StringUtils.hasText(item.getFxId())).map(HistoryScreenShotTask::getFxId).collect(Collectors.toList());
-            List<FengXian> fengXianList = fengXianRepository.findAll(fxIds);
+            /*List<String> fxIds = details.getContent().stream().filter(item -> StringUtils.hasText(item.getFxId())).map(HistoryScreenShotTask::getFxId).collect(Collectors.toList());
+            List<FengXian> fengXianList = fengXianRepository.findAll(fxIds);*/
             for (HistoryScreenShotTask historyScreenShotTask : details.getContent()) {
                 HistoryScreenShotTaskDto taskDto = new HistoryScreenShotTaskDto();
                 BeanUtils.copyProperties(historyScreenShotTask, taskDto);
-                if (StringUtils.hasText(historyScreenShotTask.getFilePath())) {
+                /*if (StringUtils.hasText(historyScreenShotTask.getFilePath())) {
                     File saveFile = new File(savePath, historyScreenShotTask.getFilePath());
                     if (saveFile.exists()) {
                         FileInputStream inputFile = null;
@@ -174,8 +174,7 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
                                     }
                                 }
                             });
-                }
-
+                }*/
                 dtos.add(taskDto);
             }
         }

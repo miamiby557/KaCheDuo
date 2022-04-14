@@ -18,10 +18,7 @@ import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("driver")
@@ -60,7 +57,7 @@ public class DriverController {
     @GetMapping("downloadNoWechat/{owner}")
     public void downloadNoWechat(@PathVariable String owner, HttpServletResponse response) {
         OutputStream out = null;
-        try{
+        try {
             out = response.getOutputStream();
             List<DriverDto> driverList = driverService.queryNoWechat(owner);
             Map<String, List<String>> map = new HashMap<>();
@@ -119,14 +116,14 @@ public class DriverController {
                 i++;
             }
             // 下载EXCEL
-            String fName = URLEncoder.encode("司机信息表" , "UTF-8");
+            String fName = URLEncoder.encode("司机信息表", "UTF-8");
             response.setHeader("Content-disposition", "attachment;filename=" + fName + ".xls");
             wb.write(out);
             out.flush();
-        }catch (Exception exception){
+        } catch (Exception exception) {
             exception.printStackTrace();
-        }finally {
-            if(out!=null){
+        } finally {
+            if (out != null) {
                 try {
                     out.close();
                 } catch (IOException e) {
