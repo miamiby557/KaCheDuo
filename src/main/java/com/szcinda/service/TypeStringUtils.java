@@ -26,6 +26,7 @@ public class TypeStringUtils {
     // 微信截图状态
     public static final String screen_status1 = "已截图";
     public static final String screen_status2 = "截图失败";
+    public static final String screen_status3 = "告警失败";
 
     public static final String wechat_status1 = "待回复";
     public static final String wechat_status2 = "已回复";

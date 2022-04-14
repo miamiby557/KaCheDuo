@@ -53,10 +53,15 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
     @Override
     public void error(ScreenShotTaskErrorDto dto) {
         ScreenShotTask screenShotTask = screenShotTaskRepository.findOne(dto.getId());
+        String type = TypeStringUtils.screen_status2;
+        if (TypeStringUtils.wechat_status5.equals(screenShotTask.getStatus())) {
+            // 告警任务失败
+            type = TypeStringUtils.screen_status3;
+        }
         HistoryScreenShotTask historyScreenShotTask = new HistoryScreenShotTask();
         BeanUtils.copyProperties(screenShotTask, historyScreenShotTask);
         historyScreenShotTask.setId(snowFlakeFactory.nextId("HT"));
-        historyScreenShotTask.setType(TypeStringUtils.screen_status2);
+        historyScreenShotTask.setType(type);
         historyScreenShotTask.setMessage(dto.getMessage());
         screenShotTaskRepository.delete(screenShotTask);
         historyScreenShotTaskRepository.save(historyScreenShotTask);
@@ -140,6 +145,11 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
     public void finishSend(String screenShotId) {
         // 完成发送任务，设置处置的发送时间
         ScreenShotTask screenShotTask = screenShotTaskRepository.findOne(screenShotId);
+        if (TypeStringUtils.wechat_status5.equals(screenShotTask.getStatus())) {
+            // 告警的不做截图处理，直接删除
+            screenShotTaskRepository.delete(screenShotTask);
+            return;
+        }
         screenShotTask.setStatus(TypeStringUtils.wechat_status1);
         if (StringUtils.hasText(screenShotTask.getFxId())) {
             FengXian fengXian = fengXianRepository.findOne(screenShotTask.getFxId());
