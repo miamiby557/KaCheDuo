@@ -61,6 +61,18 @@ public class RobotController {
         return Result.success();
     }
 
+    @GetMapping("startLocation/{id}")
+    public Result<String> startLocation(@PathVariable String id) {
+        robotService.startLocation(id);
+        return Result.success();
+    }
+
+    @GetMapping("stopLocation/{id}")
+    public Result<String> stopLocation(@PathVariable String id) {
+        robotService.stopLocation(id);
+        return Result.success();
+    }
+
     // 获取10个可以运行监控的主账号
     @GetMapping("getMainAccount")
     public Result<List<RobotDto>> getMainAccount() {
@@ -68,7 +80,7 @@ public class RobotController {
     }
 
     @GetMapping("getLocationRobots/{owner}")
-    public Result<List<String>> getLocationRobots(@PathVariable String owner){
+    public Result<List<String>> getLocationRobots(@PathVariable String owner) {
         return Result.success(robotService.getLocationRobots(owner));
     }
 }

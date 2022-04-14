@@ -21,6 +21,7 @@ public class RobotDto implements Serializable {
     private String owner;
     private boolean run;
     private boolean run2;
+    private boolean runLocation;
     private LocalDateTime lastTime;
     private boolean alive;
     private String type;

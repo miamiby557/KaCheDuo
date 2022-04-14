@@ -77,16 +77,18 @@ public class ScheduleService {
         List<Robot> robots = robotRepository.findByType(TypeStringUtils.robotType3);
         if (robots.size() > 0) {
             for (Robot robot : robots) {
-                //找处理、位置监控账号来处理位置监控的上传
-                robotSearchLocationList.add(robot.getPhone());
-                robotPwdMap.put(robot.getPhone(), robot.getPwd());
-                if (robot.isRun()) {
-                    CreateRobotTaskDto taskDto = new CreateRobotTaskDto();
-                    taskDto.setTaskType(TypeStringUtils.robotType3);
-                    taskDto.setUserName(robot.getPhone());
-                    taskDto.setPwd(robot.getPwd());
-                    taskDto.setCompany(robot.getCompany());
-                    robotTaskService.create(taskDto);
+                if(robot.isRunLocation()){
+                    //找处理、位置监控账号来处理位置监控的上传
+                    robotSearchLocationList.add(robot.getPhone());
+                    robotPwdMap.put(robot.getPhone(), robot.getPwd());
+                    if (robot.isRun()) {
+                        CreateRobotTaskDto taskDto = new CreateRobotTaskDto();
+                        taskDto.setTaskType(TypeStringUtils.robotType3);
+                        taskDto.setUserName(robot.getPhone());
+                        taskDto.setPwd(robot.getPwd());
+                        taskDto.setCompany(robot.getCompany());
+                        robotTaskService.create(taskDto);
+                    }
                 }
             }
         }

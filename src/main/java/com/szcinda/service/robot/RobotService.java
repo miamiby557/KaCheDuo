@@ -24,4 +24,8 @@ public interface RobotService {
     List<RobotDto> find10Account();
 
     List<String> getLocationRobots(String owner);
+
+    void startLocation(String id);
+
+    void stopLocation(String id);
 }

@@ -1,7 +1,13 @@
 package com.szcinda.service.robot;
 
-import com.szcinda.repository.*;
-import com.szcinda.service.*;
+import com.szcinda.repository.Robot;
+import com.szcinda.repository.RobotRepository;
+import com.szcinda.repository.User;
+import com.szcinda.repository.UserRepository;
+import com.szcinda.service.PageResult;
+import com.szcinda.service.RobotAliveDto;
+import com.szcinda.service.ScheduleService;
+import com.szcinda.service.SnowFlakeFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
-import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
@@ -194,6 +199,7 @@ public class RobotServiceImpl implements RobotService {
                         dto.setPwd2(subRobot.getPwd());
                         dto.setId2(subRobot.getId());// 处理机器人的id
                         dto.setRun2(subRobot.isRun()); // 机器人处理是否启动
+                        dto.setRunLocation(subRobot.isRunLocation()); // 是否启动位置查询
                     } else {
                         RobotDto subRobotDto = new RobotDto();
                         BeanUtils.copyProperties(subRobot, subRobotDto);
@@ -378,5 +384,19 @@ public class RobotServiceImpl implements RobotService {
             }
         }
         return names;
+    }
+
+    @Override
+    public void startLocation(String id) {
+        Robot robot = robotRepository.findById(id);
+        robot.setRunLocation(true);
+        robotRepository.save(robot);
+    }
+
+    @Override
+    public void stopLocation(String id) {
+        Robot robot = robotRepository.findById(id);
+        robot.setRunLocation(false);
+        robotRepository.save(robot);
     }
 }
