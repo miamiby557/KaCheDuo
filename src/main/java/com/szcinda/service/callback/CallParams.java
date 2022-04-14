@@ -11,4 +11,6 @@ public class CallParams implements Serializable {
     private String phone;
     private List<String> params;
     private String dataId;
+
+    private String fxId;
 }

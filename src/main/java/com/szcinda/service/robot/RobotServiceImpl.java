@@ -221,6 +221,7 @@ public class RobotServiceImpl implements RobotService {
         for (Robot robot : robots) {
             RobotGroupDto groupDto = new RobotGroupDto();
             groupDto.setOwner(robot.getPhone());
+            groupDto.setCompany(robot.getCompany());
             RobotDto dto = new RobotDto();
             BeanUtils.copyProperties(robot, dto);
             if (robotAliveMap.containsKey(robot.getPhone())) {

@@ -31,6 +31,8 @@ public class TypeStringUtils {
     public static final String wechat_status2 = "已回复";
     public static final String wechat_status3 = "待发送";
     public static final String wechat_status4 = "超时未回复";
+    public static final String wechat_status5 = "告警";
+
 
     public static final String phone_status1 = "未拨打";
     public static final String phone_status2 = "已拨打";

@@ -21,11 +21,14 @@ public class CallServiceImpl implements CallService {
     private final SnowFlakeFactory snowFlakeFactory;
     private final DriverRepository driverRepository;
     private final RobotRepository robotRepository;
+    private final FengXianRepository fengXianRepository;
 
-    public CallServiceImpl(PhoneBillRepository phoneBillRepository, DriverRepository driverRepository, RobotRepository robotRepository) {
+    public CallServiceImpl(PhoneBillRepository phoneBillRepository, DriverRepository driverRepository,
+                           RobotRepository robotRepository, FengXianRepository fengXianRepository) {
         this.phoneBillRepository = phoneBillRepository;
         this.driverRepository = driverRepository;
         this.robotRepository = robotRepository;
+        this.fengXianRepository = fengXianRepository;
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
 
@@ -36,6 +39,8 @@ public class CallServiceImpl implements CallService {
     public void call(CallParams params) {
         PhoneBill phoneBill = new PhoneBill();
         phoneBill.setId(snowFlakeFactory.nextId("PB"));
+        // 与处置记录关联
+        phoneBill.setFxId(params.getFxId());
         params.setDataId(phoneBill.getId());
         Result<String> result = VoiceApi.sendVoiceNotification(params);
         phoneBill.setCalled(params.getPhone());
@@ -114,6 +119,15 @@ public class CallServiceImpl implements CallService {
             phoneBill.setStatus(TypeStringUtils.phone_status4);
         }
         phoneBillRepository.save(phoneBill);
+        // 更新处置的通话记录
+        FengXian fengXian = fengXianRepository.findOne(phoneBill.getFxId());
+        if (fengXian != null) {
+            fengXian.setCallTime(phoneBill.getCallCreateTime().toString().replaceAll("T", " "));
+            fengXian.setCalled(phoneBill.getStatus());
+            fengXian.setHangUpTime(phoneBill.getAnswerTime().toString().replaceAll("T", " "));
+            fengXian.setSeconds(phoneBill.getIvrTime());
+            fengXianRepository.save(fengXian);
+        }
     }
 
     public static void main(String[] args) {

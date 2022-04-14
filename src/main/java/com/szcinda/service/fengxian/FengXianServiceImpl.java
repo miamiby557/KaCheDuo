@@ -105,46 +105,10 @@ public class FengXianServiceImpl implements FengXianService {
                     callParams.setTemplateId(overSpeedId);
                 }
                 if (callParams != null) {
+                    callParams.setFxId(fengXian.getId());
                     callService.call(callParams);
                 }
             }
-            // 检查处理账号是否启用
-            /*Robot robot = robotRepository.findByPhone(fengXian.getOwner());
-            if (robot != null) {
-                robot = robotRepository.findByParentIdAndType(robot.getParentId(), TypeStringUtils.robotType3);
-                if (robot != null && robot.isRun()) {
-                    // 创建一个截图的任务
-                    Driver driver = driverRepository.findByVehicleNo(fengXian.getVehicleNo());
-                    if (driver != null && StringUtils.hasText(driver.getWechat())) {
-                        ScreenShotTask screenShotTask = new ScreenShotTask();
-                        screenShotTask.setId(snowFlakeFactory.nextId("ST"));
-                        screenShotTask.setFxId(fengXian.getId());
-                        screenShotTask.setWechat(driver.getWechat());
-                        screenShotTask.setVehicleNo(fengXian.getVehicleNo());
-                        screenShotTask.setOwnerWechat(driver.getOwnerWechat());
-                        screenShotTask.setOwner(fengXian.getOwner());
-                        screenShotTask.setWxid(driver.getWxid());
-                        screenShotTask.setHappenTime(fengXian.getHappenTime());
-                        screenShotTask.setStatus(TypeStringUtils.wechat_status3);
-                        screenShotTask.setContent(TypeStringUtils.getWechatContent(fengXian.getDangerType()));
-                        screenShotTaskRepository.save(screenShotTask);
-                        // 如果是生理疲劳或者超速，需要打电话
-                        CallParams callParams = null;
-                        if (TypeStringUtils.tired_status.equals(fengXian.getDangerType())) {
-                            callParams = new CallParams();
-                            callParams.setPhone(driver.getPhone());
-                            callParams.setTemplateId(tiredId);
-                        } else if (TypeStringUtils.over_status.equals(fengXian.getDangerType())) {
-                            callParams = new CallParams();
-                            callParams.setPhone(driver.getPhone());
-                            callParams.setTemplateId(overSpeedId);
-                        }
-                        if (callParams != null) {
-                            callService.call(callParams);
-                        }
-                    }
-                }
-            }*/
         }
     }
 

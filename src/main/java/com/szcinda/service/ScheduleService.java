@@ -3,6 +3,7 @@ package com.szcinda.service;
 import com.szcinda.repository.*;
 import com.szcinda.service.robotTask.CreateRobotTaskDto;
 import com.szcinda.service.robotTask.RobotTaskService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -26,11 +27,16 @@ public class ScheduleService {
 
     private final RobotRepository robotRepository;
     private final RobotTaskService robotTaskService;
+    private final RobotTaskRepository robotTaskRepository;
     private final WorkRobotRepository workRobotRepository;
     private final FengXianRepository fengXianRepository;
     private final DriverRepository driverRepository;
     private final SnowFlakeFactory snowFlakeFactory = SnowFlakeFactory.getInstance();
     private final ScreenShotTaskRepository screenShotTaskRepository;
+
+    // 管理员微信号
+    @Value("${admin.user.wechat}")
+    private String wechats;
 
     // 需要运行位置监控的机器人名称列表
     public static List<String> robotSearchLocationList = new ArrayList<>();
@@ -52,10 +58,11 @@ public class ScheduleService {
     public static CopyOnWriteArrayList<Robot> copyOnWriteRobots = new CopyOnWriteArrayList<>();
 
     public ScheduleService(RobotRepository robotRepository, RobotTaskService robotTaskService,
-                           WorkRobotRepository workRobotRepository, FengXianRepository fengXianRepository,
+                           RobotTaskRepository robotTaskRepository, WorkRobotRepository workRobotRepository, FengXianRepository fengXianRepository,
                            DriverRepository driverRepository, ScreenShotTaskRepository screenShotTaskRepository) {
         this.robotRepository = robotRepository;
         this.robotTaskService = robotTaskService;
+        this.robotTaskRepository = robotTaskRepository;
         this.workRobotRepository = workRobotRepository;
         this.fengXianRepository = fengXianRepository;
         this.driverRepository = driverRepository;
@@ -300,7 +307,7 @@ public class ScheduleService {
                                     .append("】违规时间【").append(fengXian.getHappenTime()).append("】违规类型【").append(fengXian.getDangerType())
                                     .append("】");
                             msgList.add(stringBuilder.toString());
-                            index ++;
+                            index++;
                         }
                         stringBuilder = new StringBuilder("请注意行车规范，杜绝此类行为再次发生。K请您收到回复”确认“！");
                         msgList.add(stringBuilder.toString());
@@ -317,5 +324,69 @@ public class ScheduleService {
                         screenShotTaskRepository.save(screenShotTask);
                     });
         });
+    }
+
+    // 30分钟执行一次检查，如果发现掉线超过15分钟，则代表已经下线
+    @Scheduled(cron = "0 */30 * * * ?")
+    public void checkRobotIsAliveAndSendMsgToAdmin() {
+        List<Robot> robots = robotRepository.findByParentIdIsNull();
+        LocalDateTime now = LocalDateTime.now();
+        StringBuilder stringBuilder = new StringBuilder("机器人下线情况：");
+        int index = 1;
+        boolean hasDown = false;
+        for (Robot robot : robots) {
+            if (!robot.isRun()) {
+                continue;
+            }
+            if (mainRobotWatchMap.containsKey(robot.getPhone())) {
+                LocalDateTime lastTime = mainRobotWatchMap.get(robot.getPhone());
+                Duration duration = Duration.between(now, lastTime);
+                long minutes = Math.abs(duration.toMinutes());//相差的分钟数
+                if (minutes >= 15) {
+                    // 代表下线
+                    stringBuilder.append(index).append(",").append(robot.getPhone()).append("\n");
+                    index++;
+                    hasDown = true;
+                }
+            }
+        }
+        if (hasDown) {
+            // 需要创建一条微信发消息任务通知管理员
+            if (StringUtils.hasText(wechats)) {
+                String[] strings = wechats.split(",");
+                for (String wechat : strings) {
+                    ScreenShotTask screenShotTask = new ScreenShotTask();
+                    screenShotTask.setId(snowFlakeFactory.nextId("ST"));
+                    screenShotTask.setWechat(wechat);
+                    screenShotTask.setVehicleNo("");
+                    screenShotTask.setOwnerWechat("anqin1588");
+                    screenShotTask.setWxid(wechat);
+                    screenShotTask.setOwner("");
+                    screenShotTask.setStatus(TypeStringUtils.wechat_status5);
+                    screenShotTask.setContent(stringBuilder.toString());
+                    screenShotTaskRepository.save(screenShotTask);
+                }
+            }
+        }
+        // 检查是否有超过30条处置任务，说明可能处理端机器人有问题了
+        List<RobotTask> all = robotTaskRepository.findAll();
+        int size = all.size();
+        if (size >= 30) {
+            if (StringUtils.hasText(wechats)) {
+                String[] strings = wechats.split(",");
+                for (String wechat : strings) {
+                    ScreenShotTask screenShotTask = new ScreenShotTask();
+                    screenShotTask.setId(snowFlakeFactory.nextId("ST"));
+                    screenShotTask.setWechat(wechat);
+                    screenShotTask.setVehicleNo("");
+                    screenShotTask.setOwnerWechat("anqin1588");
+                    screenShotTask.setWxid(wechat);
+                    screenShotTask.setOwner("");
+                    screenShotTask.setStatus(TypeStringUtils.wechat_status5);
+                    screenShotTask.setContent(String.format("目前正在运行的任务列表已经堆积了【%d】条任务没有处置或处理，请赶紧查看机器人所在机器的运行情况", size));
+                    screenShotTaskRepository.save(screenShotTask);
+                }
+            }
+        }
     }
 }

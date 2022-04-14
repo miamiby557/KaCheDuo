@@ -15,12 +15,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import sun.misc.BASE64Encoder;
 
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
-import java.io.File;
-import java.io.FileInputStream;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -118,63 +115,9 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
         Page<HistoryScreenShotTask> details = historyScreenShotTaskRepository.findAll(specification, pageable);
         List<HistoryScreenShotTaskDto> dtos = new ArrayList<>();
         if (details.getContent() != null) {
-            /*List<String> fxIds = details.getContent().stream().filter(item -> StringUtils.hasText(item.getFxId())).map(HistoryScreenShotTask::getFxId).collect(Collectors.toList());
-            List<FengXian> fengXianList = fengXianRepository.findAll(fxIds);*/
             for (HistoryScreenShotTask historyScreenShotTask : details.getContent()) {
                 HistoryScreenShotTaskDto taskDto = new HistoryScreenShotTaskDto();
                 BeanUtils.copyProperties(historyScreenShotTask, taskDto);
-                /*if (StringUtils.hasText(historyScreenShotTask.getFilePath())) {
-                    File saveFile = new File(savePath, historyScreenShotTask.getFilePath());
-                    if (saveFile.exists()) {
-                        FileInputStream inputFile = null;
-                        try {
-                            inputFile = new FileInputStream(saveFile);
-                            byte[] buffer = new byte[(int) saveFile.length()];
-                            inputFile.read(buffer);
-                            inputFile.close();
-                            taskDto.setFileBase64(new BASE64Encoder().encode(buffer));
-                        } catch (Exception ignored) {
-
-                        } finally {
-                            assert inputFile != null;
-                            try {
-                                inputFile.close();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-
-                } else {
-                    // 把图片转成base64
-                    fengXianList.stream().filter(fx -> fx.getId().equals(historyScreenShotTask.getFxId()))
-                            .findFirst()
-                            .ifPresent(fx -> {
-                                if (StringUtils.hasText(fx.getFilePath())) {
-                                    File saveFile = new File(savePath, fx.getFilePath());
-                                    if (!saveFile.exists()) {
-                                        return;
-                                    }
-                                    FileInputStream inputFile = null;
-                                    try {
-                                        inputFile = new FileInputStream(saveFile);
-                                        byte[] buffer = new byte[(int) saveFile.length()];
-                                        inputFile.read(buffer);
-                                        inputFile.close();
-                                        taskDto.setFileBase64(new BASE64Encoder().encode(buffer));
-                                    } catch (Exception ignored) {
-
-                                    } finally {
-                                        assert inputFile != null;
-                                        try {
-                                            inputFile.close();
-                                        } catch (Exception e) {
-                                            e.printStackTrace();
-                                        }
-                                    }
-                                }
-                            });
-                }*/
                 dtos.add(taskDto);
             }
         }
@@ -189,8 +132,8 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
 
     @Override
     public ScreenShotTask findOneSendMission(String ownerWechat) {
-        // 找一条待发送的任务进行发送
-        return screenShotTaskRepository.findFirstByOwnerWechatAndStatus(ownerWechat, TypeStringUtils.wechat_status3);
+        // 找一条待发送的任务进行发送，其中包括待发送给司机的和告警的
+        return screenShotTaskRepository.findFirstByOwnerWechatAndStatusIn(ownerWechat, Arrays.asList(TypeStringUtils.wechat_status3, TypeStringUtils.wechat_status5));
     }
 
     @Override
