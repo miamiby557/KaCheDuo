@@ -346,7 +346,8 @@ public class ScheduleService {
                 long minutes = Math.abs(duration.toMinutes());//相差的分钟数
                 if (minutes >= 15) {
                     // 代表下线
-                    stringBuilder.append(index).append(",").append(robot.getPhone()).append("\n");
+                    stringBuilder.append("第").append(index).append("个账号：").append(robot.getPhone())
+                            .append("(").append(robot.getCompany()).append(")").append("\n");
                     index++;
                     hasDown = true;
                 }
