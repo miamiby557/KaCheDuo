@@ -77,7 +77,7 @@ public class ScheduleService {
         List<Robot> robots = robotRepository.findByType(TypeStringUtils.robotType3);
         if (robots.size() > 0) {
             for (Robot robot : robots) {
-                if(robot.isRunLocation()){
+                if (robot.isRunLocation()) {
                     //找处理、位置监控账号来处理位置监控的上传
                     robotSearchLocationList.add(robot.getPhone());
                     robotPwdMap.put(robot.getPhone(), robot.getPwd());
@@ -333,16 +333,16 @@ public class ScheduleService {
     public void checkRobotIsAliveAndSendMsgToAdmin() {
         List<Robot> robots = robotRepository.findByParentIdIsNull();
         LocalDateTime now = LocalDateTime.now();
-        StringBuilder stringBuilder = new StringBuilder("机器人下线情况：");
+        StringBuilder stringBuilder = new StringBuilder("机器人下线情况：").append("\n");
         int index = 1;
         boolean hasDown = false;
         for (Robot robot : robots) {
             if (!robot.isRun()) {
                 continue;
             }
-            if (mainRobotWatchMap.containsKey(robot.getPhone())) {
-                LocalDateTime lastTime = mainRobotWatchMap.get(robot.getPhone());
-                Duration duration = Duration.between(now, lastTime);
+            if (robotAliveMap.containsKey(robot.getPhone())) {
+                RobotAliveDto aliveDto = robotAliveMap.get(robot.getPhone());
+                Duration duration = Duration.between(now, aliveDto.getTime());
                 long minutes = Math.abs(duration.toMinutes());//相差的分钟数
                 if (minutes >= 15) {
                     // 代表下线
@@ -350,7 +350,7 @@ public class ScheduleService {
                     index++;
                     hasDown = true;
                 }
-            }else{
+            } else {
                 stringBuilder.append(index).append(",").append(robot.getPhone()).append("\n");
                 index++;
                 hasDown = true;
@@ -361,16 +361,24 @@ public class ScheduleService {
             if (StringUtils.hasText(wechats)) {
                 String[] strings = wechats.split(",");
                 for (String wechat : strings) {
-                    ScreenShotTask screenShotTask = new ScreenShotTask();
-                    screenShotTask.setId(snowFlakeFactory.nextId("ST"));
-                    screenShotTask.setWechat(wechat);
-                    screenShotTask.setVehicleNo("");
-                    screenShotTask.setOwnerWechat("anqin1588");
-                    screenShotTask.setWxid(wechat);
-                    screenShotTask.setOwner("");
-                    screenShotTask.setStatus(TypeStringUtils.wechat_status5);
-                    screenShotTask.setContent(stringBuilder.toString());
-                    screenShotTaskRepository.save(screenShotTask);
+                    // 判断是否存在报警记录，存在则更新
+                    List<ScreenShotTask> screenShotTasks = screenShotTaskRepository.findByWechatAndStatus(wechat, TypeStringUtils.wechat_status5);
+                    if (screenShotTasks.size() > 0) {
+                        ScreenShotTask screenShotTask = screenShotTasks.get(0);
+                        screenShotTask.setContent(stringBuilder.toString());
+                        screenShotTaskRepository.save(screenShotTask);
+                    } else {
+                        ScreenShotTask screenShotTask = new ScreenShotTask();
+                        screenShotTask.setId(snowFlakeFactory.nextId("ST"));
+                        screenShotTask.setWechat(wechat);
+                        screenShotTask.setVehicleNo("");
+                        screenShotTask.setOwnerWechat("anqin1588");
+                        screenShotTask.setWxid(wechat);
+                        screenShotTask.setOwner("");
+                        screenShotTask.setStatus(TypeStringUtils.wechat_status5);
+                        screenShotTask.setContent(stringBuilder.toString());
+                        screenShotTaskRepository.save(screenShotTask);
+                    }
                 }
             }
         }
@@ -381,16 +389,24 @@ public class ScheduleService {
             if (StringUtils.hasText(wechats)) {
                 String[] strings = wechats.split(",");
                 for (String wechat : strings) {
-                    ScreenShotTask screenShotTask = new ScreenShotTask();
-                    screenShotTask.setId(snowFlakeFactory.nextId("ST"));
-                    screenShotTask.setWechat(wechat);
-                    screenShotTask.setVehicleNo("");
-                    screenShotTask.setOwnerWechat("anqin1588");
-                    screenShotTask.setWxid(wechat);
-                    screenShotTask.setOwner("");
-                    screenShotTask.setStatus(TypeStringUtils.wechat_status5);
-                    screenShotTask.setContent(String.format("目前正在运行的任务列表已经堆积了【%d】条任务没有处置或处理，请赶紧查看机器人所在机器的运行情况", size));
-                    screenShotTaskRepository.save(screenShotTask);
+                    // 判断是否存在报警记录，存在则更新
+                    List<ScreenShotTask> screenShotTasks = screenShotTaskRepository.findByWechatAndStatus(wechat, TypeStringUtils.wechat_status5);
+                    if (screenShotTasks.size() > 0) {
+                        ScreenShotTask screenShotTask = screenShotTasks.get(0);
+                        screenShotTask.setContent(String.format("目前正在运行的任务列表已经堆积了【%d】条任务没有处置或处理，请赶紧查看机器人所在机器的运行情况", size));
+                        screenShotTaskRepository.save(screenShotTask);
+                    } else {
+                        ScreenShotTask screenShotTask = new ScreenShotTask();
+                        screenShotTask.setId(snowFlakeFactory.nextId("ST"));
+                        screenShotTask.setWechat(wechat);
+                        screenShotTask.setVehicleNo("");
+                        screenShotTask.setOwnerWechat("anqin1588");
+                        screenShotTask.setWxid(wechat);
+                        screenShotTask.setOwner("");
+                        screenShotTask.setStatus(TypeStringUtils.wechat_status5);
+                        screenShotTask.setContent(String.format("目前正在运行的任务列表已经堆积了【%d】条任务没有处置或处理，请赶紧查看机器人所在机器的运行情况", size));
+                        screenShotTaskRepository.save(screenShotTask);
+                    }
                 }
             }
         }
