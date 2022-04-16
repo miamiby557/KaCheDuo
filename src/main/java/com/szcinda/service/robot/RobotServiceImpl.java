@@ -312,7 +312,6 @@ public class RobotServiceImpl implements RobotService {
             scheduleService.changeChuZhiRobotStatus(robot.getAccount2(), true);
         }
         // 把主账号改为运行
-        scheduleService.updateToMainRobotWatchMap(id);
         scheduleService.updateRobotFromCopyOnWriteRobots(robot);
         if (subRobots.size() > 0) {
             for (Robot subRobot : subRobots) {
@@ -366,9 +365,6 @@ public class RobotServiceImpl implements RobotService {
                 robotDtos.add(dto);
                 // 添加到主账号监控集合中
                 scheduleService.updateToMainRobotWatchMap(robot.getId());
-                if (robotDtos.size() >= 10) {
-                    break;
-                }
             }
         }
         return robotDtos;
