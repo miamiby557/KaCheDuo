@@ -194,6 +194,11 @@ public class ScheduleService {
         }
     }
 
+    // 检查机器人是否在线
+    public boolean isAlive(String userName){
+        return robotAliveMap.containsKey(userName);
+    }
+
     // 添加到或者更新到主账号监控列表
     public void updateToMainRobotWatchMap(String id) {
         mainRobotWatchMap.put(id, LocalDateTime.now());

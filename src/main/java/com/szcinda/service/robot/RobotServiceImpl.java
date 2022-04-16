@@ -356,7 +356,8 @@ public class RobotServiceImpl implements RobotService {
         List<RobotDto> robotDtos = new ArrayList<>();
         List<Robot> robots = scheduleService.queryAllRobotsFromCopyOnWriteRobots();
         for (Robot robot : robots) {
-            boolean inMap = scheduleService.checkIsInMainRobotWatchMap(robot.getId());
+            // 判断机器人是否在线
+            boolean inMap = scheduleService.isAlive(robot.getPhone());
             if (StringUtils.isEmpty(robot.getParentId()) && !inMap && robot.isRun()) {
                 RobotDto dto = new RobotDto();
                 dto.setId(robot.getId());
