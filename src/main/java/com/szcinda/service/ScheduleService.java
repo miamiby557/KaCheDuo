@@ -352,7 +352,8 @@ public class ScheduleService {
                     hasDown = true;
                 }
             } else {
-                stringBuilder.append(index).append(",").append(robot.getPhone()).append("\n");
+                stringBuilder.append("第").append(index).append("个账号：").append(robot.getPhone())
+                        .append("(").append(robot.getCompany()).append(")").append("\n");
                 index++;
                 hasDown = true;
             }
