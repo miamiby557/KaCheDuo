@@ -50,7 +50,6 @@ public class DriverServiceImpl implements DriverService {
         for (DriverImportDto driverImportDto : driverImportDtos) {
             Driver driver = driverRepository.findByVehicleNo(driverImportDto.getVehicleNo());
             if (driver != null) {
-                driver.setName(driver.getName());
                 driver.setCompany(driverImportDto.getCompany());
                 driver.setName(driverImportDto.getName());
                 driver.setPhone(driverImportDto.getPhone());
