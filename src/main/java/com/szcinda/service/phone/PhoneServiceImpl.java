@@ -48,6 +48,7 @@ public class PhoneServiceImpl implements PhoneService {
             if (phoneMap.containsKey(phone.getPhone())) {
                 dto.setTime(phoneMap.get(phone.getPhone()));
             }
+            dtos.add(dto);
         }
         return dtos;
     }
