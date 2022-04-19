@@ -84,6 +84,10 @@ public class DriverServiceImpl implements DriverService {
                 Predicate vehicleNo = criteriaBuilder.like(root.get("vehicleNo"), "%" + query.getVehicleNo() + "%");
                 predicates.add(vehicleNo);
             }
+            if (!StringUtils.isEmpty(query.getCompany())) {
+                Predicate company = criteriaBuilder.equal(root.get("company"), query.getCompany());
+                predicates.add(company);
+            }
             Predicate owner = criteriaBuilder.equal(root.get("owner"), query.getOwner());
             predicates.add(owner);
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

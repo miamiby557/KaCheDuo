@@ -10,4 +10,5 @@ public class DriverQuery extends PageParams {
     private String name;
     private String vehicleNo;
     private String owner;
+    private String company;
 }
