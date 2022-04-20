@@ -144,7 +144,7 @@ public class SendMailService {
             InputStream is = null;
             OutputStream os = null;
             // 写出文件
-            File saveFile = new File(System.getProperty("user.dir"), robot.getCompany() + "-GPS监控表.xls");
+            File saveFile = new File(System.getProperty("user.dir"), robot.getCompany() + "GPS监控表.xls");
             try {
                 // 获取模板文件
                 is = this.getClass().getClassLoader().getResourceAsStream("GPS监控表.xls");
@@ -179,22 +179,21 @@ public class SendMailService {
                     //true代表支持多组件，如附件，图片等
                     helper.setFrom(from);
                     helper.setTo(em.trim());
-                    helper.setSubject(date + "-" + robot.getCompany() + "-GPS监控表");
+                    helper.setSubject(date + "-" + robot.getCompany() + "GPS监控表");
                     helper.setText("详情见附件", false);
                     FileSystemResource file = new FileSystemResource(saveFile);
-                    String fileName = saveFile.getName();
-                    helper.addAttachment(fileName, file);//添加附件，可多次调用该方法添加多个附件
+//                    String fileName = saveFile.getName();
+                    helper.addAttachment("GPS监控表.xls", file);//添加附件，可多次调用该方法添加多个附件
                     mailSender.send(message);
-                    // 删除临时文件
-                    try {
-                        saveFile.delete();
-                    } catch (Exception ignored) {
-                    }
                 } catch (MessagingException e) {
                     e.printStackTrace();
                 }
             }
-
+            // 删除临时文件
+            try {
+                saveFile.delete();
+            } catch (Exception ignored) {
+            }
         }
     }
 
