@@ -223,4 +223,21 @@ public class DriverServiceImpl implements DriverService {
         }
         return driverDtos;
     }
+
+    @Override
+    public void updateInfo(UpdateDriverInfo driverInfo) {
+        List<Driver> drivers = driverRepository.findByOwnerWechat(driverInfo.getOwner());
+        List<String> wxids = driverInfo.getData();
+        if (wxids == null || wxids.size() == 0) {
+            return;
+        }
+        for (Driver driver : drivers) {
+            if (wxids.contains(driver.getWxid())) {
+                driver.setFriend(true);
+            } else {
+                driver.setFriend(false);
+            }
+        }
+        driverRepository.save(drivers);
+    }
 }

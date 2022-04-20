@@ -12,4 +12,5 @@ public interface DriverRepository extends JpaRepository<Driver, String>, JpaSpec
     List<Driver> findByVehicleNoIn(Collection<String> vehicleNos);
     Driver findByPhone(String phone);
     Driver findByWechat(String wechat);
+    List<Driver> findByOwnerWechat(String ownerWechat);
 }

@@ -2,9 +2,9 @@ package com.szcinda.controller;
 
 import com.alibaba.excel.EasyExcelFactory;
 import com.alibaba.excel.metadata.Sheet;
-import com.szcinda.repository.Driver;
 import com.szcinda.service.PageResult;
 import com.szcinda.service.driver.*;
+import com.szcinda.service.wechat.WechatService;
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,19 +18,24 @@ import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("driver")
 public class DriverController {
 
     private final DriverService driverService;
+    private final WechatService wechatService;
 
     @Value("${file.save.path}")
     private String savePath;
 
-    public DriverController(DriverService driverService) {
+    public DriverController(DriverService driverService, WechatService wechatService) {
         this.driverService = driverService;
+        this.wechatService = wechatService;
     }
 
     @PostMapping("/import/{owner}")
@@ -151,6 +156,12 @@ public class DriverController {
         return Result.success();
     }
 
+    @PostMapping("updateInfo")
+    public Result<String> updateInfo(@RequestBody UpdateDriverInfo info) {
+        driverService.updateInfo(info);
+        return Result.success();
+    }
+
 
     @PostMapping("connect")
     public Result<String> connect(@RequestBody DriverConnectDto connectDto) {
@@ -161,6 +172,12 @@ public class DriverController {
     @GetMapping("confirm/{wechat}")
     public Result<String> confirm(@PathVariable String wechat) {
         driverService.confirm(wechat);
+        return Result.success();
+    }
+
+    @GetMapping("sync/{wechat}")
+    public Result<String> sync(@PathVariable String wechat) {
+        wechatService.sync(wechat);
         return Result.success();
     }
 

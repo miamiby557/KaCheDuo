@@ -33,6 +33,7 @@ public class ScheduleService {
     private final DriverRepository driverRepository;
     private final SnowFlakeFactory snowFlakeFactory = SnowFlakeFactory.getInstance();
     private final ScreenShotTaskRepository screenShotTaskRepository;
+    private final WechatRepository wechatRepository;
 
     // 管理员微信号
     @Value("${admin.user.wechat}")
@@ -57,9 +58,12 @@ public class ScheduleService {
     // 系统所有登录帐号的列表，避免前端的定时器每次请求都到数据库 CopyOnWriteArrayList适合读多写少的并发场景
     public static CopyOnWriteArrayList<Robot> copyOnWriteRobots = new CopyOnWriteArrayList<>();
 
+    // 需要同步好友列表的微信
+    public static CopyOnWriteArrayList<String> needSyncFriendWechatList = new CopyOnWriteArrayList<>();
+
     public ScheduleService(RobotRepository robotRepository, RobotTaskService robotTaskService,
                            RobotTaskRepository robotTaskRepository, WorkRobotRepository workRobotRepository, FengXianRepository fengXianRepository,
-                           DriverRepository driverRepository, ScreenShotTaskRepository screenShotTaskRepository) {
+                           DriverRepository driverRepository, ScreenShotTaskRepository screenShotTaskRepository, WechatRepository wechatRepository) {
         this.robotRepository = robotRepository;
         this.robotTaskService = robotTaskService;
         this.robotTaskRepository = robotTaskRepository;
@@ -67,6 +71,7 @@ public class ScheduleService {
         this.fengXianRepository = fengXianRepository;
         this.driverRepository = driverRepository;
         this.screenShotTaskRepository = screenShotTaskRepository;
+        this.wechatRepository = wechatRepository;
     }
 
     // 每日0时、8时、16时循环一次
@@ -91,6 +96,11 @@ public class ScheduleService {
                     }
                 }
             }
+        }
+        needSyncFriendWechatList.clear();
+        List<Wechat> wechats = wechatRepository.findAll();
+        for (Wechat wechat : wechats) {
+            needSyncFriendWechatList.add(wechat.getNo());
         }
     }
 
@@ -195,7 +205,7 @@ public class ScheduleService {
     }
 
     // 检查机器人是否在线
-    public boolean isAlive(String userName){
+    public boolean isAlive(String userName) {
         return robotAliveMap.containsKey(userName);
     }
 
@@ -305,7 +315,7 @@ public class ScheduleService {
                     .ifPresent(driver -> {
                         // 把消息汇总成一条发送
                         List<String> msgList = new ArrayList<>();
-                        StringBuilder stringBuilder = new StringBuilder("卡车多物流科技提醒您，昨天存在以下违规内容：");
+                        StringBuilder stringBuilder = new StringBuilder(String.format("卡车多物流科技提醒您，【%s】昨天存在以下违规内容：", vehicleNo));
                         msgList.add(stringBuilder.toString());
                         int index = 1;
                         for (FengXian fengXian : list) {
@@ -417,5 +427,13 @@ public class ScheduleService {
                 }
             }
         }
+    }
+
+    public boolean canRunSyncFriends(String wechat) {
+        if (needSyncFriendWechatList.contains(wechat)) {
+            needSyncFriendWechatList.remove(wechat);
+            return true;
+        }
+        return false;
     }
 }
