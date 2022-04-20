@@ -1,8 +1,14 @@
 package com.szcinda.controller;
 
+import com.szcinda.repository.Driver;
+import com.szcinda.repository.DriverRepository;
+import com.szcinda.service.callback.CallParams;
+import com.szcinda.service.callback.CallService;
 import com.szcinda.service.mail.SendMailService;
 import com.szcinda.service.robot.RobotGroupDto;
 import com.szcinda.service.robot.RobotService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,10 +24,21 @@ public class HomeController {
     private final RobotService robotService;
 
     private final SendMailService sendMailService;
+    private final DriverRepository driverRepository;
+    private final CallService callService;
 
-    public HomeController(RobotService robotService, SendMailService sendMailService) {
+    @Value("${body.tired.id}")
+    private String tiredId;
+
+    @Value("${over.speed.id}")
+    private String overSpeedId;
+
+    public HomeController(RobotService robotService, SendMailService sendMailService, DriverRepository driverRepository,
+                          CallService callService) {
         this.robotService = robotService;
         this.sendMailService = sendMailService;
+        this.driverRepository = driverRepository;
+        this.callService = callService;
     }
 
 
@@ -51,4 +68,20 @@ public class HomeController {
     }
 
 
+    @GetMapping("testPhone/{vehicleNo}/{templateId}")
+    public Result<String> testPhone(@PathVariable String vehicleNo, @PathVariable String templateId) {
+        Driver driver = driverRepository.findByVehicleNo(vehicleNo);
+        if (driver != null && StringUtils.hasText(driver.getPhone())) {
+            CallParams callParams = new CallParams();
+            callParams.setPhone(driver.getPhone());
+            if (tiredId.equals(templateId) || overSpeedId.equals(templateId)) {
+                callParams.setTemplateId(templateId);
+            } else {
+                callParams.setTemplateId(overSpeedId);
+            }
+            callParams.setFxId("test");
+            callService.call(callParams);
+        }
+        return Result.success();
+    }
 }

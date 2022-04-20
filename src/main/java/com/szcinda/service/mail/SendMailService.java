@@ -19,7 +19,6 @@ import javax.mail.internet.MimeMessage;
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
 import java.io.*;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -28,6 +27,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.szcinda.service.TypeStringUtils.over_status;
+import static com.szcinda.service.TypeStringUtils.tired_status;
 
 @Component
 public class SendMailService {
@@ -45,6 +47,9 @@ public class SendMailService {
 
     @Autowired
     private RobotRepository robotRepository;
+
+    @Autowired
+    private FengXianRepository fengXianRepository;
 
 
     @Scheduled(cron = "0 0 8 * * ?")
@@ -69,6 +74,21 @@ public class SendMailService {
             if (StringUtils.isEmpty(email)) {
                 continue;
             }
+            // 取出子账号
+            List<String> accountList = robots.stream().filter(robot1 -> robot1.getParentId().equals(robot.getId())).map(Robot::getPhone).collect(Collectors.toList());
+            // 取出关于这个账号的所有处置列表
+            Specification<FengXian> specification2 = ((root, criteriaQuery, criteriaBuilder) -> {
+                List<Predicate> predicates = new ArrayList<>();
+                Predicate timeStart = criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), lastDate.atStartOfDay());
+                predicates.add(timeStart);
+                Predicate timeEnd = criteriaBuilder.lessThan(root.get("createTime"), lastDate.plusDays(1).atStartOfDay());
+                predicates.add(timeEnd);
+                Expression<String> exp = root.get("owner");
+                predicates.add(exp.in(accountList));
+                return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            });
+            // 过滤出关于这个账号的风险处置
+            List<FengXian> fengXianList = fengXianRepository.findAll(specification2);
             String[] emailArray = email.split(",");
             List<Robot> subRobotList = robots.stream().filter(item -> robot.getId().equals(item.getParentId())).collect(Collectors.toList());
             List<String> userNameList = subRobotList.stream().map(Robot::getPhone).collect(Collectors.toList());
@@ -77,44 +97,47 @@ public class SendMailService {
             // 一个车牌会有多条记录 如果是多条，则取其中一条速度不为0的
             List<ReportDto> reportDtos = new ArrayList<>();
             locationMap.forEach((vehicleNo, dataList) -> {
-                ReportDto reportDto = new ReportDto();
-                Location location = null;
-                if (dataList.size() > 1) {
-                    for (Location l : dataList) {
-                        try {
-                            String speed = l.getSpeed();
-                            if (StringUtils.hasText(speed)) {
-                                speed = speed.toLowerCase().replace("km/h", "").trim();
-                                if (((new BigDecimal(speed)).compareTo(BigDecimal.ZERO)) > 0) {
-                                    location = l;
-                                    break;
-                                }
+                for (Location location : dataList) {
+                    ReportDto reportDto = new ReportDto();
+                    reportDto.setVehicleNo(vehicleNo);
+                    reportDto.setLocation(location.getHappenPlace());
+                    reportDto.setCheckTime(checkTime);
+                    reportDto.setSpeed(location.getSpeed());
+                    reportDto.setVehicleType("重型货车");
+                    reportDto.setMessage("");
+                    reportDtos.add(reportDto);
+                    // 检查当天是否有疲劳驾驶或者超速的放在对应列表的下面
+                    List<FengXian> fengXians = fengXianList.stream().filter(fengXian -> fengXian.getVehicleNo().equals(vehicleNo) && (tired_status.equals(fengXian.getDangerType()) || over_status.equals(fengXian.getDangerType())))
+                            .collect(Collectors.toList());
+                    if (fengXians.size() > 0) {
+                        for (FengXian fengXian : fengXians) {
+                            reportDto = new ReportDto();
+                            reportDto.setVehicleNo(vehicleNo);
+                            reportDto.setLocation(location.getHappenPlace());
+                            reportDto.setCheckTime(checkTime);
+                            reportDto.setSpeed(location.getSpeed());
+                            reportDto.setVehicleType("重型货车");
+                            if (tired_status.equals(fengXian.getDangerType())) {
+                                reportDto.setMessage("疲劳报警");
+                                reportDto.setHandleResult("通知司机停车休息");
+                            } else if (over_status.equals(fengXian.getDangerType())) {
+                                reportDto.setMessage("超速报警");
+                                reportDto.setHandleResult("通知司机降低车速");
+                            } else {
+                                reportDto.setMessage("");
                             }
-                        } catch (Exception ignored) {
-
+                            reportDto.setHandleText(fengXian.getChuLiTime().toString().replace("T", " ") + ",已下发语音信息通知");
+                            reportDtos.add(reportDto);
                         }
                     }
-                    if (location == null) {
-                        location = dataList.get(0);
-                    }
-                } else {
-                    location = dataList.get(0);
                 }
-                // 找到速度大于0的一条记录
-                reportDto.setVehicleNo(vehicleNo);
-                reportDto.setLocation(location.getHappenPlace());
-                reportDto.setCheckTime(checkTime);
-                reportDto.setSpeed(location.getSpeed());
-                reportDto.setVehicleType("重型货车");
-                reportDto.setMessage("");
-                reportDtos.add(reportDto);
             });
             // 写入文件
             String date = LocalDate.now().toString();
             Map<String, Object> beans = new HashMap<>();
             beans.put("date", date);
             beans.put("time", checkTime);
-            beans.put("carCount", reportDtos.size());
+            beans.put("carCount", reportDtos.stream().map(ReportDto::getVehicleNo).collect(Collectors.toSet()).size());
             beans.put("vehicleList", reportDtos);
             InputStream is = null;
             OutputStream os = null;
