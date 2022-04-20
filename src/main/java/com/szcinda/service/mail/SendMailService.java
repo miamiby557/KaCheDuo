@@ -89,6 +89,8 @@ public class SendMailService {
             });
             // 过滤出关于这个账号的风险处置
             List<FengXian> fengXianList = fengXianRepository.findAll(specification2);
+            // 替换中文符号
+            email = email.replace("，", ",");
             String[] emailArray = email.split(",");
             List<Robot> subRobotList = robots.stream().filter(item -> robot.getId().equals(item.getParentId())).collect(Collectors.toList());
             List<String> userNameList = subRobotList.stream().map(Robot::getPhone).collect(Collectors.toList());
@@ -142,7 +144,7 @@ public class SendMailService {
             InputStream is = null;
             OutputStream os = null;
             // 写出文件
-            String filePath = System.getProperty("user.dir") + File.separator + robot.getCompany() + "-GPS监控表.xls";
+            File saveFile = new File(System.getProperty("user.dir"), robot.getCompany() + "-GPS监控表.xls");
             try {
                 // 获取模板文件
                 is = this.getClass().getClassLoader().getResourceAsStream("GPS监控表.xls");
@@ -150,7 +152,7 @@ public class SendMailService {
                 XLSTransformer xlsTransformer = new XLSTransformer();
                 // 获取 Workbook ，传入 模板 和 数据
                 Workbook workbook = xlsTransformer.transformXLS(is, beans);
-                os = new BufferedOutputStream(new FileOutputStream(filePath));
+                os = new BufferedOutputStream(new FileOutputStream(saveFile));
                 // 输出
                 workbook.write(os);
                 // 关闭和刷新管道，不然可能会出现表格数据不齐，打不开之类的问题
@@ -165,7 +167,6 @@ public class SendMailService {
                     os.close();
                 }
             }
-            File saveFile = new File(filePath);
             if (!saveFile.exists()) {
                 continue;
             }
@@ -177,11 +178,11 @@ public class SendMailService {
                     helper = new MimeMessageHelper(message, true);
                     //true代表支持多组件，如附件，图片等
                     helper.setFrom(from);
-                    helper.setTo(em);
+                    helper.setTo(em.trim());
                     helper.setSubject(date + "-" + robot.getCompany() + "-GPS监控表");
                     helper.setText("详情见附件", false);
                     FileSystemResource file = new FileSystemResource(saveFile);
-                    String fileName = file.getFilename();
+                    String fileName = saveFile.getName();
                     helper.addAttachment(fileName, file);//添加附件，可多次调用该方法添加多个附件
                     mailSender.send(message);
                     // 删除临时文件
