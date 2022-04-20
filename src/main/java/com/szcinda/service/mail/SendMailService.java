@@ -103,7 +103,9 @@ public class SendMailService {
                     ReportDto reportDto = new ReportDto();
                     reportDto.setVehicleNo(vehicleNo);
                     reportDto.setLocation(location.getHappenPlace());
-                    reportDto.setCheckTime(checkTime);
+                    if (location.getHappenTime() != null) {
+                        reportDto.setCheckTime(location.getHappenTime().format(DateTimeFormatter.ofPattern("HH时mm分")));
+                    }
                     reportDto.setSpeed(location.getSpeed());
                     reportDto.setVehicleType("重型货车");
                     reportDto.setMessage("");
@@ -128,7 +130,7 @@ public class SendMailService {
                             } else {
                                 reportDto.setMessage("");
                             }
-                            reportDto.setHandleText(fengXian.getChuLiTime().toString().replace("T", " ") + ",已下发语音信息通知");
+                            reportDto.setHandleText(fengXian.getChuLiTime().format(DateTimeFormatter.ofPattern("HH时mm分")) + "已下发语音信息通知");
                             reportDtos.add(reportDto);
                         }
                     }
