@@ -75,7 +75,7 @@ public class SendMailService {
                 continue;
             }
             // 取出子账号
-            List<String> accountList = robots.stream().filter(robot1 -> robot1.getParentId().equals(robot.getId())).map(Robot::getPhone).collect(Collectors.toList());
+            List<String> accountList = robots.stream().filter(robot1 -> robot1.getParentId() != null && robot1.getParentId().equals(robot.getId())).map(Robot::getPhone).collect(Collectors.toList());
             // 取出关于这个账号的所有处置列表
             Specification<FengXian> specification2 = ((root, criteriaQuery, criteriaBuilder) -> {
                 List<Predicate> predicates = new ArrayList<>();
