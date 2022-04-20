@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("phone")
+@RequestMapping("wechat")
 public class WechatController {
     private final WechatService wechatService;
     private final ScheduleService scheduleService;
