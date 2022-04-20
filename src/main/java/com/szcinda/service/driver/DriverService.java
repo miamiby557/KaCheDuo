@@ -21,6 +21,7 @@ public interface DriverService {
     void update(DriverUpdateDto updateDto);
 
     List<DriverDto> queryNoWechat(String owner);
+    List<DriverDto> queryNotFriend(String owner);
 
     void updateInfo(UpdateDriverInfo driverInfo);
 }

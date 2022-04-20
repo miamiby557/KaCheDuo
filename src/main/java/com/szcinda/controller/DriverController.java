@@ -139,6 +139,86 @@ public class DriverController {
     }
 
 
+    @GetMapping("downloadNotFriends/{owner}")
+    public void downloadNotFriends(@PathVariable String owner, HttpServletResponse response) {
+        OutputStream out = null;
+        try {
+            out = response.getOutputStream();
+            List<DriverDto> driverList = driverService.queryNotFriend(owner);
+            Map<String, List<String>> map = new HashMap<>();
+            HSSFWorkbook wb = new HSSFWorkbook();
+            HSSFSheet sheet = wb.createSheet("sheet1");
+            sheet.setDefaultColumnWidth(20);// 默认列宽
+            HSSFRow row = sheet.createRow(0);
+            HSSFCellStyle style = wb.createCellStyle();
+            style.setAlignment(HorizontalAlignment.CENTER);
+            HSSFCell cell;
+            Map<String, String> fieldMap = DriverDto.getFieldMap();
+            List<String> columnList = DriverDto.getFieldList();
+            // 生成标题
+            int size = columnList.size();
+            for (int i = 0; i < size; i++) {
+                cell = row.createCell((short) i);
+                cell.setCellValue(columnList.get(i));
+                cell.setCellStyle(style);
+            }
+            for (DriverDto dto : driverList) {
+                String id = dto.getId();
+                List<String> list = new ArrayList<>();
+                columnList.forEach(column -> {
+                    if (fieldMap.containsKey(column)) {
+                        String value;
+                        try {
+                            Field field = DriverDto.class.getDeclaredField(fieldMap.get(column));
+                            if (field.getType() == String.class) {
+                                value = (String) field.get(dto);
+                            } else if (field.getType() == Integer.class || field.getGenericType().getTypeName().equals("int")) {
+                                value = ((Integer) field.get(dto)).toString();
+                            } else if (field.getType() == Double.class || field.getGenericType().getTypeName().equals("double")) {
+                                value = field.get(dto).toString();
+                            } else if (field.getType() == LocalDateTime.class) {
+                                value = ((LocalDateTime) field.get(dto)).toString().replace("T", " ");
+                            } else if (field.getType() == LocalDate.class) {
+                                value = ((LocalDate) field.get(dto)).toString();
+                            } else {
+                                value = "";
+                            }
+                        } catch (Exception e) {
+                            value = "";
+                        }
+                        list.add(value);
+                    }
+                });
+                map.put(id, list);
+            }
+            int i = 0;
+            for (String str : map.keySet()) {
+                row = sheet.createRow(i + 1);
+                List<String> list = map.get(str);
+                for (int j = 0; j < size; j++) {
+                    row.createCell((short) j).setCellValue(list.get(j));
+                }
+                i++;
+            }
+            // 下载EXCEL
+            String fName = URLEncoder.encode("不是好友司机信息表", "UTF-8");
+            response.setHeader("Content-disposition", "attachment;filename=" + fName + ".xls");
+            wb.write(out);
+            out.flush();
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        } finally {
+            if (out != null) {
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+
     @GetMapping("delete/{id}")
     public Result<String> delete(@PathVariable String id) {
         driverService.delete(id);

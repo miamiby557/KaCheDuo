@@ -87,6 +87,10 @@ public class DriverServiceImpl implements DriverService {
                 Predicate company = criteriaBuilder.equal(root.get("company"), query.getCompany());
                 predicates.add(company);
             }
+            if (query.getFriend() != null) {
+                Predicate company = criteriaBuilder.equal(root.get("friend"), query.getFriend());
+                predicates.add(company);
+            }
             Predicate owner = criteriaBuilder.equal(root.get("owner"), query.getOwner());
             predicates.add(owner);
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
@@ -215,6 +219,26 @@ public class DriverServiceImpl implements DriverService {
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         });
         List<Driver> drivers = driverRepository.findAll(specification).stream().filter(driver -> StringUtils.isEmpty(driver.getWechat())).collect(Collectors.toList());
+        List<DriverDto> driverDtos = new ArrayList<>();
+        for (Driver driver : drivers) {
+            DriverDto dto = new DriverDto();
+            BeanUtils.copyProperties(driver, dto);
+            driverDtos.add(dto);
+        }
+        return driverDtos;
+    }
+
+    @Override
+    public List<DriverDto> queryNotFriend(String owner) {
+        Specification<Driver> specification = ((root, criteriaQuery, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            Predicate ownerPre = criteriaBuilder.equal(root.get("owner"), owner);
+            predicates.add(ownerPre);
+            Predicate friend = criteriaBuilder.equal(root.get("friend"), false);
+            predicates.add(friend);
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        });
+        List<Driver> drivers = driverRepository.findAll(specification);
         List<DriverDto> driverDtos = new ArrayList<>();
         for (Driver driver : drivers) {
             DriverDto dto = new DriverDto();

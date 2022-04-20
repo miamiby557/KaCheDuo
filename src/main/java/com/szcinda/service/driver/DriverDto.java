@@ -19,6 +19,7 @@ public class DriverDto implements Serializable {
     public String wxid;
     public String owner;
     public String ownerWechat;// 来源微信号，就是哪个微信下的好友
+    private boolean friend;
 
     public static Map<String, String> getFieldMap() {
         Map<String, String> map = new HashMap<>();
