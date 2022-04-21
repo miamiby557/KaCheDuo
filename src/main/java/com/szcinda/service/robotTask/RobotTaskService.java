@@ -28,4 +28,6 @@ public interface RobotTaskService {
     void lock(String userName);
 
     void reRunHistoryTask(String id);
+
+    List<RobotTaskDto> getOneLocationMission();
 }

@@ -223,7 +223,36 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                         RobotTaskDto dto = new RobotTaskDto();
                         BeanUtils.copyProperties(robotTask, dto);
                         filterTasks.add(dto);
-                    } else if (TypeStringUtils.robotType3.equals(robotTask.getTaskType())) {
+                    } else if (TypeStringUtils.robotType3.equals(robotTask.getTaskType()) && StringUtils.hasText(robotTask.getFxId()) && StringUtils.hasText(robotTask.getVehicleNo())) {
+                        // 过滤不是正在运行中的帐号，避免帐号冲突
+                        boolean noWork = workRobots.stream().noneMatch(item -> item.getUserName().equals(robotTask.getUserName()));
+                        if (noWork) {
+                            addToSubTasks(filterTasks, robotTask);
+                        }
+                    }
+                }
+                return filterTasks;
+            }
+        } catch (Exception ignored) {
+
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<RobotTaskDto> getOneLocationMission() {
+        try {
+            if (lock.tryLock(3, TimeUnit.SECONDS)) {
+                List<RobotTaskDto> filterTasks = new ArrayList<>();
+                // 获取正在工作的处理账号
+                List<WorkRobot> workRobots = workRobotRepository.findAll();
+                List<RobotTask> robotTasks = robotTaskRepository.findByTaskStatus(TypeStringUtils.taskStatus1);
+                for (RobotTask robotTask : robotTasks) {
+                    if (TypeStringUtils.robotType3.equals(robotTask.getTaskType()) && StringUtils.isEmpty(robotTask.getFxId()) && StringUtils.isEmpty(robotTask.getVehicleNo())) {
                         // 过滤不是正在运行中的帐号，避免帐号冲突
                         boolean noWork = workRobots.stream().noneMatch(item -> item.getUserName().equals(robotTask.getUserName()));
                         if (noWork) {

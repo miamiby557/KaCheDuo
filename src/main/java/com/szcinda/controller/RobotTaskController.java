@@ -26,6 +26,11 @@ public class RobotTaskController {
         return Result.success(robotTaskService.getStandByList());
     }
 
+    @GetMapping("getLocationMission")
+    public Result<List<RobotTaskDto>> getLocationMission(){
+        return Result.success(robotTaskService.getOneLocationMission());
+    }
+
     @GetMapping("checkIsStandBy/{id}")
     public Result<String> checkIsStandBy(@PathVariable String id) {
         boolean standby = robotTaskService.checkIsStandby(id);
