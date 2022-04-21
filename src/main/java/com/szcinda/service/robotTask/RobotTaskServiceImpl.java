@@ -337,6 +337,10 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             List<String> taskIds = new ArrayList<>();
             LocalDateTime now = LocalDateTime.now();
             for (RobotTask task : tasks) {
+                if (TypeStringUtils.robotType3.equals(task.getTaskType())) {
+                    // 位置监控和处理类型不删除
+                    continue;
+                }
                 LocalDateTime time = task.getRunTime(); // 开始运行时间
                 Duration duration = Duration.between(now, time);
                 long minutes = Math.abs(duration.toMinutes());//相差的分钟数
