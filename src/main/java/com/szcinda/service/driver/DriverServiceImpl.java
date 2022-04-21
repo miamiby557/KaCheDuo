@@ -116,6 +116,18 @@ public class DriverServiceImpl implements DriverService {
             driver.setWxid(connectDto.getWxid());
             driver.setFriend(true);
             driverRepository.save(driver);
+        }else{
+            driver = new Driver();
+            driver.setId(snowFlakeFactory.nextId("DR"));
+            driver.setVehicleNo(connectDto.getVehicleNo());
+            driver.setOwnerWechat(connectDto.getOwnerWechat());
+            driver.setWechat(connectDto.getWechat());
+            driver.setWxid(connectDto.getWxid());
+            driver.setCompany("");
+            driver.setPhone("");
+            driver.setName("");
+            driver.setOwner("");
+            driverRepository.save(driver);
         }
     }
 
