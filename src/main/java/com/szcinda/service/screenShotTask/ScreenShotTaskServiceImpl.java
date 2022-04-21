@@ -35,17 +35,19 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
     private final FengXianRepository fengXianRepository;
     private final RobotRepository robotRepository;
     private final RobotTaskRepository robotTaskRepository;
+    private final DriverRepository driverRepository;
 
     @Value("${file.save.path}")
     private String savePath;
 
     public ScreenShotTaskServiceImpl(ScreenShotTaskRepository screenShotTaskRepository, HistoryScreenShotTaskRepository historyScreenShotTaskRepository,
-                                     FengXianRepository fengXianRepository, RobotRepository robotRepository, RobotTaskRepository robotTaskRepository) {
+                                     FengXianRepository fengXianRepository, RobotRepository robotRepository, RobotTaskRepository robotTaskRepository, DriverRepository driverRepository) {
         this.screenShotTaskRepository = screenShotTaskRepository;
         this.historyScreenShotTaskRepository = historyScreenShotTaskRepository;
         this.fengXianRepository = fengXianRepository;
         this.robotRepository = robotRepository;
         this.robotTaskRepository = robotTaskRepository;
+        this.driverRepository = driverRepository;
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
 
@@ -169,6 +171,12 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
         screenShotTask.setId(snowFlakeFactory.nextId("ST"));
         screenShotTask.setCreateTime(LocalDateTime.now());
         screenShotTask.setStatus(TypeStringUtils.wechat_status2);
+        // 提取司机最新的信息
+        if(StringUtils.hasText(historyScreenShotTask.getVehicleNo())){
+            Driver driver = driverRepository.findByVehicleNo(historyScreenShotTask.getVehicleNo());
+            screenShotTask.setWechat(driver.getWechat());
+            screenShotTask.setWxid(driver.getWxid());
+        }
         screenShotTaskRepository.save(screenShotTask);
         // 并且把正在运行的关于这个车牌的处理任务都删除
         List<RobotTask> robotTasks = robotTaskRepository.findByVehicleNoAndTaskTypeAndTaskStatus(historyScreenShotTask.getVehicleNo(), TypeStringUtils.robotType3, TypeStringUtils.taskStatus1);
