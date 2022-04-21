@@ -342,6 +342,9 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                     continue;
                 }
                 LocalDateTime time = task.getRunTime(); // 开始运行时间
+                if (time == null) {
+                    time = task.getCreateTime();
+                }
                 Duration duration = Duration.between(now, time);
                 long minutes = Math.abs(duration.toMinutes());//相差的分钟数
                 long minNumber = 15;

@@ -10,7 +10,9 @@ import java.time.LocalDate;
 @Data
 public class WechatLogQueryDto extends PageParams {
     private String wxid; // 发送人的微信ID
+    private String wechat; // 发送人的微信ID
     private String selfWxid;// 接收消息的微信
     private LocalDate createTimeStart;
     private LocalDate createTimeEnd;
+    private String content;
 }

@@ -42,8 +42,12 @@ public class WechatLogServiceImpl implements WechatLogService {
         Specification<WechatLog> specification = ((root, criteriaQuery, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (!StringUtils.isEmpty(params.getWxid())) {
-                Predicate vehicleNo = criteriaBuilder.equal(root.get("wxid"), params.getWxid());
-                predicates.add(vehicleNo);
+                Predicate wxid = criteriaBuilder.equal(root.get("wxid"), params.getWxid());
+                predicates.add(wxid);
+            }
+            if (!StringUtils.isEmpty(params.getWechat())) {
+                Predicate wechat = criteriaBuilder.equal(root.get("wechat"), params.getWechat());
+                predicates.add(wechat);
             }
             if (params.getCreateTimeStart() != null) {
                 Predicate createTimeStart = criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), params.getCreateTimeStart().atStartOfDay());
@@ -52,6 +56,10 @@ public class WechatLogServiceImpl implements WechatLogService {
             if (params.getCreateTimeEnd() != null) {
                 Predicate createTimeEnd = criteriaBuilder.lessThan(root.get("createTime"), params.getCreateTimeEnd().plusDays(1).atStartOfDay());
                 predicates.add(createTimeEnd);
+            }
+            if (!StringUtils.isEmpty(params.getContent())) {
+                Predicate content = criteriaBuilder.like(root.get("content"), "%" + params.getContent() + "%");
+                predicates.add(content);
             }
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         });
