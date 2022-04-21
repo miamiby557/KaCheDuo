@@ -114,6 +114,7 @@ public class DriverServiceImpl implements DriverService {
             driver.setWechat(connectDto.getWechat());
             driver.setOwnerWechat(connectDto.getOwnerWechat());
             driver.setWxid(connectDto.getWxid());
+            driver.setFriend(true);
             driverRepository.save(driver);
         }
     }
