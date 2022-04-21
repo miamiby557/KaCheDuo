@@ -164,6 +164,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
     public void run(String id) {
         RobotTask task = robotTaskRepository.findById(id);
         task.setTaskStatus(TypeStringUtils.taskStatus2);
+        task.setRunTime(LocalDateTime.now());
         robotTaskRepository.save(task);
     }
 
@@ -336,7 +337,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             List<String> taskIds = new ArrayList<>();
             LocalDateTime now = LocalDateTime.now();
             for (RobotTask task : tasks) {
-                LocalDateTime time = task.getCreateTime();
+                LocalDateTime time = task.getRunTime(); // 开始运行时间
                 Duration duration = Duration.between(now, time);
                 long minutes = Math.abs(duration.toMinutes());//相差的分钟数
                 long minNumber = 15;

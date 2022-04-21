@@ -21,4 +21,5 @@ public class RobotTask  extends BaseEntity{
     private String vehicleNo;
     private String happenTime;
     private String filePath;
+    private LocalDateTime runTime;
 }
