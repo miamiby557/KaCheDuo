@@ -73,6 +73,10 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                 Predicate taskType = criteriaBuilder.equal(root.get("taskType"), params.getTaskType());
                 predicates.add(taskType);
             }
+            if (!StringUtils.isEmpty(params.getVehicleNo())) {
+                Predicate vehicleNo = criteriaBuilder.equal(root.get("vehicleNo"), params.getVehicleNo());
+                predicates.add(vehicleNo);
+            }
             if (params.getCreateTimeStart() != null) {
                 Predicate timeStart = criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), params.getCreateTimeStart().atStartOfDay());
                 predicates.add(timeStart);

@@ -15,6 +15,7 @@ public class RobotTaskQuery extends PageParams {
     private LocalDate createTimeStart;
     private LocalDate createTimeEnd;
     private String owner;
+    private String vehicleNo;
 
 
     private boolean queryRunning; // 是否查询正在待运行和运行的
