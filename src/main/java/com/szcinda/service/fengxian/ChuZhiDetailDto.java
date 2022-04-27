@@ -33,4 +33,7 @@ public class ChuZhiDetailDto implements Serializable {
     private String hangUpTime;//接通时间
     private int seconds;//接通时长
     private double cost;// 接通成本
+
+
+
 }

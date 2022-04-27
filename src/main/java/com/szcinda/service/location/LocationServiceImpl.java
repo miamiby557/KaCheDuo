@@ -91,6 +91,10 @@ public class LocationServiceImpl implements LocationService {
                 Predicate owner = criteriaBuilder.equal(root.get("owner"), params.getUserName());
                 predicates.add(owner);
             }
+            if (StringUtils.hasText(params.getUserCompany())) {
+                Predicate userCompany = criteriaBuilder.equal(root.get("userCompany"), params.getUserCompany());
+                predicates.add(userCompany);
+            }
             // 过滤出位置监控的帐号
             List<String> phones = robots.stream().filter(robot -> StringUtils.hasText(robot.getAccount2())).map(Robot::getAccount2).collect(Collectors.toList());
             Expression<String> exp = root.get("owner");

@@ -28,4 +28,6 @@ public interface RobotService {
     void startLocation(String id);
 
     void stopLocation(String id);
+
+    void batchRunOnceLocation();
 }

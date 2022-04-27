@@ -354,7 +354,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                 long minNumber = 15;
                 if (TypeStringUtils.robotType3.equals(task.getTaskType())) {
                     // 如果是位置监控，需要的时间长
-                    minNumber = 60;
+                    minNumber = 120;
                 }
                 if (minutes >= minNumber) {
                     taskIds.add(task.getId());

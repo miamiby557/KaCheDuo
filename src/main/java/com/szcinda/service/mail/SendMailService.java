@@ -218,7 +218,5 @@ public class SendMailService {
             mailSender.send(message);
         } catch (Exception ignored) {
         }
-
-
     }
 }

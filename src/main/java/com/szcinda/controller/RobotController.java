@@ -73,6 +73,12 @@ public class RobotController {
         return Result.success();
     }
 
+    @GetMapping("batchRunOnceLocation")
+    public Result<String> batchRunOnceLocation(){
+        robotService.batchRunOnceLocation();
+        return Result.success();
+    }
+
     // 获取10个可以运行监控的主账号
     @GetMapping("getMainAccount")
     public Result<List<RobotDto>> getMainAccount() {

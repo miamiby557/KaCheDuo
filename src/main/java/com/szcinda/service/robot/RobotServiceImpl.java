@@ -4,10 +4,9 @@ import com.szcinda.repository.Robot;
 import com.szcinda.repository.RobotRepository;
 import com.szcinda.repository.User;
 import com.szcinda.repository.UserRepository;
-import com.szcinda.service.PageResult;
-import com.szcinda.service.RobotAliveDto;
-import com.szcinda.service.ScheduleService;
-import com.szcinda.service.SnowFlakeFactory;
+import com.szcinda.service.*;
+import com.szcinda.service.robotTask.CreateRobotTaskDto;
+import com.szcinda.service.robotTask.RobotTaskService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +25,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import static com.szcinda.service.ScheduleService.robotSearchLocationList;
+
 @Service
 @Transactional
 public class RobotServiceImpl implements RobotService {
@@ -33,11 +34,13 @@ public class RobotServiceImpl implements RobotService {
     private final SnowFlakeFactory snowFlakeFactory;
     private final UserRepository userRepository;
     private final ScheduleService scheduleService;
+    private final RobotTaskService robotTaskService;
 
-    public RobotServiceImpl(RobotRepository robotRepository, UserRepository userRepository, ScheduleService scheduleService) {
+    public RobotServiceImpl(RobotRepository robotRepository, UserRepository userRepository, ScheduleService scheduleService, RobotTaskService robotTaskService) {
         this.robotRepository = robotRepository;
         this.userRepository = userRepository;
         this.scheduleService = scheduleService;
+        this.robotTaskService = robotTaskService;
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
 
@@ -395,5 +398,25 @@ public class RobotServiceImpl implements RobotService {
         Robot robot = robotRepository.findById(id);
         robot.setRunLocation(false);
         robotRepository.save(robot);
+    }
+
+    @Override
+    public void batchRunOnceLocation() {
+        List<Robot> robots = robotRepository.findByType(TypeStringUtils.robotType3);
+        // 清空历史任务
+        robotSearchLocationList.clear();
+        for (Robot robot : robots) {
+            if (robot.isRun()) {
+                //加到位置监控的列表
+                robotSearchLocationList.add(robot.getPhone());
+                // 创建一条位置监控的任务
+                CreateRobotTaskDto taskDto = new CreateRobotTaskDto();
+                taskDto.setTaskType(TypeStringUtils.robotType3);
+                taskDto.setUserName(robot.getPhone());
+                taskDto.setPwd(robot.getPwd());
+                taskDto.setCompany(robot.getCompany());
+                robotTaskService.create(taskDto);
+            }
+        }
     }
 }

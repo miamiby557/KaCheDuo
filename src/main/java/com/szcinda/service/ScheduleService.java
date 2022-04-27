@@ -83,7 +83,7 @@ public class ScheduleService {
         if (robots.size() > 0) {
             for (Robot robot : robots) {
                 if (robot.isRunLocation()) {
-                    //找处理、位置监控账号来处理位置监控的上传
+                    //找处理、位置监控账号来处理位置监控
                     robotSearchLocationList.add(robot.getPhone());
                     robotPwdMap.put(robot.getPhone(), robot.getPwd());
                     if (robot.isRun()) {
