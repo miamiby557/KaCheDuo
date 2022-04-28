@@ -75,7 +75,7 @@ public class ScheduleService {
     }
 
     // 每日0时、8时、16时循环一次
-    @Scheduled(cron = "0 0 0,8,16 * * ?")
+    @Scheduled(cron = "0 0 2,10,16 * * ?")
     public void run() throws Exception {
         // 清空历史任务
         robotSearchLocationList.clear();

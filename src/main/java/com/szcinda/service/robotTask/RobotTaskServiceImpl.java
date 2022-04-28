@@ -189,8 +189,6 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             fengXian.setChuLiType(TypeStringUtils.fxHandleStatus3);
             fengXianRepository.save(fengXian);
         }
-        // 从集合中删除正在运行的帐号
-//        workRobotRepository.deleteByUserName(task.getUserName());
     }
 
     @Override
@@ -209,8 +207,6 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             fengXian.setChuLiType(TypeStringUtils.fxHandleStatus2);
             fengXianRepository.save(fengXian);
         }
-        // 从集合中删除正在运行的帐号
-//        workRobotRepository.deleteByUserName(task.getUserName());
     }
 
 
@@ -408,6 +404,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         workRobotRepository.deleteByUserName(userName);
     }
 
+    // 对正在工作的账号加锁，避免同一账号重复登录
     @Override
     public void lock(String userName) {
         WorkRobot workRobot = workRobotRepository.findByUserName(userName);
