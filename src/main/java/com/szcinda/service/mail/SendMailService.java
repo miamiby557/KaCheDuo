@@ -111,7 +111,10 @@ public class SendMailService {
                     reportDto.setMessage("");
                     reportDtos.add(reportDto);
                     // 检查当天是否有疲劳驾驶或者超速的放在对应列表的下面
-                    List<FengXian> fengXians = fengXianList.stream().filter(fengXian -> fengXian.getVehicleNo().equals(vehicleNo) && (tired_status.equals(fengXian.getDangerType()) || over_status.equals(fengXian.getDangerType())))
+//                    List<FengXian> fengXians = fengXianList.stream().filter(fengXian -> fengXian.getVehicleNo().equals(vehicleNo) && (tired_status.equals(fengXian.getDangerType()) || over_status.equals(fengXian.getDangerType())))
+//                            .collect(Collectors.toList());
+                    // 不过滤疲劳驾驶或者超速
+                    List<FengXian> fengXians = fengXianList.stream().filter(fengXian -> fengXian.getVehicleNo().equals(vehicleNo))
                             .collect(Collectors.toList());
                     if (fengXians.size() > 0) {
                         for (FengXian fengXian : fengXians) {
