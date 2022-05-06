@@ -13,10 +13,7 @@ import javax.persistence.criteria.Predicate;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -44,6 +41,12 @@ public class ScheduleService {
 
     // 机器人在线
     public static ConcurrentHashMap<String, RobotAliveDto> robotAliveMap = new ConcurrentHashMap<>();
+
+    // ip 和机器人账号对应表
+    public static ConcurrentHashMap<String, List<String>> ipRobotList = new ConcurrentHashMap<>();
+
+    // 需要重启的IP机器
+    public static Set<String> ipList = new HashSet<>();
 
 
     // 需要运行处置的机器人列表
@@ -351,6 +354,8 @@ public class ScheduleService {
         StringBuilder stringBuilder = new StringBuilder("机器人下线情况：").append("\n");
         int index = 1;
         boolean hasDown = false;
+        // 需要重启的账号
+        List<String> needRebootAccountList = new ArrayList<>();
         for (Robot robot : robots) {
             if (!robot.isRun()) {
                 continue;
@@ -365,12 +370,14 @@ public class ScheduleService {
                             .append("(").append(robot.getCompany()).append(")").append("\n");
                     index++;
                     hasDown = true;
+                    needRebootAccountList.add(robot.getPhone());
                 }
             } else {
                 stringBuilder.append("第").append(index).append("个账号：").append(robot.getPhone())
                         .append("(").append(robot.getCompany()).append(")").append("\n");
                 index++;
                 hasDown = true;
+                needRebootAccountList.add(robot.getPhone());
             }
         }
         if (hasDown) {
@@ -396,6 +403,20 @@ public class ScheduleService {
                         screenShotTask.setContent(stringBuilder.toString());
                         screenShotTaskRepository.save(screenShotTask);
                     }
+                }
+            }
+            // 判断是哪一台电脑的账号，加入到需要重启的列表里面，如果没有找到，则全部机器重启
+            for (String account : needRebootAccountList) {
+                boolean hasInList = false;
+                for (Map.Entry<String, List<String>> entry : ipRobotList.entrySet()) {
+                    List<String> accountList = entry.getValue();
+                    if (accountList.contains(account)) {
+                        hasInList = true;
+                        ipList.add(entry.getKey());
+                    }
+                }
+                if (!hasInList) {
+                    ipList.addAll(ipRobotList.keySet());
                 }
             }
         }
@@ -435,5 +456,31 @@ public class ScheduleService {
             return true;
         }
         return false;
+    }
+
+    // 判断IP是否需要重启
+    public boolean needReboot(String ip) {
+        return ipList.contains(ip);
+    }
+
+    // 重启成功后剔除IP
+    public void rebootSuccess(String ip) {
+        ipList.remove(ip);
+    }
+
+    public void aliveIp(String ip, String phone) {
+        if (ipRobotList.containsKey(ip)) {
+            List<String> accountList = ipRobotList.get(ip);
+            if (accountList == null) {
+                accountList = new ArrayList<>();
+                ipRobotList.put(ip, accountList);
+            } else if (!accountList.contains(phone)) {
+                accountList.add(phone);
+            }
+        } else {
+            List<String> accountList = new ArrayList<>();
+            accountList.add(phone);
+            ipRobotList.put(ip, accountList);
+        }
     }
 }

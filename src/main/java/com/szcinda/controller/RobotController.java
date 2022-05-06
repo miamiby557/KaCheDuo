@@ -25,11 +25,36 @@ public class RobotController {
         return robotService.query(params);
     }
 
+
     @GetMapping("alive/{id}/{phone}")
     public Result<String> alive(@PathVariable String id, @PathVariable String phone) {
         scheduleService.alive(id, phone);
         return Result.success();
     }
+
+
+    @GetMapping("aliveIp/{id}/{phone}/{ip}")
+    public Result<String> aliveIp(@PathVariable String id, @PathVariable String phone, @PathVariable String ip) {
+        scheduleService.alive(id, phone);
+        scheduleService.aliveIp(ip, phone);
+        return Result.success();
+    }
+
+    @GetMapping("checkCanReboot/{ip}")
+    public Result<String> checkCanReboot(@PathVariable String ip) {
+        boolean needReboot = scheduleService.needReboot(ip);
+        if (needReboot) {
+            return Result.success();
+        }
+        return Result.fail("不需要重启");
+    }
+
+    @GetMapping("rebootSuccess/{ip}")
+    public Result<String> rebootSuccess(@PathVariable String ip) {
+        scheduleService.rebootSuccess(ip);
+        return Result.success();
+    }
+
 
     @PostMapping("create")
     public Result<String> create(@RequestBody CreateRobotDto robotDto) {
@@ -74,7 +99,7 @@ public class RobotController {
     }
 
     @GetMapping("batchRunOnceLocation")
-    public Result<String> batchRunOnceLocation(){
+    public Result<String> batchRunOnceLocation() {
         robotService.batchRunOnceLocation();
         return Result.success();
     }
