@@ -116,7 +116,7 @@ public class DriverServiceImpl implements DriverService {
             driver.setWxid(connectDto.getWxid());
             driver.setFriend(true);
             driverRepository.save(driver);
-        }else{
+        } else {
             driver = new Driver();
             driver.setId(snowFlakeFactory.nextId("DR"));
             driver.setVehicleNo(connectDto.getVehicleNo());
@@ -167,6 +167,49 @@ public class DriverServiceImpl implements DriverService {
             task.setVehicleNo(fengXian.getVehicleNo());
             task.setHappenTime(fengXian.getHappenTime());
             task.setFilePath(shotDto.getFilePath());
+            // 过滤出处置账号所属的主账号下的处理账号，需要判断处理账号是否启用
+            copyOnWriteRobots.stream().filter(item -> item.getPhone().equals(fengXian.getOwner()))
+                    .findFirst().flatMap(runRobot -> copyOnWriteRobots.stream().filter(item -> item.getId().equals(runRobot.getParentId()))
+                    .findFirst().flatMap(masterRobot -> copyOnWriteRobots.stream().filter(item -> StringUtils.hasText(item.getParentId()) && item.getParentId().equals(masterRobot.getId()))
+                            .findFirst())).ifPresent(chuLiRobot -> {
+                if (chuLiRobot.isRun()) {
+                    task.setUserName(chuLiRobot.getPhone());
+                    task.setPwd(chuLiRobot.getPwd());
+                    task.setCompany(chuLiRobot.getCompany());
+                }
+            });
+            if (StringUtils.hasText(task.getUserName())) {
+                robotTaskRepository.save(task);
+            }
+        }
+    }
+
+
+    /**
+     * APP上传截图后，为这个车牌还没有处理的处置列表都新建一条处理任务
+     *
+     * @param vehicleNo
+     * @param filePath
+     */
+    @Override
+    public void generateChuliMissionFromAppUpload(String vehicleNo, String filePath) {
+        // 创建处理任务，把历史关于这个车牌号码未处理的都生成一个处理任务
+        List<Robot> copyOnWriteRobots = scheduleService.queryAllRobotsFromCopyOnWriteRobots();
+        List<FengXian> fengXianList = fengXianRepository.findByVehicleNoAndChuLiType(vehicleNo, TypeStringUtils.fxHandleStatus1);
+        if (fengXianList == null || fengXianList.size() == 0) {
+            return;
+        }
+        for (FengXian fengXian : fengXianList) {
+            fengXian.setFilePath(filePath);
+            fengXianRepository.save(fengXian);
+            RobotTask task = new RobotTask();
+            task.setId(snowFlakeFactory.nextId("RT"));
+            task.setTaskStatus(TypeStringUtils.taskStatus1);
+            task.setTaskType(TypeStringUtils.robotType3);
+            task.setFxId(fengXian.getId());
+            task.setVehicleNo(fengXian.getVehicleNo());
+            task.setHappenTime(fengXian.getHappenTime());
+            task.setFilePath(filePath);
             // 过滤出处置账号所属的主账号下的处理账号，需要判断处理账号是否启用
             copyOnWriteRobots.stream().filter(item -> item.getPhone().equals(fengXian.getOwner()))
                     .findFirst().flatMap(runRobot -> copyOnWriteRobots.stream().filter(item -> item.getId().equals(runRobot.getParentId()))

@@ -7,4 +7,5 @@ import java.io.Serializable;
 @Data
 public class DownPrams implements Serializable {
     private String fileName;
+    private String vehicleNo;
 }

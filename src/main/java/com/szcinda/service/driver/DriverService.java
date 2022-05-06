@@ -16,6 +16,9 @@ public interface DriverService {
 
     void savePic(DriverScreenShotDto shotDto);
 
+    // APP接收到图片后生成处理任务
+    void generateChuliMissionFromAppUpload(String vehicleNo, String filePath);
+
     void confirm(String wechat);
 
     void update(DriverUpdateDto updateDto);
