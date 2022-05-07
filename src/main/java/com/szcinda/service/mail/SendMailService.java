@@ -113,38 +113,35 @@ public class SendMailService {
                     reportDto.setVehicleType("重型货车");
                     reportDto.setMessage("");
                     reportDtos.add(reportDto);
-                    // 检查当天是否有疲劳驾驶或者超速的放在对应列表的下面
-//                    List<FengXian> fengXians = fengXianList.stream().filter(fengXian -> fengXian.getVehicleNo().equals(vehicleNo) && (tired_status.equals(fengXian.getDangerType()) || over_status.equals(fengXian.getDangerType())))
-//                            .collect(Collectors.toList());
-                    // 不过滤疲劳驾驶或者超速
-                    List<FengXian> fengXians = fengXianList.stream().filter(fengXian -> fengXian.getVehicleNo().equals(vehicleNo))
-                            .collect(Collectors.toList());
-                    if (fengXians.size() > 0) {
-                        for (FengXian fengXian : fengXians) {
-                            reportDto = new ReportDto();
-                            reportDto.setVehicleNo(vehicleNo);
-                            reportDto.setLocation(location.getHappenPlace());
-                            reportDto.setCheckTime(checkTime);
-                            reportDto.setSpeed(location.getSpeed());
-                            reportDto.setVehicleType("重型货车");
-                            if (tired_status.equals(fengXian.getDangerType())) {
-                                reportDto.setMessage("疲劳报警");
-                                reportDto.setHandleResult("通知司机停车休息");
-                            } else if (over_status.equals(fengXian.getDangerType())) {
-                                reportDto.setMessage("超速报警");
-                                reportDto.setHandleResult("通知司机降低车速");
-                            } else {
-                                reportDto.setMessage("");
-                            }
-                            if (fengXian.getChuLiTime() != null) {
-                                try {
-                                    reportDto.setHandleText(fengXian.getChuLiTime().format(DateTimeFormatter.ofPattern("HH时mm分")) + "已下发语音信息通知");
-                                } catch (Exception exception) {
-                                    exception.printStackTrace();
-                                }
-                            }
-                            reportDtos.add(reportDto);
+                }
+                // 不过滤疲劳驾驶或者超速
+                List<FengXian> fengXians = fengXianList.stream().filter(fengXian -> fengXian.getVehicleNo().equals(vehicleNo))
+                        .collect(Collectors.toList());
+                if (fengXians.size() > 0) {
+                    for (FengXian fengXian : fengXians) {
+                        ReportDto reportDto = new ReportDto();
+                        reportDto.setVehicleNo(vehicleNo);
+                        reportDto.setLocation(fengXian.getHappenPlace());
+                        reportDto.setCheckTime(checkTime);
+                        reportDto.setSpeed(fengXian.getSpeed());
+                        reportDto.setVehicleType("重型货车");
+                        if (tired_status.equals(fengXian.getDangerType())) {
+                            reportDto.setMessage("疲劳报警");
+                            reportDto.setHandleResult("通知司机停车休息");
+                        } else if (over_status.equals(fengXian.getDangerType())) {
+                            reportDto.setMessage("超速报警");
+                            reportDto.setHandleResult("通知司机降低车速");
+                        } else {
+                            reportDto.setMessage(fengXian.getDangerType());
                         }
+                        if (fengXian.getChuLiTime() != null) {
+                            try {
+                                reportDto.setHandleText(fengXian.getChuLiTime().format(DateTimeFormatter.ofPattern("HH时mm分")) + "已下发语音信息通知");
+                            } catch (Exception exception) {
+                                exception.printStackTrace();
+                            }
+                        }
+                        reportDtos.add(reportDto);
                     }
                 }
             });
