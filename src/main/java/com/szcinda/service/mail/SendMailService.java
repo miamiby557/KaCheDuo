@@ -51,6 +51,10 @@ public class SendMailService {
     @Autowired
     private FengXianRepository fengXianRepository;
 
+    public void testSend() {
+        sendAttachmentMail("huangrensen@uniner.com", "报表", "报表测试", null);
+    }
+
 
     @Scheduled(cron = "0 0 8 * * ?")
     public void sendMail() throws Exception {
@@ -209,9 +213,7 @@ public class SendMailService {
 
 
     public void sendAttachmentMail(String to, String subject, String content, String filePath) {
-
         MimeMessage message = mailSender.createMimeMessage();
-
         MimeMessageHelper helper;
         try {
             helper = new MimeMessageHelper(message, true);
@@ -220,11 +222,14 @@ public class SendMailService {
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(content, true);
-            FileSystemResource file = new FileSystemResource(new File(filePath));
-            String fileName = file.getFilename();
-            helper.addAttachment(fileName, file);//添加附件，可多次调用该方法添加多个附件
+            if (filePath != null) {
+                FileSystemResource file = new FileSystemResource(new File(filePath));
+                String fileName = file.getFilename();
+                helper.addAttachment(fileName, file);//添加附件，可多次调用该方法添加多个附件
+            }
             mailSender.send(message);
-        } catch (Exception ignored) {
+        } catch (Exception exception) {
+            exception.printStackTrace();
         }
     }
 }

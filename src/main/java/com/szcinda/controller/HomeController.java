@@ -62,6 +62,16 @@ public class HomeController {
         return Result.success();
     }
 
+    @GetMapping("testSendMail2")
+    public Result<String> testSendMail2() {
+        try {
+            sendMailService.testSend();
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
+        return Result.success();
+    }
+
     @GetMapping("queryByAdmin")
     public Result<List<RobotGroupDto>> queryByAdmin() {
         return Result.success(robotService.group());
