@@ -133,7 +133,13 @@ public class SendMailService {
                             } else {
                                 reportDto.setMessage("");
                             }
-                            reportDto.setHandleText(fengXian.getChuLiTime().format(DateTimeFormatter.ofPattern("HH时mm分")) + "已下发语音信息通知");
+                            if (fengXian.getChuLiTime() != null) {
+                                try {
+                                    reportDto.setHandleText(fengXian.getChuLiTime().format(DateTimeFormatter.ofPattern("HH时mm分")) + "已下发语音信息通知");
+                                } catch (Exception exception) {
+                                    exception.printStackTrace();
+                                }
+                            }
                             reportDtos.add(reportDto);
                         }
                     }
@@ -187,7 +193,6 @@ public class SendMailService {
                     helper.setSubject(date + "-" + robot.getCompany() + "GPS监控表");
                     helper.setText("详情见附件", false);
                     FileSystemResource file = new FileSystemResource(saveFile);
-//                    String fileName = saveFile.getName();
                     helper.addAttachment("GPS监控表.xls", file);//添加附件，可多次调用该方法添加多个附件
                     mailSender.send(message);
                 } catch (MessagingException e) {
