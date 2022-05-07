@@ -100,7 +100,6 @@ public class SendMailService {
             List<String> userNameList = subRobotList.stream().map(Robot::getPhone).collect(Collectors.toList());
             // 按照车牌分组
             Map<String, List<Location>> locationMap = locationList.stream().filter(location -> userNameList.contains(location.getOwner())).collect(Collectors.groupingBy(Location::getVehicleNo));
-            // 一个车牌会有多条记录 如果是多条，则取其中一条速度不为0的
             List<ReportDto> reportDtos = new ArrayList<>();
             locationMap.forEach((vehicleNo, dataList) -> {
                 for (Location location : dataList) {
