@@ -40,18 +40,18 @@ public class RobotController {
         return Result.success();
     }
 
-    @GetMapping("checkCanReboot/{ip}")
-    public Result<String> checkCanReboot(@PathVariable String ip) {
-        boolean needReboot = scheduleService.needReboot(ip);
+    @PostMapping("checkCanReboot")
+    public Result<String> checkCanReboot(@RequestBody IpRobotDto ip) {
+        boolean needReboot = scheduleService.needReboot(ip.getIp());
         if (needReboot) {
             return Result.success();
         }
         return Result.fail("不需要重启");
     }
 
-    @GetMapping("rebootSuccess/{ip}")
-    public Result<String> rebootSuccess(@PathVariable String ip) {
-        scheduleService.rebootSuccess(ip);
+    @PostMapping("rebootSuccess")
+    public Result<String> rebootSuccess(@PathVariable IpRobotDto ip) {
+        scheduleService.rebootSuccess(ip.getIp());
         return Result.success();
     }
 
