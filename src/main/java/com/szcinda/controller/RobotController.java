@@ -6,6 +6,7 @@ import com.szcinda.service.robot.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("robot")
@@ -33,10 +34,10 @@ public class RobotController {
     }
 
 
-    @GetMapping("aliveIp/{id}/{phone}/{ip}")
-    public Result<String> aliveIp(@PathVariable String id, @PathVariable String phone, @PathVariable String ip) {
-        scheduleService.alive(id, phone);
-        scheduleService.aliveIp(ip, phone);
+    @PostMapping("aliveIp")
+    public Result<String> aliveIp(@RequestBody IpRobotDto ipRobotDto) {
+        scheduleService.alive(ipRobotDto.getId(), ipRobotDto.getAccount());
+        scheduleService.aliveIp(ipRobotDto.getIp(), ipRobotDto.getAccount());
         return Result.success();
     }
 
@@ -47,6 +48,12 @@ public class RobotController {
             return Result.success();
         }
         return Result.fail("不需要重启");
+    }
+
+    // 获取需要重启的IP列表
+    @GetMapping("getNeedRebootList")
+    public Result<Set<String>> getNeedRebootList() {
+        return Result.success(ScheduleService.ipList);
     }
 
     @PostMapping("rebootSuccess")

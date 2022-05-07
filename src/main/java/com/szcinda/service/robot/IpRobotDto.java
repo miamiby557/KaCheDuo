@@ -8,4 +8,7 @@ import java.io.Serializable;
 public class IpRobotDto implements Serializable {
     private String ip;
     private String account;
+
+    private String id;
+    private String phone;
 }

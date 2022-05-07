@@ -468,18 +468,18 @@ public class ScheduleService {
         ipList.remove(ip);
     }
 
-    public void aliveIp(String ip, String phone) {
+    public void aliveIp(String ip, String account) {
         if (ipRobotList.containsKey(ip)) {
             List<String> accountList = ipRobotList.get(ip);
             if (accountList == null) {
                 accountList = new ArrayList<>();
                 ipRobotList.put(ip, accountList);
-            } else if (!accountList.contains(phone)) {
-                accountList.add(phone);
+            } else if (!accountList.contains(account)) {
+                accountList.add(account);
             }
         } else {
             List<String> accountList = new ArrayList<>();
-            accountList.add(phone);
+            accountList.add(account);
             ipRobotList.put(ip, accountList);
         }
     }
