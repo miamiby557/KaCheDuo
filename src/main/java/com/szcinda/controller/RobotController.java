@@ -50,7 +50,7 @@ public class RobotController {
     }
 
     @PostMapping("rebootSuccess")
-    public Result<String> rebootSuccess(@PathVariable IpRobotDto ip) {
+    public Result<String> rebootSuccess(@RequestBody IpRobotDto ip) {
         scheduleService.rebootSuccess(ip.getIp());
         return Result.success();
     }
