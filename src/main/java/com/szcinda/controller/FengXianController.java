@@ -4,6 +4,8 @@ import com.szcinda.service.PageResult;
 import com.szcinda.service.ScheduleService;
 import com.szcinda.service.fengxian.*;
 import com.szcinda.service.robotTask.RobotTaskServiceImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.List;
 @RequestMapping("fx")
 public class FengXianController {
 
+    private final static Logger logger = LoggerFactory.getLogger(FengXianController.class);
 
     private final FengXianService fengXianService;
     private final ScheduleService scheduleService;
@@ -23,6 +26,7 @@ public class FengXianController {
 
     @PostMapping("apiCreate")
     public Result<String> apiCreate(@RequestBody List<CreateFengXianDto> dtos) {
+        logger.info(String.format("批量创建风险处置：%s", dtos.toString()));
         fengXianService.batchCreate(dtos);
         return Result.success();
     }
@@ -30,6 +34,7 @@ public class FengXianController {
     // 批量插入之前的未处理的数据
     @PostMapping("batchCreateHandleList")
     public Result<String> batchCreateHandleList(@RequestBody List<CreateFengXianDto> dtos) {
+        logger.info("批量插入之前的未处理的数据");
         fengXianService.batchCreateHandle(dtos);
         return Result.success();
     }
@@ -42,6 +47,7 @@ public class FengXianController {
 
     @PostMapping("chuZhi")
     public Result<String> chuZhi(@RequestBody ChuZhiDto dto) {
+        logger.info(String.format("机器人上传处置：%s", dto.toString()));
         fengXianService.chuZhi(dto);
         return Result.success();
     }

@@ -90,6 +90,12 @@
             <artifactId>jxls-core</artifactId>
             <version>1.0.3</version>
         </dependency>
+        <!--配置logback日志-->
+        <!--<dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.3</version>
+        </dependency>-->
     </dependencies>
 
     <build>
