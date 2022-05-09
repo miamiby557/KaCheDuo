@@ -181,6 +181,10 @@ public class SendMailService {
             if (!saveFile.exists()) {
                 continue;
             }
+            String mailText = "详情见附件\n";
+            if (reportDtos.size() == 0) {
+                mailText += "<p><span style=\"font-size: 36px; color: rgb(255, 0, 0);\">请注意：GPS监控没有数据！</span><span style=\"font-size: 36px; color: rgb(255, 0, 0);\"></span></p>";
+            }
             // 发送邮件
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper;
@@ -191,11 +195,11 @@ public class SendMailService {
                     helper.setFrom(from);
                     helper.setTo(em.trim());
                     helper.setSubject(date + "-" + robot.getCompany() + "GPS监控表");
-                    helper.setText("详情见附件", false);
+                    helper.setText(mailText, true);
                     FileSystemResource file = new FileSystemResource(saveFile);
                     helper.addAttachment("GPS监控表.xls", file);//添加附件，可多次调用该方法添加多个附件
                     mailSender.send(message);
-                } catch (MessagingException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }

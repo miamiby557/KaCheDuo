@@ -56,6 +56,13 @@ public class RobotController {
         return Result.success(ScheduleService.ipList);
     }
 
+    // 手动重启
+    @PostMapping("manualReboot")
+    public Result<String> manualReboot(@RequestBody IpRobotDto ip){
+        ScheduleService.ipList.add(ip.getIp());
+        return Result.success();
+    }
+
     @PostMapping("rebootSuccess")
     public Result<String> rebootSuccess(@RequestBody IpRobotDto ip) {
         scheduleService.rebootSuccess(ip.getIp());
