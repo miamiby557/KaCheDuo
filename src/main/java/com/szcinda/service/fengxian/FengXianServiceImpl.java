@@ -68,6 +68,27 @@ public class FengXianServiceImpl implements FengXianService {
             BeanUtils.copyProperties(dto, fengXian);
             fengXian.setId(snowFlakeFactory.nextId("FX"));
             fengXianRepository.save(fengXian);
+            // 判断是否有关于生理疲劳报警 超速报警 需要打电话通知司机
+            CallParams callParams = null;
+            if (TypeStringUtils.tired_status.equals(fengXian.getDangerType())) {
+                Driver driver = driverRepository.findByVehicleNo(fengXian.getVehicleNo());
+                if (driver != null) {
+                    callParams = new CallParams();
+                    callParams.setPhone(driver.getPhone());
+                    callParams.setTemplateId(tiredId);
+                }
+            } else if (TypeStringUtils.over_status.equals(fengXian.getDangerType()) && over89(fengXian.getSpeed())) { // 超速，并且速度大于89每小时才电话通知
+                Driver driver = driverRepository.findByVehicleNo(fengXian.getVehicleNo());
+                if (driver != null) {
+                    callParams = new CallParams();
+                    callParams.setPhone(driver.getPhone());
+                    callParams.setTemplateId(overSpeedId);
+                }
+            }
+            if (callParams != null) {
+                callParams.setFxId(fengXian.getId());
+                callService.call(callParams);
+            }
         }
         return fengXian;
     }
@@ -99,7 +120,7 @@ public class FengXianServiceImpl implements FengXianService {
                     callParams = new CallParams();
                     callParams.setPhone(driver.getPhone());
                     callParams.setTemplateId(tiredId);
-                } else if (TypeStringUtils.over_status.equals(fengXian.getDangerType())) {
+                } else if (TypeStringUtils.over_status.equals(fengXian.getDangerType()) && over89(fengXian.getSpeed())) { // 超速，并且速度大于89每小时才电话通知
                     callParams = new CallParams();
                     callParams.setPhone(driver.getPhone());
                     callParams.setTemplateId(overSpeedId);
@@ -110,6 +131,14 @@ public class FengXianServiceImpl implements FengXianService {
                 }
             }
         }
+    }
+
+    private boolean over89(String speed) {
+        if (speed == null) {
+            return false;
+        }
+        speed = speed.toLowerCase().replace("km/h", "").trim();
+        return Float.parseFloat(speed) > 89;
     }
 
 
