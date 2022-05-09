@@ -133,6 +133,14 @@ public class SendMailService {
                             reportDto.setHandleResult("通知司机降低车速");
                         } else {
                             reportDto.setMessage(fengXian.getDangerType());
+                            reportDto.setHandleResult("通知司机注意安全驾驶");
+//                            if("接打手机报警".equals(fengXian.getDangerType())){
+//                                reportDto.setHandleResult("通知司机注意安全驾驶");
+//                            }else if("玩手机报警".equals(fengXian.getDangerType())){
+//                                reportDto.setHandleResult("通知司机注意安全驾驶");
+//                            }else if("抽烟报警".equals(fengXian.getDangerType())){
+//                                reportDto.setHandleResult("通知司机注意安全驾驶");
+//                            }
                         }
                         if (fengXian.getChuLiTime() != null) {
                             try {
