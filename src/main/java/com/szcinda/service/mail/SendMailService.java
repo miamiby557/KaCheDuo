@@ -1,6 +1,8 @@
 package com.szcinda.service.mail;
 
 import com.szcinda.repository.*;
+import com.szcinda.service.SnowFlakeFactory;
+import com.szcinda.service.TypeStringUtils;
 import com.szcinda.service.report.ReportDto;
 import net.sf.jxls.transformer.XLSTransformer;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -36,6 +38,10 @@ public class SendMailService {
     @Value("${spring.mail.username}")
     private String from;
 
+    // 管理员微信号
+    @Value("${admin.user.wechat}")
+    private String wechats;
+
     @Autowired
     //用于发送文件
     private JavaMailSender mailSender;
@@ -45,6 +51,11 @@ public class SendMailService {
 
     @Autowired
     private RobotRepository robotRepository;
+
+    @Autowired
+    private ScreenShotTaskRepository screenShotTaskRepository;
+
+    private final SnowFlakeFactory snowFlakeFactory = SnowFlakeFactory.getInstance();
 
     @Autowired
     private FengXianRepository fengXianRepository;
@@ -57,9 +68,10 @@ public class SendMailService {
     public void sendOnceCompanyEmail(String id) {
         // 主账号
         Robot robot = robotRepository.findById(id);
+        // 没有成功发送邮件的列表
+        List<String> emailList = new ArrayList<>();
         // 子账号
         List<Robot> robots = robotRepository.findByParentId(robot.getId());
-        String checkTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH时mm分"));
         // 先查出所有昨天的数据
         LocalDate lastDate = LocalDate.now().minusDays(1);
         Specification<Location> specification = ((root, criteriaQuery, criteriaBuilder) -> {
@@ -214,14 +226,20 @@ public class SendMailService {
                 helper.setText(mailText, true);
                 FileSystemResource file = new FileSystemResource(saveFile);
                 helper.addAttachment("GPS监控表.xls", file);//添加附件，可多次调用该方法添加多个附件
+                boolean hasSend = false;
                 for (int i = 0; i < 3; i++) {
                     try {
                         mailSender.send(message);
+                        hasSend = true;
                         break;
                     } catch (Exception exception) {
                         exception.printStackTrace();
                         Thread.sleep(2000);
                     }
+                }
+                if (!hasSend) {
+                    // 没发送成功，就加入到未发送成功的列表
+                    emailList.add(robot.getCompany() + "," + em);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -231,6 +249,37 @@ public class SendMailService {
         try {
             saveFile.delete();
         } catch (Exception ignored) {
+        }
+        if (emailList.size() > 0) {
+            // 需要创建一条微信发消息任务通知管理员
+            if (StringUtils.hasText(wechats)) {
+                StringBuilder stringBuilder = new StringBuilder();
+                stringBuilder.append("以下邮箱没有成功发送邮件").append("\n");
+                for (int i = 0; i < emailList.size(); i++) {
+                    stringBuilder.append(i + 1).append(",").append(emailList.get(i)).append("\n");
+                }
+                String[] strings = wechats.split(",");
+                for (String wechat : strings) {
+                    // 判断是否存在报警记录，存在则更新
+                    List<ScreenShotTask> screenShotTasks = screenShotTaskRepository.findByWechatAndStatus(wechat, TypeStringUtils.wechat_status5);
+                    if (screenShotTasks.size() > 0) {
+                        ScreenShotTask screenShotTask = screenShotTasks.get(0);
+                        screenShotTask.setContent(stringBuilder.toString());
+                        screenShotTaskRepository.save(screenShotTask);
+                    } else {
+                        ScreenShotTask screenShotTask = new ScreenShotTask();
+                        screenShotTask.setId(snowFlakeFactory.nextId("ST"));
+                        screenShotTask.setWechat(wechat);
+                        screenShotTask.setVehicleNo("");
+                        screenShotTask.setOwnerWechat("anqin1588");
+                        screenShotTask.setWxid(wechat);
+                        screenShotTask.setOwner("");
+                        screenShotTask.setStatus(TypeStringUtils.wechat_status5);
+                        screenShotTask.setContent(stringBuilder.toString());
+                        screenShotTaskRepository.save(screenShotTask);
+                    }
+                }
+            }
         }
     }
 
@@ -252,7 +301,8 @@ public class SendMailService {
     @Scheduled(cron = "0 0 8 * * ?")
     public void sendMail() throws Exception {
         List<Robot> robots = robotRepository.findAll();
-        String checkTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH时mm分"));
+        // 发送失败的邮件
+        List<String> emailList = new ArrayList<>();
         // 先查出所有昨天的数据
         LocalDate lastDate = LocalDate.now().minusDays(1);
         Specification<Location> specification = ((root, criteriaQuery, criteriaBuilder) -> {
@@ -402,14 +452,20 @@ public class SendMailService {
                     helper.setText(mailText, true);
                     FileSystemResource file = new FileSystemResource(saveFile);
                     helper.addAttachment("GPS监控表.xls", file);//添加附件，可多次调用该方法添加多个附件
+                    boolean hasSend = false;
                     for (int i = 0; i < 3; i++) {
                         try {
                             mailSender.send(message);
+                            hasSend = true;
                             break;
                         } catch (Exception exception) {
                             exception.printStackTrace();
                             Thread.sleep(2000);
                         }
+                    }
+                    if (!hasSend) {
+                        // 没发送成功，就加入到未发送成功的列表
+                        emailList.add(robot.getCompany() + "," + em);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -419,6 +475,37 @@ public class SendMailService {
             try {
                 saveFile.delete();
             } catch (Exception ignored) {
+            }
+        }
+        if (emailList.size() > 0) {
+            // 需要创建一条微信发消息任务通知管理员
+            if (StringUtils.hasText(wechats)) {
+                StringBuilder stringBuilder = new StringBuilder();
+                stringBuilder.append("以下邮箱没有成功发送邮件").append("\n");
+                for (int i = 0; i < emailList.size(); i++) {
+                    stringBuilder.append(i + 1).append(",").append(emailList.get(i)).append("\n");
+                }
+                String[] strings = wechats.split(",");
+                for (String wechat : strings) {
+                    // 判断是否存在报警记录，存在则更新
+                    List<ScreenShotTask> screenShotTasks = screenShotTaskRepository.findByWechatAndStatus(wechat, TypeStringUtils.wechat_status5);
+                    if (screenShotTasks.size() > 0) {
+                        ScreenShotTask screenShotTask = screenShotTasks.get(0);
+                        screenShotTask.setContent(stringBuilder.toString());
+                        screenShotTaskRepository.save(screenShotTask);
+                    } else {
+                        ScreenShotTask screenShotTask = new ScreenShotTask();
+                        screenShotTask.setId(snowFlakeFactory.nextId("ST"));
+                        screenShotTask.setWechat(wechat);
+                        screenShotTask.setVehicleNo("");
+                        screenShotTask.setOwnerWechat("anqin1588");
+                        screenShotTask.setWxid(wechat);
+                        screenShotTask.setOwner("");
+                        screenShotTask.setStatus(TypeStringUtils.wechat_status5);
+                        screenShotTask.setContent(stringBuilder.toString());
+                        screenShotTaskRepository.save(screenShotTask);
+                    }
+                }
             }
         }
     }

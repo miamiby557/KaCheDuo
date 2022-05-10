@@ -337,10 +337,6 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             List<String> taskIds = new ArrayList<>();
             LocalDateTime now = LocalDateTime.now();
             for (RobotTask task : tasks) {
-                if (TypeStringUtils.robotType3.equals(task.getTaskType())) {
-                    // 位置监控和处理类型不删除
-                    continue;
-                }
                 LocalDateTime time = task.getRunTime(); // 开始运行时间
                 if (time == null) {
                     time = task.getCreateTime();
@@ -349,8 +345,12 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                 long minutes = Math.abs(duration.toMinutes());//相差的分钟数
                 long minNumber = 15;
                 if (TypeStringUtils.robotType3.equals(task.getTaskType())) {
-                    // 如果是位置监控，需要的时间长
-                    minNumber = 120;
+                    // 如果100分钟内还不处理完位置监控，则重新处理
+                    if (minutes > 100) {
+                        // 不删除位置监控，直接重新启动任务
+                        task.setTaskStatus(TypeStringUtils.taskStatus1);
+                        robotTaskRepository.save(task);
+                    }
                 }
                 if (minutes >= minNumber) {
                     taskIds.add(task.getId());
