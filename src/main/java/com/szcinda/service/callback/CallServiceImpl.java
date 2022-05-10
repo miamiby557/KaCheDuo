@@ -4,7 +4,10 @@ import com.szcinda.controller.Result;
 import com.szcinda.repository.*;
 import com.szcinda.service.SnowFlakeFactory;
 import com.szcinda.service.TypeStringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -12,10 +15,16 @@ import org.springframework.util.StringUtils;
 import java.time.*;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Transactional
 public class CallServiceImpl implements CallService {
+
+    private final static Logger logger = LoggerFactory.getLogger(CallService.class);
+
+    //记录上次拨打的时间，在30分钟内不打
+    private static final ConcurrentHashMap<String, LocalDateTime> callMap = new ConcurrentHashMap<>();
 
     private final PhoneBillRepository phoneBillRepository;
     private final SnowFlakeFactory snowFlakeFactory;
@@ -35,6 +44,17 @@ public class CallServiceImpl implements CallService {
     @Value("${charge.msg.id}")
     private String chargeMsgId;
 
+
+    // 每天凌晨1点清空一下，避免内存过大
+    @Scheduled(cron = "0 0 1 * * ?")
+    public void deleteCallMap() {
+        try {
+            callMap.clear();
+        } catch (Exception ignored) {
+
+        }
+    }
+
     @Override
     public void call(CallParams params) {
         PhoneBill phoneBill = new PhoneBill();
@@ -47,16 +67,41 @@ public class CallServiceImpl implements CallService {
         phoneBill.setCompany(params.getCompany());
 
         params.setDataId(phoneBill.getId());
-        Result<String> result = VoiceApi.sendVoiceNotification(params);
-        phoneBill.setCalled(params.getPhone());
-        if (params.getParams() != null) {
-            phoneBill.setParams(String.join(",", params.getParams()));
-        }
-        phoneBill.setTemplateId(params.getTemplateId());
-        if (result.isSuccess()) {
-            phoneBill.setStatus(TypeStringUtils.phone_status2);
+        logger.info("判断当前手机号上次拨打时间是否超过30分钟");
+        boolean canCall = true;
+        LocalDateTime now = LocalDateTime.now();
+        if (callMap.containsKey(params.getPhone())) {
+            logger.info("上次拨打时间：" + callMap.get(params.getPhone()));
+            LocalDateTime lastCall = callMap.get(params.getPhone());
+            Duration duration = Duration.between(now, lastCall);
+            long minutes = Math.abs(duration.toMinutes());//相差的分钟数
+            if (minutes <= 30) {
+                canCall = false;
+            }
         } else {
-            phoneBill.setStatus(TypeStringUtils.phone_status1);
+            logger.info("没有上次拨打记录，可以拨打电话");
+        }
+        if (!canCall) {
+            logger.info("30分钟内不允许拨打电话");
+            phoneBill.setMessage("30分钟内不允许拨打电话");
+        } else {
+            logger.info(String.format("正在外呼：【%s】", params.toString()));
+            Result<String> result = VoiceApi.sendVoiceNotification(params);
+            logger.info(String.format("外呼返回结果：【%s】", result.toString()));
+            phoneBill.setCalled(params.getPhone());
+            if (params.getParams() != null) {
+                phoneBill.setParams(String.join(",", params.getParams()));
+            }
+            phoneBill.setTemplateId(params.getTemplateId());
+            if (result.isSuccess()) {
+                phoneBill.setStatus(TypeStringUtils.phone_status2);
+                phoneBill.setMessage("成功调用外呼接口");
+                // 记录当前拨打时间
+                callMap.put(params.getPhone(), LocalDateTime.now());
+            } else {
+                phoneBill.setStatus(TypeStringUtils.phone_status1);
+                phoneBill.setMessage(result.getMessage());
+            }
         }
         phoneBillRepository.save(phoneBill);
     }

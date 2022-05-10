@@ -75,7 +75,7 @@ public class VoiceApi {
                 }
             }
         }
-        return Result.fail("通话失败");
+        return Result.fail("调用外呼接口失败");
     }
 
 

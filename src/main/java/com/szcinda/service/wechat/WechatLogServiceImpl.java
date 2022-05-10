@@ -34,6 +34,9 @@ public class WechatLogServiceImpl implements WechatLogService {
         WechatLog wechatLog = new WechatLog();
         BeanUtils.copyProperties(createDto, wechatLog);
         wechatLog.setId(snowFlakeFactory.nextId("WL"));
+        if (wechatLog.getContent() != null && wechatLog.getContent().length() > 2000) {
+            wechatLog.setContent(wechatLog.getContent().substring(0, 2000));
+        }
         wechatLogRepository.save(wechatLog);
     }
 
