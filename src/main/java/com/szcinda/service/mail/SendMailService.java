@@ -55,7 +55,7 @@ public class SendMailService {
     }
 
     // 发送一次公司的邮件
-    public void sendOnceCompanyEmail(String id){
+    public void sendOnceCompanyEmail(String id) {
         // 主账号
         Robot robot = robotRepository.findById(id);
         // 子账号
@@ -78,6 +78,7 @@ public class SendMailService {
         }
         // 取出子账号
         List<String> accountList = robots.stream().filter(robot1 -> robot1.getParentId() != null && robot1.getParentId().equals(robot.getId())).map(Robot::getPhone).collect(Collectors.toList());
+        accountList.add(robot.getPhone());
         // 取出关于这个账号的所有处置列表
         Specification<FengXian> specification2 = ((root, criteriaQuery, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -257,6 +258,7 @@ public class SendMailService {
             }
             // 取出子账号
             List<String> accountList = robots.stream().filter(robot1 -> robot1.getParentId() != null && robot1.getParentId().equals(robot.getId())).map(Robot::getPhone).collect(Collectors.toList());
+            accountList.add(robot.getPhone());
             // 取出关于这个账号的所有处置列表
             Specification<FengXian> specification2 = ((root, criteriaQuery, criteriaBuilder) -> {
                 List<Predicate> predicates = new ArrayList<>();

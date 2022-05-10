@@ -34,7 +34,7 @@ public class VoiceApi {
         try {
 //            sendVoiceCaptcha();
             CallParams callParams = new CallParams();
-            callParams.setPhone("13427990185");
+            callParams.setPhone("13112274760");
             callParams.setDataId("test");
             callParams.setTemplateId("27667");
             Result<String> result = sendVoiceNotification(callParams);

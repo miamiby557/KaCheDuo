@@ -62,6 +62,7 @@ public class FengXianServiceImpl implements FengXianService {
 
     @Override
     public FengXian create(CreateFengXianDto dto) {
+        // 不允许同一时间同一车牌新建风险
         FengXian fengXian = fengXianRepository.findByVehicleNoAndHappenTime(dto.getVehicleNo(), dto.getHappenTime());
         if (fengXian == null) {
             fengXian = new FengXian();
