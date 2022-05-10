@@ -13,4 +13,8 @@ public class BillQuery extends PageParams {
     private String status;
     private LocalDate callTimeStart;
     private LocalDate callTimeEnd;
+
+    private String vehicleNo;
+    private String account;
+    private String company;
 }
