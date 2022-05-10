@@ -419,4 +419,24 @@ public class RobotServiceImpl implements RobotService {
             }
         }
     }
+
+    @Override
+    public void runOnceLocation(String id) {
+        Robot robot = robotRepository.findById(id);
+        List<Robot> robots = robotRepository.findByParentId(robot.getId());
+        robots.stream().filter(r -> TypeStringUtils.robotType3.equals(r.getType())).findFirst()
+                .ifPresent(robot1 -> {
+                    if (robot1.isRun()) {
+                        // 清空历史任务
+                        robotSearchLocationList.remove(robot1.getPhone());
+                        // 创建一条位置监控的任务
+                        CreateRobotTaskDto taskDto = new CreateRobotTaskDto();
+                        taskDto.setTaskType(TypeStringUtils.robotType3);
+                        taskDto.setUserName(robot1.getPhone());
+                        taskDto.setPwd(robot1.getPwd());
+                        taskDto.setCompany(robot1.getCompany());
+                        robotTaskService.create(taskDto);
+                    }
+                });
+    }
 }

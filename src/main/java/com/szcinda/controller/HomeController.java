@@ -62,6 +62,16 @@ public class HomeController {
         return Result.success();
     }
 
+    @GetMapping("sendMailOnceCompany/{id}")
+    public Result<String> sendMailOnceCompany(@PathVariable String id) {
+        try {
+            sendMailService.sendOnceCompanyEmail(id);
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
+        return Result.success();
+    }
+
     @GetMapping("testSendMail2")
     public Result<String> testSendMail2() {
         try {

@@ -132,6 +132,13 @@ public class RobotController {
         return Result.success();
     }
 
+    @GetMapping("sendOneCompanyEmail/{id}")
+    public Result<String> sendOneCompanyEmail(@PathVariable String id) {
+        logger.info(String.format("运行一次发邮件,%s", id));
+        robotService.runOnceLocation(id);
+        return Result.success();
+    }
+
     // 获取10个可以运行监控的主账号
     @GetMapping("getMainAccount")
     public Result<List<RobotDto>> getMainAccount() {

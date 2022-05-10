@@ -34,7 +34,7 @@ public class VoiceApi {
         try {
 //            sendVoiceCaptcha();
             CallParams callParams = new CallParams();
-            callParams.setPhone("13427990185");
+            callParams.setPhone("13537228132");
             callParams.setDataId("test");
             callParams.setTemplateId("27667");
             Result<String> result = sendVoiceNotification(callParams);
@@ -61,8 +61,8 @@ public class VoiceApi {
             output.close();
             printResponse(conn);
             return Result.success();
-        } catch (Exception ignored) {
-
+        } catch (Exception exception) {
+            exception.printStackTrace();
         } finally {
             if (conn != null) {
                 conn.disconnect();
