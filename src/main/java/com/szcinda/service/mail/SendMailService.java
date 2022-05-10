@@ -27,8 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.szcinda.service.TypeStringUtils.over_status;
-import static com.szcinda.service.TypeStringUtils.tired_status;
+import static com.szcinda.service.TypeStringUtils.*;
 
 @Component
 public class SendMailService {
@@ -121,39 +120,37 @@ public class SendMailService {
                     ReportDto reportDto = new ReportDto();
                     reportDto.setVehicleNo(vehicleNo);
                     reportDto.setLocation(fengXian.getHappenPlace());
-                    reportDto.setCheckTime(checkTime);
+                    reportDto.setCheckTime(formatCallTime(fengXian.getHappenTime()));
                     reportDto.setSpeed(fengXian.getSpeed());
                     reportDto.setVehicleType("重型货车");
-                    if (tired_status.equals(fengXian.getDangerType()) && StringUtils.hasText(fengXian.getCallTime())) {
-                        reportDto.setMessage("疲劳报警");
-                        reportDto.setHandleResult("通知司机停车休息");
-                        // 格式话时间
-                        reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
-                    } else if (over_status.equals(fengXian.getDangerType()) && StringUtils.hasText(fengXian.getCallTime())) {
-                        reportDto.setMessage("超速报警");
-                        reportDto.setHandleResult("通知司机降低车速");
-                        // 格式话时间
-                        reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
+                    if (tired_status.equals(fengXian.getDangerType())) {
+                        if (StringUtils.hasText(fengXian.getCallTime())) {
+                            reportDto.setMessage(tired_status);
+                            reportDto.setHandleResult(messageStop);
+                            // 格式话时间
+                            reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
+                            reportDtos.add(reportDto);
+                        }
+                    } else if (over_status.equals(fengXian.getDangerType())) {
+                        if (StringUtils.hasText(fengXian.getCallTime())) {
+                            reportDto.setMessage(over_status);
+                            reportDto.setHandleResult(messageSlow);
+                            // 格式话时间
+                            reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
+                            reportDtos.add(reportDto);
+                        }
                     } else {
                         reportDto.setMessage(fengXian.getDangerType());
-                        reportDto.setHandleResult("通知司机注意安全驾驶");
-//                            if("接打手机报警".equals(fengXian.getDangerType())){
-//                                reportDto.setHandleResult("通知司机注意安全驾驶");
-//                            }else if("玩手机报警".equals(fengXian.getDangerType())){
-//                                reportDto.setHandleResult("通知司机注意安全驾驶");
-//                            }else if("抽烟报警".equals(fengXian.getDangerType())){
-//                                reportDto.setHandleResult("通知司机注意安全驾驶");
-//                            }
-                        if (fengXian.getChuLiTime() != null) {
+                        reportDto.setHandleResult(messageSafe);
+                        if (fengXian.getDisposeTime() != null) {
                             try {
-                                reportDto.setHandleText(fengXian.getChuLiTime().format(DateTimeFormatter.ofPattern("HH时mm分")) + "已下发语音信息通知");
+                                reportDto.setHandleText(fengXian.getDisposeTime().format(DateTimeFormatter.ofPattern("HH时mm分")) + "已下发语音信息通知");
                             } catch (Exception exception) {
                                 exception.printStackTrace();
                             }
                         }
+                        reportDtos.add(reportDto);
                     }
-
-                    reportDtos.add(reportDto);
                 }
             }
         });
@@ -320,38 +317,37 @@ public class SendMailService {
                         ReportDto reportDto = new ReportDto();
                         reportDto.setVehicleNo(vehicleNo);
                         reportDto.setLocation(fengXian.getHappenPlace());
-                        reportDto.setCheckTime(checkTime);
+                        reportDto.setCheckTime(formatCallTime(fengXian.getHappenTime()));
                         reportDto.setSpeed(fengXian.getSpeed());
                         reportDto.setVehicleType("重型货车");
-                        if (tired_status.equals(fengXian.getDangerType()) && StringUtils.hasText(fengXian.getCallTime())) {
-                            reportDto.setMessage("疲劳报警");
-                            reportDto.setHandleResult("通知司机停车休息");
-                            // 格式话时间
-                            reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
-                        } else if (over_status.equals(fengXian.getDangerType()) && StringUtils.hasText(fengXian.getCallTime())) {
-                            reportDto.setMessage("超速报警");
-                            reportDto.setHandleResult("通知司机降低车速");
-                            // 格式话时间
-                            reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
+                        if (tired_status.equals(fengXian.getDangerType())) {
+                            if (StringUtils.hasText(fengXian.getCallTime())) {
+                                reportDto.setMessage(tired_status);
+                                reportDto.setHandleResult(messageStop);
+                                // 格式话时间
+                                reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
+                                reportDtos.add(reportDto);
+                            }
+                        } else if (over_status.equals(fengXian.getDangerType())) {
+                            if (StringUtils.hasText(fengXian.getCallTime())) {
+                                reportDto.setMessage(over_status);
+                                reportDto.setHandleResult(messageSlow);
+                                // 格式话时间
+                                reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
+                                reportDtos.add(reportDto);
+                            }
                         } else {
                             reportDto.setMessage(fengXian.getDangerType());
-                            reportDto.setHandleResult("通知司机注意安全驾驶");
-//                            if("接打手机报警".equals(fengXian.getDangerType())){
-//                                reportDto.setHandleResult("通知司机注意安全驾驶");
-//                            }else if("玩手机报警".equals(fengXian.getDangerType())){
-//                                reportDto.setHandleResult("通知司机注意安全驾驶");
-//                            }else if("抽烟报警".equals(fengXian.getDangerType())){
-//                                reportDto.setHandleResult("通知司机注意安全驾驶");
-//                            }
-                        }
-                        if (fengXian.getChuLiTime() != null) {
-                            try {
-                                reportDto.setHandleText(fengXian.getChuLiTime().format(DateTimeFormatter.ofPattern("HH时mm分")) + "已下发语音信息通知");
-                            } catch (Exception exception) {
-                                exception.printStackTrace();
+                            reportDto.setHandleResult(messageSafe);
+                            if (fengXian.getDisposeTime() != null) {
+                                try {
+                                    reportDto.setHandleText(fengXian.getDisposeTime().format(DateTimeFormatter.ofPattern("HH时mm分")) + "已下发语音信息通知");
+                                } catch (Exception exception) {
+                                    exception.printStackTrace();
+                                }
                             }
+                            reportDtos.add(reportDto);
                         }
-                        reportDtos.add(reportDto);
                     }
                 }
             });

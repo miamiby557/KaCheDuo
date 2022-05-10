@@ -41,6 +41,11 @@ public class TypeStringUtils {
     public static final String phone_status4 = "已接通";
 
 
+    public static final String messageStop = "通知司机停车休息";
+    public static final String messageSlow = "通知司机降低车速";
+    public static final String messageSafe = "通知司机注意安全驾驶";
+
+
     public static String getWechatContent(String type) {
         switch (type) {
             case tired_status:
