@@ -212,6 +212,10 @@ public class FengXianServiceImpl implements FengXianService {
                 Predicate owner = criteriaBuilder.equal(root.get("owner"), params.getUserName());
                 predicates.add(owner);
             }
+            if (!StringUtils.isEmpty(params.getCompany())) {
+                Predicate company = criteriaBuilder.equal(root.get("company"), params.getCompany());
+                predicates.add(company);
+            }
             List<String> phones = robots.stream().map(Robot::getPhone).collect(Collectors.toList());
             Expression<String> exp = root.get("owner");
             predicates.add(exp.in(phones));

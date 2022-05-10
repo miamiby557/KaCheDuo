@@ -11,4 +11,5 @@ public class ChuZhiQuery extends PageParams {
     private String happenTime;// 发生时间
     private String userName;// 属于那个账号的风险处置
     private String owner;
+    private String company;
 }
