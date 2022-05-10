@@ -124,12 +124,16 @@ public class SendMailService {
                     reportDto.setCheckTime(checkTime);
                     reportDto.setSpeed(fengXian.getSpeed());
                     reportDto.setVehicleType("重型货车");
-                    if (tired_status.equals(fengXian.getDangerType())) {
+                    if (tired_status.equals(fengXian.getDangerType()) && StringUtils.hasText(fengXian.getCallTime())) {
                         reportDto.setMessage("疲劳报警");
                         reportDto.setHandleResult("通知司机停车休息");
-                    } else if (over_status.equals(fengXian.getDangerType())) {
+                        // 格式话时间
+                        reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
+                    } else if (over_status.equals(fengXian.getDangerType()) && StringUtils.hasText(fengXian.getCallTime())) {
                         reportDto.setMessage("超速报警");
                         reportDto.setHandleResult("通知司机降低车速");
+                        // 格式话时间
+                        reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
                     } else {
                         reportDto.setMessage(fengXian.getDangerType());
                         reportDto.setHandleResult("通知司机注意安全驾驶");
@@ -140,14 +144,15 @@ public class SendMailService {
 //                            }else if("抽烟报警".equals(fengXian.getDangerType())){
 //                                reportDto.setHandleResult("通知司机注意安全驾驶");
 //                            }
-                    }
-                    if (fengXian.getChuLiTime() != null) {
-                        try {
-                            reportDto.setHandleText(fengXian.getChuLiTime().format(DateTimeFormatter.ofPattern("HH时mm分")) + "已下发语音信息通知");
-                        } catch (Exception exception) {
-                            exception.printStackTrace();
+                        if (fengXian.getChuLiTime() != null) {
+                            try {
+                                reportDto.setHandleText(fengXian.getChuLiTime().format(DateTimeFormatter.ofPattern("HH时mm分")) + "已下发语音信息通知");
+                            } catch (Exception exception) {
+                                exception.printStackTrace();
+                            }
                         }
                     }
+
                     reportDtos.add(reportDto);
                 }
             }
@@ -233,6 +238,20 @@ public class SendMailService {
         }
     }
 
+    private String formatCallTime(String callTime) {
+
+        try {
+            if (callTime.length() > 19) {
+                callTime = callTime.substring(0, 19);
+                LocalDateTime time = LocalDateTime.parse(callTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                return time.format(DateTimeFormatter.ofPattern("HH时mm分"));
+            }
+        } catch (Exception e) {
+
+        }
+        return "";
+    }
+
 
     @Scheduled(cron = "0 0 8 * * ?")
     public void sendMail() throws Exception {
@@ -304,12 +323,16 @@ public class SendMailService {
                         reportDto.setCheckTime(checkTime);
                         reportDto.setSpeed(fengXian.getSpeed());
                         reportDto.setVehicleType("重型货车");
-                        if (tired_status.equals(fengXian.getDangerType())) {
+                        if (tired_status.equals(fengXian.getDangerType()) && StringUtils.hasText(fengXian.getCallTime())) {
                             reportDto.setMessage("疲劳报警");
                             reportDto.setHandleResult("通知司机停车休息");
-                        } else if (over_status.equals(fengXian.getDangerType())) {
+                            // 格式话时间
+                            reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
+                        } else if (over_status.equals(fengXian.getDangerType()) && StringUtils.hasText(fengXian.getCallTime())) {
                             reportDto.setMessage("超速报警");
                             reportDto.setHandleResult("通知司机降低车速");
+                            // 格式话时间
+                            reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
                         } else {
                             reportDto.setMessage(fengXian.getDangerType());
                             reportDto.setHandleResult("通知司机注意安全驾驶");
