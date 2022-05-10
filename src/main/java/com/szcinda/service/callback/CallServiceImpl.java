@@ -41,6 +41,11 @@ public class CallServiceImpl implements CallService {
         phoneBill.setId(snowFlakeFactory.nextId("PB"));
         // 与处置记录关联
         phoneBill.setFxId(params.getFxId());
+
+        phoneBill.setVehicleNo(params.getVehicleNo());
+        phoneBill.setAccount(params.getAccount());
+        phoneBill.setCompany(params.getCompany());
+
         params.setDataId(phoneBill.getId());
         Result<String> result = VoiceApi.sendVoiceNotification(params);
         phoneBill.setCalled(params.getPhone());

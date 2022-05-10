@@ -13,4 +13,8 @@ public class CallParams implements Serializable {
     private String dataId;
 
     private String fxId;
+
+    private String vehicleNo;
+    private String account;
+    private String company;
 }

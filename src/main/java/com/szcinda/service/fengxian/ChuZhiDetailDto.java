@@ -29,6 +29,7 @@ public class ChuZhiDetailDto implements Serializable {
     private LocalDateTime chuLiTime;// 处理时间
     private String filePath;//处理图片相对路径
     private String callTime;//外呼时间
+    private String phone;
     private String called;//是否接通   是、否
     private String hangUpTime;//接通时间
     private int seconds;//接通时长

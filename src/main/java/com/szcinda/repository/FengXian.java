@@ -34,6 +34,7 @@ public class FengXian extends BaseEntity{
     private String filePath;//处理图片相对路径
     private String callTime;//外呼时间
     private String called;//是否接通   是、否
+    private String phone;
     private String hangUpTime;//接通时间
     private int seconds;//接通时长
     private double cost;// 接通成本

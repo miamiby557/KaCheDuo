@@ -67,7 +67,6 @@ public class FengXianServiceImpl implements FengXianService {
             fengXian = new FengXian();
             BeanUtils.copyProperties(dto, fengXian);
             fengXian.setId(snowFlakeFactory.nextId("FX"));
-            fengXianRepository.save(fengXian);
             // 判断是否有关于生理疲劳报警 超速报警 需要打电话通知司机
             CallParams callParams = null;
             if (TypeStringUtils.tired_status.equals(fengXian.getDangerType())) {
@@ -76,6 +75,7 @@ public class FengXianServiceImpl implements FengXianService {
                     callParams = new CallParams();
                     callParams.setPhone(driver.getPhone());
                     callParams.setTemplateId(tiredId);
+                    fengXian.setPhone(driver.getPhone());
                 }
             } else if (TypeStringUtils.over_status.equals(fengXian.getDangerType()) && over89(fengXian.getSpeed())) { // 超速，并且速度大于89每小时才电话通知
                 Driver driver = driverRepository.findByVehicleNo(fengXian.getVehicleNo());
@@ -83,12 +83,19 @@ public class FengXianServiceImpl implements FengXianService {
                     callParams = new CallParams();
                     callParams.setPhone(driver.getPhone());
                     callParams.setTemplateId(overSpeedId);
+                    fengXian.setPhone(driver.getPhone());
                 }
             }
             if (callParams != null) {
                 callParams.setFxId(fengXian.getId());
+
+                callParams.setVehicleNo(fengXian.getVehicleNo());
+                callParams.setAccount(fengXian.getOwner());
+                callParams.setCompany(fengXian.getCompany());
+
                 callService.call(callParams);
             }
+            fengXianRepository.save(fengXian);
         }
         return fengXian;
     }
