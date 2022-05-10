@@ -155,10 +155,9 @@ public class SendMailService {
             }
         });
         // 写入文件
-        String date = LocalDate.now().toString();
+        String date = LocalDate.now().minusDays(1).toString();
         Map<String, Object> beans = new HashMap<>();
         beans.put("date", date);
-        beans.put("time", checkTime);
         beans.put("carCount", reportDtos.stream().map(ReportDto::getVehicleNo).collect(Collectors.toSet()).size());
         beans.put("vehicleList", reportDtos);
         InputStream is = null;
@@ -352,10 +351,9 @@ public class SendMailService {
                 }
             });
             // 写入文件
-            String date = LocalDate.now().toString();
+            String date = LocalDate.now().minusDays(1).toString();
             Map<String, Object> beans = new HashMap<>();
             beans.put("date", date);
-            beans.put("time", checkTime);
             beans.put("carCount", reportDtos.stream().map(ReportDto::getVehicleNo).collect(Collectors.toSet()).size());
             beans.put("vehicleList", reportDtos);
             InputStream is = null;
