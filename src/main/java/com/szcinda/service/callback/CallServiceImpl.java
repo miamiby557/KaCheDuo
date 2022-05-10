@@ -122,9 +122,13 @@ public class CallServiceImpl implements CallService {
         // 更新处置的通话记录
         FengXian fengXian = fengXianRepository.findOne(phoneBill.getFxId());
         if (fengXian != null) {
-            fengXian.setCallTime(phoneBill.getCallCreateTime().toString().replaceAll("T", " "));
+            if (phoneBill.getCallCreateTime() != null) {
+                fengXian.setCallTime(phoneBill.getCallCreateTime().toString().replaceAll("T", " "));
+            }
             fengXian.setCalled(phoneBill.getStatus());
-            fengXian.setHangUpTime(phoneBill.getAnswerTime().toString().replaceAll("T", " "));
+            if (phoneBill.getAnswerTime() != null) {
+                fengXian.setHangUpTime(phoneBill.getAnswerTime().toString().replaceAll("T", " "));
+            }
             fengXian.setSeconds(phoneBill.getIvrTime());
             fengXianRepository.save(fengXian);
         }
