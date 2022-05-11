@@ -150,6 +150,12 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
         if (TypeStringUtils.wechat_status5.equals(screenShotTask.getStatus())) {
             // 告警的不做截图处理，直接删除
             screenShotTaskRepository.delete(screenShotTask);
+            // 生成一条历史任务
+            HistoryScreenShotTask historyScreenShotTask = new HistoryScreenShotTask();
+            BeanUtils.copyProperties(screenShotTask, historyScreenShotTask);
+            historyScreenShotTask.setId(snowFlakeFactory.nextId("HT"));
+            historyScreenShotTask.setType(TypeStringUtils.screen_status4);
+            historyScreenShotTaskRepository.save(historyScreenShotTask);
             return;
         }
         screenShotTask.setStatus(TypeStringUtils.wechat_status1);
@@ -172,7 +178,7 @@ public class ScreenShotTaskServiceImpl implements ScreenShotTaskService {
         screenShotTask.setCreateTime(LocalDateTime.now());
         screenShotTask.setStatus(TypeStringUtils.wechat_status2);
         // 提取司机最新的信息
-        if(StringUtils.hasText(historyScreenShotTask.getVehicleNo())){
+        if (StringUtils.hasText(historyScreenShotTask.getVehicleNo())) {
             Driver driver = driverRepository.findByVehicleNo(historyScreenShotTask.getVehicleNo());
             screenShotTask.setWechat(driver.getWechat());
             screenShotTask.setWxid(driver.getWxid());

@@ -42,6 +42,10 @@ public class SendMailService {
     @Value("${admin.user.wechat}")
     private String wechats;
 
+    // 抄送邮箱
+    @Value("${cc.email}")
+    private String ccEmail;
+
     @Autowired
     //用于发送文件
     private JavaMailSender mailSender;
@@ -103,8 +107,8 @@ public class SendMailService {
         });
         // 过滤出关于这个账号的风险处置
         List<FengXian> fengXianList = fengXianRepository.findAll(specification2);
-        // 替换中文符号
-        email = email.replace("，", ",");
+        // 替换中文符号 去除空格
+        email = email.trim().replaceAll(" ", "").replace("，", ",");
         String[] emailArray = email.split(",");
         List<Robot> subRobotList = robots.stream().filter(item -> robot.getId().equals(item.getParentId())).collect(Collectors.toList());
         List<String> userNameList = subRobotList.stream().map(Robot::getPhone).collect(Collectors.toList());
@@ -216,34 +220,33 @@ public class SendMailService {
         // 发送邮件
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper;
-        for (String em : emailArray) {
-            try {
-                helper = new MimeMessageHelper(message, true);
-                //true代表支持多组件，如附件，图片等
-                helper.setFrom(from);
-                helper.setTo(em.trim());
-                helper.setSubject(date + "-" + robot.getCompany() + "GPS监控表");
-                helper.setText(mailText, true);
-                FileSystemResource file = new FileSystemResource(saveFile);
-                helper.addAttachment("GPS监控表.xls", file);//添加附件，可多次调用该方法添加多个附件
-                boolean hasSend = false;
-                for (int i = 0; i < 3; i++) {
-                    try {
-                        mailSender.send(message);
-                        hasSend = true;
-                        break;
-                    } catch (Exception exception) {
-                        exception.printStackTrace();
-                        Thread.sleep(2000);
-                    }
+        try {
+            helper = new MimeMessageHelper(message, true);
+            //true代表支持多组件，如附件，图片等
+            helper.setFrom(from);
+            helper.setTo(emailArray);
+            helper.setSubject(date + "-" + robot.getCompany() + "GPS监控表");
+            helper.setCc(ccEmail);
+            helper.setText(mailText, true);
+            FileSystemResource file = new FileSystemResource(saveFile);
+            helper.addAttachment("GPS监控表.xls", file);//添加附件，可多次调用该方法添加多个附件
+            boolean hasSend = false;
+            for (int i = 0; i < 3; i++) {
+                try {
+                    mailSender.send(message);
+                    hasSend = true;
+                    break;
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                    Thread.sleep(2000);
                 }
-                if (!hasSend) {
-                    // 没发送成功，就加入到未发送成功的列表
-                    emailList.add(robot.getCompany() + "," + em);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
+            if (!hasSend) {
+                // 没发送成功，就加入到未发送成功的列表
+                emailList.add(robot.getCompany() + ":" + email);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         // 删除临时文件
         try {
@@ -337,8 +340,8 @@ public class SendMailService {
             });
             // 过滤出关于这个账号的风险处置
             List<FengXian> fengXianList = fengXianRepository.findAll(specification2);
-            // 替换中文符号
-            email = email.replace("，", ",");
+            // 替换中文符号 去除空格
+            email = email.trim().replaceAll(" ", "").replace("，", ",");
             String[] emailArray = email.split(",");
             List<Robot> subRobotList = robots.stream().filter(item -> robot.getId().equals(item.getParentId())).collect(Collectors.toList());
             List<String> userNameList = subRobotList.stream().map(Robot::getPhone).collect(Collectors.toList());
@@ -442,34 +445,33 @@ public class SendMailService {
             // 发送邮件
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper;
-            for (String em : emailArray) {
-                try {
-                    helper = new MimeMessageHelper(message, true);
-                    //true代表支持多组件，如附件，图片等
-                    helper.setFrom(from);
-                    helper.setTo(em.trim());
-                    helper.setSubject(date + "-" + robot.getCompany() + "GPS监控表");
-                    helper.setText(mailText, true);
-                    FileSystemResource file = new FileSystemResource(saveFile);
-                    helper.addAttachment("GPS监控表.xls", file);//添加附件，可多次调用该方法添加多个附件
-                    boolean hasSend = false;
-                    for (int i = 0; i < 3; i++) {
-                        try {
-                            mailSender.send(message);
-                            hasSend = true;
-                            break;
-                        } catch (Exception exception) {
-                            exception.printStackTrace();
-                            Thread.sleep(2000);
-                        }
+            try {
+                helper = new MimeMessageHelper(message, true);
+                //true代表支持多组件，如附件，图片等
+                helper.setFrom(from);
+                helper.setTo(emailArray);
+                helper.setCc(ccEmail);
+                helper.setSubject(date + "-" + robot.getCompany() + "GPS监控表");
+                helper.setText(mailText, true);
+                FileSystemResource file = new FileSystemResource(saveFile);
+                helper.addAttachment("GPS监控表.xls", file);//添加附件，可多次调用该方法添加多个附件
+                boolean hasSend = false;
+                for (int i = 0; i < 3; i++) {
+                    try {
+                        mailSender.send(message);
+                        hasSend = true;
+                        break;
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
+                        Thread.sleep(2000);
                     }
-                    if (!hasSend) {
-                        // 没发送成功，就加入到未发送成功的列表
-                        emailList.add(robot.getCompany() + "," + em);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
+                if (!hasSend) {
+                    // 没发送成功，就加入到未发送成功的列表
+                    emailList.add(robot.getCompany() + ":" + email);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
             // 删除临时文件
             try {
