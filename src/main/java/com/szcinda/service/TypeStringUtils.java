@@ -23,6 +23,9 @@ public class TypeStringUtils {
     // 报警类型
     public static final String tired_status = "生理疲劳报警";
     public static final String over_status = "超速报警";
+    public static final String smoke_status = "抽烟报警";
+    public static final String hangup_phone_status = "接打手机报警";
+    public static final String play_phone_status = "玩手机报警";
     // 微信截图状态
     public static final String screen_status1 = "已截图";
     public static final String screen_status2 = "截图失败";

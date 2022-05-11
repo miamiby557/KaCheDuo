@@ -21,4 +21,6 @@ public interface FengXianService {
     void generateScreenShotMissions();
 
     void batchCreateHandle(List<CreateFengXianDto> dtos);
+
+    List<FengXian> queryAll(ChuZhiQuery params);
 }

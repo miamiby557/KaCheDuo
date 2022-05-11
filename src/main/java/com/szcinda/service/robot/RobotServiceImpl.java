@@ -118,6 +118,7 @@ public class RobotServiceImpl implements RobotService {
         robot.setType("监控");
         robot.setAccount2(dto.getAccount2());
         robot.setPwd2(dto.getPwd2());
+        robot.setCarCount(dto.getCarCount());
         // 做一下符号的容错
         if (StringUtils.hasText(robot.getEmail())) {
             robot.setEmail(robot.getEmail().replace('，', ','));
@@ -175,6 +176,10 @@ public class RobotServiceImpl implements RobotService {
             List<Predicate> predicates = new ArrayList<>();
             Predicate owner = criteriaBuilder.equal(root.get("owner"), params.getOwner());
             predicates.add(owner);
+            if (StringUtils.hasText(params.getCompany())) {
+                Predicate company = criteriaBuilder.like(root.get("company"), "%" + params.getCompany() + "%");
+                predicates.add(company);
+            }
             Predicate parentId = criteriaBuilder.isNull(root.get("parentId"));
             predicates.add(parentId);
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

@@ -4,6 +4,8 @@ import com.szcinda.service.PageParams;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.time.LocalDate;
+
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class ChuZhiQuery extends PageParams {
@@ -12,4 +14,6 @@ public class ChuZhiQuery extends PageParams {
     private String userName;// 属于那个账号的风险处置
     private String owner;
     private String company;
+    private LocalDate createTimeStart;
+    private LocalDate createTimeEnd;
 }

@@ -16,13 +16,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import sun.misc.BASE64Encoder;
 
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -224,6 +221,14 @@ public class FengXianServiceImpl implements FengXianService {
                 Predicate company = criteriaBuilder.equal(root.get("company"), params.getCompany());
                 predicates.add(company);
             }
+            if (params.getCreateTimeStart() != null) {
+                Predicate createTimeStart = criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), params.getCreateTimeStart().atStartOfDay());
+                predicates.add(createTimeStart);
+            }
+            if (params.getCreateTimeEnd() != null) {
+                Predicate createTimeEnd = criteriaBuilder.lessThan(root.get("createTime"), params.getCreateTimeEnd().plusDays(1).atStartOfDay());
+                predicates.add(createTimeEnd);
+            }
             List<String> phones = robots.stream().map(Robot::getPhone).collect(Collectors.toList());
             Expression<String> exp = root.get("owner");
             predicates.add(exp.in(phones));
@@ -241,6 +246,53 @@ public class FengXianServiceImpl implements FengXianService {
             }
         }
         return PageResult.of(dtos, params.getPage(), params.getPageSize(), details.getTotalElements());
+    }
+
+    @Override
+    public List<FengXian> queryAll(ChuZhiQuery params) {
+        List<Robot> robots = robotRepository.findByOwner(params.getOwner());
+        Specification<FengXian> specification = ((root, criteriaQuery, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (!StringUtils.isEmpty(params.getVehicleNo())) {
+                Predicate vehicleNo = criteriaBuilder.equal(root.get("vehicleNo"), params.getVehicleNo());
+                predicates.add(vehicleNo);
+            }
+            if (!StringUtils.isEmpty(params.getHappenTime())) {
+                Predicate happenTime = criteriaBuilder.like(root.get("happenTime"), params.getHappenTime() + "%");
+                predicates.add(happenTime);
+            }
+            if (!StringUtils.isEmpty(params.getUserName())) {
+                Predicate owner = criteriaBuilder.equal(root.get("owner"), params.getUserName());
+                predicates.add(owner);
+            }
+            if (!StringUtils.isEmpty(params.getCompany())) {
+                Predicate company = criteriaBuilder.equal(root.get("company"), params.getCompany());
+                predicates.add(company);
+            }
+            if (params.getCreateTimeStart() == null || params.getCreateTimeEnd() == null) {
+                LocalDate now = LocalDate.now();
+                Predicate timeStart = criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), now.atStartOfDay());
+                predicates.add(timeStart);
+                Predicate timeEnd = criteriaBuilder.lessThan(root.get("createTime"), now.plusDays(1).atStartOfDay());
+                predicates.add(timeEnd);
+            } else {
+                if (params.getCreateTimeStart() != null) {
+                    Predicate createTimeStart = criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), params.getCreateTimeStart().atStartOfDay());
+                    predicates.add(createTimeStart);
+                }
+                if (params.getCreateTimeEnd() != null) {
+                    Predicate createTimeEnd = criteriaBuilder.lessThan(root.get("createTime"), params.getCreateTimeEnd().plusDays(1).atStartOfDay());
+                    predicates.add(createTimeEnd);
+                }
+            }
+
+            List<String> phones = robots.stream().map(Robot::getPhone).collect(Collectors.toList());
+            Expression<String> exp = root.get("owner");
+            predicates.add(exp.in(phones));
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        });
+        Sort order = new Sort(Sort.Direction.DESC, "createTime");
+        return fengXianRepository.findAll(specification, order);
     }
 
     @Override

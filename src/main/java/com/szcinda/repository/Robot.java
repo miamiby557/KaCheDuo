@@ -21,4 +21,6 @@ public class Robot extends BaseEntity{
     private boolean run = true;
     private boolean runLocation = true;
     private String type;  // 监控、处置、处理-位置监控
+
+    private int carCount;
 }

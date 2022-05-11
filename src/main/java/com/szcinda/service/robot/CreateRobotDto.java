@@ -18,5 +18,7 @@ public class CreateRobotDto implements Serializable {
     private String owner;
     private String parentId;
 
+    private int carCount;
+
     List<CreateRobotDto> subRobotList = new ArrayList<>();
 }

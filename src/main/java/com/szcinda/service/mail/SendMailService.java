@@ -3,6 +3,7 @@ package com.szcinda.service.mail;
 import com.szcinda.repository.*;
 import com.szcinda.service.SnowFlakeFactory;
 import com.szcinda.service.TypeStringUtils;
+import com.szcinda.service.report.CountDto;
 import com.szcinda.service.report.ReportDto;
 import net.sf.jxls.transformer.XLSTransformer;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -114,7 +115,10 @@ public class SendMailService {
         List<String> userNameList = subRobotList.stream().map(Robot::getPhone).collect(Collectors.toList());
         // 按照车牌分组
         Map<String, List<Location>> locationMap = locationList.stream().filter(location -> userNameList.contains(location.getOwner())).collect(Collectors.groupingBy(Location::getVehicleNo));
+        // 填充excel数据的列表
         List<ReportDto> reportDtos = new ArrayList<>();
+        // 统计
+        CountDto countDto = new CountDto();
         locationMap.forEach((vehicleNo, dataList) -> {
             for (Location location : dataList) {
                 ReportDto reportDto = new ReportDto();
@@ -126,6 +130,9 @@ public class SendMailService {
                 reportDto.setSpeed(location.getSpeed());
                 reportDto.setVehicleType("重型货车");
                 reportDto.setMessage("");
+                // 正常行驶
+                reportDto.setType(1);
+                countDto.addType(1);
                 reportDtos.add(reportDto);
             }
             // 不过滤疲劳驾驶或者超速
@@ -139,42 +146,30 @@ public class SendMailService {
                     reportDto.setCheckTime(formatCallTime(fengXian.getHappenTime()));
                     reportDto.setSpeed(fengXian.getSpeed());
                     reportDto.setVehicleType("重型货车");
-                    if (tired_status.equals(fengXian.getDangerType())) {
-                        if (StringUtils.hasText(fengXian.getCallTime())) {
-                            reportDto.setMessage(tired_status);
-                            reportDto.setHandleResult(messageStop);
-                            // 格式话时间
-                            reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
-                            reportDtos.add(reportDto);
-                        }
-                    } else if (over_status.equals(fengXian.getDangerType())) {
-                        if (StringUtils.hasText(fengXian.getCallTime())) {
-                            reportDto.setMessage(over_status);
-                            reportDto.setHandleResult(messageSlow);
-                            // 格式话时间
-                            reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
-                            reportDtos.add(reportDto);
-                        }
-                    } else {
-                        reportDto.setMessage(fengXian.getDangerType());
-                        reportDto.setHandleResult(messageSafe);
-                        if (fengXian.getDisposeTime() != null) {
-                            try {
-                                reportDto.setHandleText(fengXian.getDisposeTime().format(DateTimeFormatter.ofPattern("HH时mm分")) + "已下发语音信息通知");
-                            } catch (Exception exception) {
-                                exception.printStackTrace();
-                            }
-                        }
-                        reportDtos.add(reportDto);
-                    }
+                    this.handle(fengXian, reportDto, reportDtos, countDto);
                 }
             }
         });
         // 写入文件
         String date = LocalDate.now().minusDays(1).toString();
         Map<String, Object> beans = new HashMap<>();
-        beans.put("date", date);
-        beans.put("carCount", reportDtos.stream().map(ReportDto::getVehicleNo).collect(Collectors.toSet()).size());
+
+        countDto.setCompany(robot.getCompany());
+        countDto.setMonth(String.valueOf(lastDate.getMonth().getValue()));
+        countDto.setTotalCount(String.valueOf(robot.getCarCount()));
+        countDto.setDay(String.valueOf(lastDate.getDayOfMonth()));
+        countDto.setAliveTotal(reportDtos.stream().map(ReportDto::getVehicleNo).collect(Collectors.toSet()).size());
+        countDto.setFxCount(reportDtos.stream().filter(reportDto -> StringUtils.isEmpty(reportDto.getType1())).map(ReportDto::getVehicleNo).collect(Collectors.toSet()).size());
+        countDto.setCzCount((int) reportDtos.stream().filter(reportDto -> StringUtils.isEmpty(reportDto.getType1())).count());
+        countDto.setManCount(countDto.getFxCount());
+
+        // 追加序号
+        int len = reportDtos.size();
+        for (int i = 0; i < len; i++) {
+            reportDtos.get(i).setIndex(i + 1);
+        }
+
+        beans.put("countDto", countDto);
         beans.put("vehicleList", reportDtos);
         InputStream is = null;
         OutputStream os = null;
@@ -301,6 +296,55 @@ public class SendMailService {
     }
 
 
+    // 公共处理方法
+    private void handle(FengXian fengXian, ReportDto reportDto, List<ReportDto> reportDtos, CountDto countDto) {
+        if (tired_status.equals(fengXian.getDangerType())) {
+            if (StringUtils.hasText(fengXian.getCallTime())) {
+                reportDto.setMessage(tired_status);
+                reportDto.setHandleResult(messageStop);
+                // 格式话时间
+                reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
+                // 生理疲劳
+                reportDto.setType(6);
+                countDto.addType(6);
+                reportDtos.add(reportDto);
+            }
+        } else if (over_status.equals(fengXian.getDangerType())) {
+            if (StringUtils.hasText(fengXian.getCallTime())) {
+                reportDto.setMessage(over_status);
+                reportDto.setHandleResult(messageSlow);
+                // 格式话时间
+                reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
+                // 生理疲劳
+                reportDto.setType(5);
+                countDto.addType(5);
+                reportDtos.add(reportDto);
+            }
+        } else {
+            reportDto.setMessage(fengXian.getDangerType());
+            reportDto.setHandleResult(messageSafe);
+            if (fengXian.getDisposeTime() != null) {
+                try {
+                    reportDto.setHandleText(fengXian.getDisposeTime().format(DateTimeFormatter.ofPattern("HH时mm分")) + "已下发语音信息通知");
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
+            }
+            if (smoke_status.equals(fengXian.getDangerType())) {
+                reportDto.setType(2);
+                countDto.addType(2);
+            } else if (hangup_phone_status.equals(fengXian.getDangerType())) {
+                reportDto.setType(3);
+                countDto.addType(3);
+            } else if (play_phone_status.equals(fengXian.getDangerType())) {
+                reportDto.setType(4);
+                countDto.addType(4);
+            }
+            reportDtos.add(reportDto);
+        }
+    }
+
+
     @Scheduled(cron = "0 0 8 * * ?")
     public void sendMail() throws Exception {
         List<Robot> robots = robotRepository.findAll();
@@ -348,6 +392,9 @@ public class SendMailService {
             // 按照车牌分组
             Map<String, List<Location>> locationMap = locationList.stream().filter(location -> userNameList.contains(location.getOwner())).collect(Collectors.groupingBy(Location::getVehicleNo));
             List<ReportDto> reportDtos = new ArrayList<>();
+            CountDto countDto = new CountDto();// 统计
+
+
             locationMap.forEach((vehicleNo, dataList) -> {
                 for (Location location : dataList) {
                     ReportDto reportDto = new ReportDto();
@@ -359,6 +406,9 @@ public class SendMailService {
                     reportDto.setSpeed(location.getSpeed());
                     reportDto.setVehicleType("重型货车");
                     reportDto.setMessage("");
+                    // 正常行驶
+                    reportDto.setType(1);
+                    countDto.addType(1);
                     reportDtos.add(reportDto);
                 }
                 // 不过滤疲劳驾驶或者超速
@@ -372,42 +422,30 @@ public class SendMailService {
                         reportDto.setCheckTime(formatCallTime(fengXian.getHappenTime()));
                         reportDto.setSpeed(fengXian.getSpeed());
                         reportDto.setVehicleType("重型货车");
-                        if (tired_status.equals(fengXian.getDangerType())) {
-                            if (StringUtils.hasText(fengXian.getCallTime())) {
-                                reportDto.setMessage(tired_status);
-                                reportDto.setHandleResult(messageStop);
-                                // 格式话时间
-                                reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
-                                reportDtos.add(reportDto);
-                            }
-                        } else if (over_status.equals(fengXian.getDangerType())) {
-                            if (StringUtils.hasText(fengXian.getCallTime())) {
-                                reportDto.setMessage(over_status);
-                                reportDto.setHandleResult(messageSlow);
-                                // 格式话时间
-                                reportDto.setHandleText(formatCallTime(fengXian.getCallTime()) + "已拨打电话通知");
-                                reportDtos.add(reportDto);
-                            }
-                        } else {
-                            reportDto.setMessage(fengXian.getDangerType());
-                            reportDto.setHandleResult(messageSafe);
-                            if (fengXian.getDisposeTime() != null) {
-                                try {
-                                    reportDto.setHandleText(fengXian.getDisposeTime().format(DateTimeFormatter.ofPattern("HH时mm分")) + "已下发语音信息通知");
-                                } catch (Exception exception) {
-                                    exception.printStackTrace();
-                                }
-                            }
-                            reportDtos.add(reportDto);
-                        }
+                        this.handle(fengXian, reportDto, reportDtos, countDto);
                     }
                 }
             });
             // 写入文件
             String date = LocalDate.now().minusDays(1).toString();
             Map<String, Object> beans = new HashMap<>();
-            beans.put("date", date);
-            beans.put("carCount", reportDtos.stream().map(ReportDto::getVehicleNo).collect(Collectors.toSet()).size());
+
+            countDto.setCompany(robot.getCompany());
+            countDto.setMonth(String.valueOf(lastDate.getMonth().getValue()));
+            countDto.setTotalCount(String.valueOf(robot.getCarCount()));
+            countDto.setDay(String.valueOf(lastDate.getDayOfMonth()));
+            countDto.setAliveTotal(reportDtos.stream().map(ReportDto::getVehicleNo).collect(Collectors.toSet()).size());
+            countDto.setFxCount(reportDtos.stream().filter(reportDto -> StringUtils.isEmpty(reportDto.getType1())).map(ReportDto::getVehicleNo).collect(Collectors.toSet()).size());
+            countDto.setCzCount((int) reportDtos.stream().filter(reportDto -> StringUtils.isEmpty(reportDto.getType1())).count());
+            countDto.setManCount(countDto.getFxCount());
+
+            // 追加序号
+            int len = reportDtos.size();
+            for (int i = 0; i < len; i++) {
+                reportDtos.get(i).setIndex(i + 1);
+            }
+
+            beans.put("countDto", countDto);
             beans.put("vehicleList", reportDtos);
             InputStream is = null;
             OutputStream os = null;

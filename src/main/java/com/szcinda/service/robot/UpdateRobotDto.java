@@ -20,5 +20,7 @@ public class UpdateRobotDto implements Serializable {
     private boolean run;
     private String parentId;
 
+    private int carCount;
+
     List<UpdateRobotDto> subRobotList = new ArrayList<>();
 }

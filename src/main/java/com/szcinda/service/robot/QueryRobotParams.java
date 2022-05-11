@@ -8,4 +8,5 @@ import lombok.EqualsAndHashCode;
 @Data
 public class QueryRobotParams extends PageParams {
     private String owner;
+    private String company;
 }

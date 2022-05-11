@@ -26,5 +26,7 @@ public class RobotDto implements Serializable {
     private boolean alive;
     private String type;
 
+    private int carCount;
+
     private List<RobotDto> subRobots = new ArrayList<>();
 }
