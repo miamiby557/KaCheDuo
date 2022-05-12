@@ -1,11 +1,13 @@
 package com.szcinda.controller;
 
+import com.szcinda.controller.util.CarCountDto;
 import com.szcinda.service.PageResult;
 import com.szcinda.service.ScheduleService;
 import com.szcinda.service.location.CreateLocationDto;
 import com.szcinda.service.location.LocationDto;
 import com.szcinda.service.location.LocationQuery;
 import com.szcinda.service.location.LocationService;
+import com.szcinda.service.robot.RobotService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,17 +17,25 @@ import java.util.List;
 public class LocationController {
 
     private final LocationService locationService;
+    private final RobotService robotService;
 
     private final ScheduleService scheduleService;
 
-    public LocationController(LocationService locationService, ScheduleService scheduleService) {
+    public LocationController(LocationService locationService, RobotService robotService, ScheduleService scheduleService) {
         this.locationService = locationService;
+        this.robotService = robotService;
         this.scheduleService = scheduleService;
     }
 
     @PostMapping("apiCreate")
     public Result<String> apiCreate(@RequestBody List<CreateLocationDto> dtos) {
         locationService.batchCreate(dtos);
+        return Result.success();
+    }
+
+    @PostMapping("updateCarCount")
+    public Result<String> updateCarCount(@RequestBody CarCountDto carCountDto) {
+        robotService.updateCarCount(carCountDto);
         return Result.success();
     }
 
@@ -44,19 +54,19 @@ public class LocationController {
     }
 
     @GetMapping("runOnce")
-    public Result<String> runOnce(){
-        try{
+    public Result<String> runOnce() {
+        try {
             scheduleService.run();
-        }catch (Exception ignored){
+        } catch (Exception ignored) {
         }
         return Result.success();
     }
 
     @GetMapping("runLastDateChuZhi")
-    public Result<String> runLastDateChuZhi(){
-        try{
+    public Result<String> runLastDateChuZhi() {
+        try {
             scheduleService.sendMsgToDriver();
-        }catch (Exception ignored){
+        } catch (Exception ignored) {
         }
         return Result.success();
     }

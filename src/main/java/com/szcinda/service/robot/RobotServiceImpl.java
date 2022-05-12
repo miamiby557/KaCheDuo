@@ -1,5 +1,6 @@
 package com.szcinda.service.robot;
 
+import com.szcinda.controller.util.CarCountDto;
 import com.szcinda.repository.Robot;
 import com.szcinda.repository.RobotRepository;
 import com.szcinda.repository.User;
@@ -443,5 +444,14 @@ public class RobotServiceImpl implements RobotService {
                         robotTaskService.create(taskDto);
                     }
                 });
+    }
+
+    @Override
+    public void updateCarCount(CarCountDto carCountDto) {
+        Robot robot = robotRepository.findByPhone(carCountDto.getUserName());
+        if (robot != null) {
+            robot.setCarCount(carCountDto.getCount());
+            robotRepository.save(robot);
+        }
     }
 }

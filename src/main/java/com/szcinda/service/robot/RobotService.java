@@ -1,5 +1,6 @@
 package com.szcinda.service.robot;
 
+import com.szcinda.controller.util.CarCountDto;
 import com.szcinda.service.PageResult;
 
 import java.util.List;
@@ -32,4 +33,6 @@ public interface RobotService {
     void batchRunOnceLocation();
 
     void runOnceLocation(String id);
+
+    void  updateCarCount(CarCountDto carCountDto);
 }
