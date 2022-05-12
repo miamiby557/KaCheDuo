@@ -1,6 +1,7 @@
 package com.szcinda.service.report;
 
 import lombok.Data;
+import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -28,6 +29,11 @@ public class ReportDto implements Serializable {
     public String handleText = "";// 处理
     public String handleResult = "";// 处理结果
 
+    public void setSpeed(String speed) {
+        if (StringUtils.hasText(speed)) {
+            this.speed = speed.toLowerCase().replace("km/h", "");
+        }
+    }
 
     public void setType(int type) {
         try {
