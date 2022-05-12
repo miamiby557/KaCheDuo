@@ -33,7 +33,7 @@ public class RobotController {
 
     @GetMapping("alive/{id}/{phone}")
     public Result<String> alive(@PathVariable String id, @PathVariable String phone) {
-        logger.info(String.format("机器人发送心跳包：%s,%s", id, phone));
+        // logger.info(String.format("机器人发送心跳包：%s,%s", id, phone));
         scheduleService.alive(id, phone);
         return Result.success();
     }
@@ -41,7 +41,7 @@ public class RobotController {
 
     @PostMapping("aliveIp")
     public Result<String> aliveIp(@RequestBody IpRobotDto ipRobotDto) {
-        logger.info(String.format("机器人发送心跳包：%s,%s,%s", ipRobotDto.getId(), ipRobotDto.getIp(), ipRobotDto.getAccount()));
+        // logger.info(String.format("机器人发送心跳包：%s,%s,%s", ipRobotDto.getId(), ipRobotDto.getIp(), ipRobotDto.getAccount()));
         scheduleService.alive(ipRobotDto.getId(), ipRobotDto.getAccount());
         scheduleService.aliveIp(ipRobotDto.getIp(), ipRobotDto.getAccount());
         return Result.success();

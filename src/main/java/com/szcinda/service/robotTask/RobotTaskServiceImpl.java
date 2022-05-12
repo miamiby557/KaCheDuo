@@ -292,6 +292,9 @@ public class RobotTaskServiceImpl implements RobotTaskService {
     @Override
     public boolean checkIsStandby(String id) {
         RobotTask task = robotTaskRepository.findById(id);
+        if (task == null) {
+            return false;
+        }
         return TypeStringUtils.taskStatus1.equals(task.getTaskStatus());
     }
 

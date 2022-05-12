@@ -7,6 +7,8 @@ import com.szcinda.service.report.CountDto;
 import com.szcinda.service.report.ReportDto;
 import net.sf.jxls.transformer.XLSTransformer;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -34,6 +36,8 @@ import static com.szcinda.service.TypeStringUtils.*;
 
 @Component
 public class SendMailService {
+
+    private final static Logger logger = LoggerFactory.getLogger(SendMailService.class);
 
 
     @Value("${spring.mail.username}")
@@ -71,6 +75,7 @@ public class SendMailService {
 
     // 发送一次公司的邮件
     public void sendOnceCompanyEmail(String id) {
+        logger.info(String.format("正在发送邮件：%s", id));
         // 主账号
         Robot robot = robotRepository.findById(id);
         // 没有成功发送邮件的列表
@@ -229,16 +234,19 @@ public class SendMailService {
             for (int i = 0; i < 3; i++) {
                 try {
                     mailSender.send(message);
+                    logger.info("这些账号发送成功：" + email);
                     hasSend = true;
                     break;
                 } catch (Exception exception) {
                     exception.printStackTrace();
+                    logger.info(exception.getLocalizedMessage());
                     Thread.sleep(2000);
                 }
             }
             if (!hasSend) {
                 // 没发送成功，就加入到未发送成功的列表
                 emailList.add(robot.getCompany() + ":" + email);
+                logger.info("这些账号发送失败：" + email);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -248,6 +256,8 @@ public class SendMailService {
             saveFile.delete();
         } catch (Exception ignored) {
         }
+        logger.info("发送动作完成");
+        logger.info(String.format("没有发送成功的邮箱：%s", emailList.toString()));
         if (emailList.size() > 0) {
             // 需要创建一条微信发消息任务通知管理员
             if (StringUtils.hasText(wechats)) {
@@ -347,6 +357,7 @@ public class SendMailService {
 
     @Scheduled(cron = "0 0 8 * * ?")
     public void sendMail() throws Exception {
+        logger.info("正在全量发邮件");
         List<Robot> robots = robotRepository.findAll();
         // 发送失败的邮件
         List<String> emailList = new ArrayList<>();
@@ -497,16 +508,19 @@ public class SendMailService {
                 for (int i = 0; i < 3; i++) {
                     try {
                         mailSender.send(message);
+                        logger.info("这些账号发送成功：" + email);
                         hasSend = true;
                         break;
                     } catch (Exception exception) {
                         exception.printStackTrace();
+                        logger.info(exception.getLocalizedMessage());
                         Thread.sleep(2000);
                     }
                 }
                 if (!hasSend) {
                     // 没发送成功，就加入到未发送成功的列表
                     emailList.add(robot.getCompany() + ":" + email);
+                    logger.info("这些账号发送失败：" + email);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -517,6 +531,8 @@ public class SendMailService {
             } catch (Exception ignored) {
             }
         }
+        logger.info("发送动作完成");
+        logger.info(String.format("没有发送成功的邮箱：%s", emailList.toString()));
         if (emailList.size() > 0) {
             // 需要创建一条微信发消息任务通知管理员
             if (StringUtils.hasText(wechats)) {
