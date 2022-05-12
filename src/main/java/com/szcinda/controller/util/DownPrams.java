@@ -8,4 +8,8 @@ import java.io.Serializable;
 public class DownPrams implements Serializable {
     private String fileName;
     private String vehicleNo;
+
+
+    // 微信字段
+    private String message;
 }

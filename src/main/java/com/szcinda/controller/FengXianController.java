@@ -1,11 +1,13 @@
 package com.szcinda.controller;
 
+import com.szcinda.controller.util.DownPrams;
 import com.szcinda.controller.util.FieldMapUtil;
 import com.szcinda.repository.FengXian;
 import com.szcinda.service.PageResult;
 import com.szcinda.service.ScheduleService;
 import com.szcinda.service.fengxian.*;
 import com.szcinda.service.robotTask.RobotTaskServiceImpl;
+import com.szcinda.service.wechat.WechatAlarmService;
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.slf4j.Logger;
@@ -33,10 +35,12 @@ public class FengXianController {
 
     private final FengXianService fengXianService;
     private final ScheduleService scheduleService;
+    private final WechatAlarmService wechatAlarmService;
 
-    public FengXianController(FengXianService fengXianService, ScheduleService scheduleService) {
+    public FengXianController(FengXianService fengXianService, ScheduleService scheduleService, WechatAlarmService wechatAlarmService) {
         this.fengXianService = fengXianService;
         this.scheduleService = scheduleService;
+        this.wechatAlarmService = wechatAlarmService;
     }
 
     @PostMapping("apiCreate")
@@ -197,4 +201,12 @@ public class FengXianController {
             }
         }
     }
+
+
+    @PostMapping("sendMsg")
+    public Result<String> sendMsg(@RequestBody DownPrams downPrams) {
+        wechatAlarmService.sendMsg(downPrams.getMessage());
+        return Result.success();
+    }
+
 }

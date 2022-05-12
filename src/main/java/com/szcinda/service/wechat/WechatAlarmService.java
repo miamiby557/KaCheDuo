@@ -1,0 +1,53 @@
+package com.szcinda.service.wechat;
+
+import com.szcinda.repository.ScreenShotTask;
+import com.szcinda.repository.ScreenShotTaskRepository;
+import com.szcinda.service.SnowFlakeFactory;
+import com.szcinda.service.TypeStringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+
+import java.util.List;
+
+@Component
+public class WechatAlarmService {
+
+
+    // 管理员微信号
+    @Value("${admin.user.wechat}")
+    private String wechats;
+
+    @Autowired
+    private ScreenShotTaskRepository screenShotTaskRepository;
+
+    private final SnowFlakeFactory snowFlakeFactory = SnowFlakeFactory.getInstance();
+
+    public void sendMsg(String msg) {
+        if (StringUtils.isEmpty(wechats)) {
+            return;
+        }
+        String[] strings = wechats.split(",");
+        for (String wechat : strings) {
+            // 判断是否存在报警记录，存在则更新
+            List<ScreenShotTask> screenShotTasks = screenShotTaskRepository.findByWechatAndStatus(wechat, TypeStringUtils.wechat_status5);
+            if (screenShotTasks.size() > 0) {
+                ScreenShotTask screenShotTask = screenShotTasks.get(0);
+                screenShotTask.setContent(msg);
+                screenShotTaskRepository.save(screenShotTask);
+            } else {
+                ScreenShotTask screenShotTask = new ScreenShotTask();
+                screenShotTask.setId(snowFlakeFactory.nextId("ST"));
+                screenShotTask.setWechat(wechat);
+                screenShotTask.setVehicleNo("");
+                screenShotTask.setOwnerWechat("anqin1588");
+                screenShotTask.setWxid(wechat);
+                screenShotTask.setOwner("");
+                screenShotTask.setStatus(TypeStringUtils.wechat_status5);
+                screenShotTask.setContent(msg);
+                screenShotTaskRepository.save(screenShotTask);
+            }
+        }
+    }
+}
