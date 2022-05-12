@@ -1,10 +1,7 @@
 package com.szcinda.service.robot;
 
 import com.szcinda.controller.util.CarCountDto;
-import com.szcinda.repository.Robot;
-import com.szcinda.repository.RobotRepository;
-import com.szcinda.repository.User;
-import com.szcinda.repository.UserRepository;
+import com.szcinda.repository.*;
 import com.szcinda.service.*;
 import com.szcinda.service.robotTask.CreateRobotTaskDto;
 import com.szcinda.service.robotTask.RobotTaskService;
@@ -20,6 +17,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import javax.persistence.criteria.Predicate;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,12 +34,14 @@ public class RobotServiceImpl implements RobotService {
     private final UserRepository userRepository;
     private final ScheduleService scheduleService;
     private final RobotTaskService robotTaskService;
+    private final CarCountRepository carCountRepository;
 
-    public RobotServiceImpl(RobotRepository robotRepository, UserRepository userRepository, ScheduleService scheduleService, RobotTaskService robotTaskService) {
+    public RobotServiceImpl(RobotRepository robotRepository, UserRepository userRepository, ScheduleService scheduleService, RobotTaskService robotTaskService, CarCountRepository carCountRepository) {
         this.robotRepository = robotRepository;
         this.userRepository = userRepository;
         this.scheduleService = scheduleService;
         this.robotTaskService = robotTaskService;
+        this.carCountRepository = carCountRepository;
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
 
@@ -452,6 +452,18 @@ public class RobotServiceImpl implements RobotService {
         if (robot != null) {
             robot.setCarCount(carCountDto.getCount());
             robotRepository.save(robot);
+            // 更新每天的车辆数量
+            CarCount carCount = carCountRepository.findByAccountAndDate(carCountDto.getUserName(), LocalDate.now());
+            if (carCount == null) {
+                carCount = new CarCount();
+                carCount.setId(snowFlakeFactory.nextId("CC"));
+                carCount.setCompany(robot.getCompany());
+                carCount.setAccount(robot.getPhone());
+            }
+            carCount.setCount(carCountDto.getCount());
+            carCountRepository.save(carCount);
         }
+
     }
+
 }
