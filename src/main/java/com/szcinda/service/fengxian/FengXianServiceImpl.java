@@ -229,6 +229,18 @@ public class FengXianServiceImpl implements FengXianService {
                 Predicate createTimeEnd = criteriaBuilder.lessThan(root.get("createTime"), params.getCreateTimeEnd().plusDays(1).atStartOfDay());
                 predicates.add(createTimeEnd);
             }
+            if (params.getDisposeTimeStart() != null) {
+                Predicate disposeTimeStart = criteriaBuilder.greaterThanOrEqualTo(root.get("disposeTime"), params.getDisposeTimeStart().atStartOfDay());
+                predicates.add(disposeTimeStart);
+            }
+            if (params.getDisposeTimeEnd() != null) {
+                Predicate disposeTimeEnd = criteriaBuilder.lessThan(root.get("disposeTime"), params.getDisposeTimeEnd().plusDays(1).atStartOfDay());
+                predicates.add(disposeTimeEnd);
+            }
+            if (params.getStatusList() != null && params.getStatusList().size() > 0) {
+                Expression<String> exp = root.get("dangerType");
+                predicates.add(exp.in(params.getStatusList()));
+            }
             List<String> phones = robots.stream().map(Robot::getPhone).collect(Collectors.toList());
             Expression<String> exp = root.get("owner");
             predicates.add(exp.in(phones));
