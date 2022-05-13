@@ -118,30 +118,41 @@ public class SendMailService {
         String[] emailArray = email.split(",");
         List<Robot> subRobotList = robots.stream().filter(item -> robot.getId().equals(item.getParentId())).collect(Collectors.toList());
         List<String> userNameList = subRobotList.stream().map(Robot::getPhone).collect(Collectors.toList());
-        // 按照车牌分组
-        Map<String, List<Location>> locationMap = locationList.stream().filter(location -> userNameList.contains(location.getOwner())).collect(Collectors.groupingBy(Location::getVehicleNo));
+        Map<String, List<Location>> locationMap;
+        if (locationList == null || locationList.size() == 0) {
+            List<String> vehicleNos = fengXianList.stream().filter(fengXian -> userNameList.contains(fengXian.getOwner())).map(FengXian::getVehicleNo).distinct().collect(Collectors.toList());
+            locationMap = new HashMap<>();
+            for (String vehicleNo : vehicleNos) {
+                locationMap.put(vehicleNo, new ArrayList<>());
+            }
+        } else {
+            locationMap = locationList.stream().filter(location -> userNameList.contains(location.getOwner())).collect(Collectors.groupingBy(Location::getVehicleNo));
+        }
         // 填充excel数据的列表
         List<ReportDto> reportDtos = new ArrayList<>();
         // 统计
         CountDto countDto = new CountDto();
+
         locationMap.forEach((vehicleNo, dataList) -> {
-            for (Location location : dataList) {
-                ReportDto reportDto = new ReportDto();
-                reportDto.setVehicleNo(vehicleNo);
-                reportDto.setLocation(location.getHappenPlace());
-                if (location.getHappenTime() != null) {
-                    reportDto.setCheckTime(location.getHappenTime().format(DateTimeFormatter.ofPattern("HH时mm分")));
+            if (dataList != null && dataList.size() > 0) {
+                for (Location location : dataList) {
+                    ReportDto reportDto = new ReportDto();
+                    reportDto.setVehicleNo(vehicleNo);
+                    reportDto.setLocation(location.getHappenPlace());
+                    if (location.getHappenTime() != null) {
+                        reportDto.setCheckTime(location.getHappenTime().format(DateTimeFormatter.ofPattern("HH时mm分")));
+                    }
+                    reportDto.setSpeed(location.getSpeed());
+                    reportDto.setVehicleType("重型货车");
+                    reportDto.setMessage("");
+                    // 正常行驶
+                    reportDto.setType(1);
+                    countDto.addType(1);
+                    reportDtos.add(reportDto);
                 }
-                reportDto.setSpeed(location.getSpeed());
-                reportDto.setVehicleType("重型货车");
-                reportDto.setMessage("");
-                // 正常行驶
-                reportDto.setType(1);
-                countDto.addType(1);
-                reportDtos.add(reportDto);
             }
             // 不过滤疲劳驾驶或者超速
-            List<FengXian> fengXians = fengXianList.stream().filter(fengXian -> fengXian.getVehicleNo().equals(vehicleNo))
+            List<FengXian> fengXians = fengXianList.stream().filter(fengXian -> fengXian.getVehicleNo().equals(vehicleNo) && inDangerType(fengXian.getDangerType()))
                     .collect(Collectors.toList());
             if (fengXians.size() > 0) {
                 for (FengXian fengXian : fengXians) {
@@ -222,14 +233,16 @@ public class SendMailService {
         MimeMessageHelper helper;
         try {
             helper = new MimeMessageHelper(message, true);
+            String fileName = robot.getCompany() + "GPS监控表";
             //true代表支持多组件，如附件，图片等
             helper.setFrom(from);
             helper.setTo(emailArray);
-            helper.setSubject(date + "-" + robot.getCompany() + "GPS监控表");
+            helper.setSubject(date + "-" + fileName);
             helper.setCc(ccEmail);
             helper.setText(mailText, true);
             FileSystemResource file = new FileSystemResource(saveFile);
-            helper.addAttachment("GPS监控表.xls", file);//添加附件，可多次调用该方法添加多个附件
+            fileName = fileName + ".xls";
+            helper.addAttachment(fileName, file);//添加附件，可多次调用该方法添加多个附件
             boolean hasSend = false;
             for (int i = 0; i < 3; i++) {
                 try {
@@ -303,6 +316,17 @@ public class SendMailService {
 
         }
         return "";
+    }
+
+    static String[] dangerType = new String[]{"抽烟报警", "接打手机报警", "玩手机报警", "超速报警", "生理疲劳报警", "双脱把报警"};
+
+    private boolean inDangerType(String type) {
+        for (String ty : dangerType) {
+            if (ty.equals(type)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -400,8 +424,18 @@ public class SendMailService {
             String[] emailArray = email.split(",");
             List<Robot> subRobotList = robots.stream().filter(item -> robot.getId().equals(item.getParentId())).collect(Collectors.toList());
             List<String> userNameList = subRobotList.stream().map(Robot::getPhone).collect(Collectors.toList());
-            // 按照车牌分组
-            Map<String, List<Location>> locationMap = locationList.stream().filter(location -> userNameList.contains(location.getOwner())).collect(Collectors.groupingBy(Location::getVehicleNo));
+
+            Map<String, List<Location>> locationMap;
+            if (locationList == null || locationList.size() == 0) {
+                List<String> vehicleNos = fengXianList.stream().filter(fengXian -> userNameList.contains(fengXian.getOwner())).map(FengXian::getVehicleNo).distinct().collect(Collectors.toList());
+                locationMap = new HashMap<>();
+                for (String vehicleNo : vehicleNos) {
+                    locationMap.put(vehicleNo, new ArrayList<>());
+                }
+            } else {
+                locationMap = locationList.stream().filter(location -> userNameList.contains(location.getOwner())).collect(Collectors.groupingBy(Location::getVehicleNo));
+            }
+
             List<ReportDto> reportDtos = new ArrayList<>();
             CountDto countDto = new CountDto();// 统计
 
@@ -423,7 +457,7 @@ public class SendMailService {
                     reportDtos.add(reportDto);
                 }
                 // 不过滤疲劳驾驶或者超速
-                List<FengXian> fengXians = fengXianList.stream().filter(fengXian -> fengXian.getVehicleNo().equals(vehicleNo))
+                List<FengXian> fengXians = fengXianList.stream().filter(fengXian -> fengXian.getVehicleNo().equals(vehicleNo) && inDangerType(fengXian.getDangerType()))
                         .collect(Collectors.toList());
                 if (fengXians.size() > 0) {
                     for (FengXian fengXian : fengXians) {
@@ -496,14 +530,16 @@ public class SendMailService {
             MimeMessageHelper helper;
             try {
                 helper = new MimeMessageHelper(message, true);
+                String fileName = robot.getCompany() + "GPS监控表";
                 //true代表支持多组件，如附件，图片等
                 helper.setFrom(from);
                 helper.setTo(emailArray);
+                helper.setSubject(date + "-" + fileName);
                 helper.setCc(ccEmail);
-                helper.setSubject(date + "-" + robot.getCompany() + "GPS监控表");
                 helper.setText(mailText, true);
                 FileSystemResource file = new FileSystemResource(saveFile);
-                helper.addAttachment("GPS监控表.xls", file);//添加附件，可多次调用该方法添加多个附件
+                fileName = fileName + ".xls";
+                helper.addAttachment(fileName, file);//添加附件，可多次调用该方法添加多个附件
                 boolean hasSend = false;
                 for (int i = 0; i < 3; i++) {
                     try {
