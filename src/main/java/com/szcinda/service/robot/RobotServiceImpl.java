@@ -457,6 +457,7 @@ public class RobotServiceImpl implements RobotService {
             if (carCount == null) {
                 carCount = new CarCount();
                 carCount.setId(snowFlakeFactory.nextId("CC"));
+                carCount.setDate(LocalDate.now());
                 carCount.setCompany(robot.getCompany());
                 carCount.setAccount(robot.getPhone());
             }
