@@ -1,11 +1,9 @@
 package com.szcinda.service.robotLog;
 
-import com.szcinda.repository.Robot;
-import com.szcinda.repository.RobotLog;
-import com.szcinda.repository.RobotLogRepository;
-import com.szcinda.repository.RobotRepository;
+import com.szcinda.repository.*;
 import com.szcinda.service.PageResult;
 import com.szcinda.service.SnowFlakeFactory;
+import com.szcinda.service.TypeStringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,10 +26,12 @@ public class LogServiceImpl implements LogService {
     private final RobotLogRepository robotLogRepository;
     private final SnowFlakeFactory snowFlakeFactory;
     private final RobotRepository robotRepository;
+    private final RobotTaskRepository robotTaskRepository;
 
-    public LogServiceImpl(RobotLogRepository robotLogRepository, RobotRepository robotRepository) {
+    public LogServiceImpl(RobotLogRepository robotLogRepository, RobotRepository robotRepository, RobotTaskRepository robotTaskRepository) {
         this.robotLogRepository = robotLogRepository;
         this.robotRepository = robotRepository;
+        this.robotTaskRepository = robotTaskRepository;
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
 
@@ -47,6 +47,14 @@ public class LogServiceImpl implements LogService {
         }
         if (robot != null) {
             log.setCompany(robot.getCompany());
+        }
+        if (logDto.getContent() != null && logDto.getContent().contains("位置监控操作失败")) {
+            // 如果是位置监控，则重试
+            RobotTask robotTask = robotTaskRepository.findById(logDto.getTaskId());
+            if (robotTask != null && !TypeStringUtils.taskStatus2.equals(robotTask.getTaskStatus())) {
+                robotTask.setTaskStatus(TypeStringUtils.taskStatus1);
+                robotTaskRepository.save(robotTask);
+            }
         }
         robotLogRepository.save(log);
     }

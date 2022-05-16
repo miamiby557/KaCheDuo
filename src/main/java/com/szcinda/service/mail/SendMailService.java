@@ -82,6 +82,9 @@ public class SendMailService {
         List<String> emailList = new ArrayList<>();
         // 子账号
         List<Robot> robots = robotRepository.findByParentId(robot.getId());
+        // 取出子账号
+        List<String> accountList = robots.stream().filter(robot1 -> robot1.getParentId() != null && robot1.getParentId().equals(robot.getId())).map(Robot::getPhone).collect(Collectors.toList());
+        accountList.add(robot.getPhone());
         // 先查出所有昨天的数据
         LocalDate lastDate = LocalDate.now().minusDays(1);
         Specification<Location> specification = ((root, criteriaQuery, criteriaBuilder) -> {
@@ -90,6 +93,8 @@ public class SendMailService {
             predicates.add(timeStart);
             Predicate timeEnd = criteriaBuilder.lessThan(root.get("createTime"), lastDate.plusDays(1).atStartOfDay());
             predicates.add(timeEnd);
+            Expression<String> exp = root.get("owner");
+            predicates.add(exp.in(accountList));
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         });
         List<Location> locationList = locationRepository.findAll(specification);
@@ -97,9 +102,7 @@ public class SendMailService {
         if (StringUtils.isEmpty(email)) {
             return;
         }
-        // 取出子账号
-        List<String> accountList = robots.stream().filter(robot1 -> robot1.getParentId() != null && robot1.getParentId().equals(robot.getId())).map(Robot::getPhone).collect(Collectors.toList());
-        accountList.add(robot.getPhone());
+
         // 取出关于这个账号的所有处置列表
         Specification<FengXian> specification2 = ((root, criteriaQuery, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -116,17 +119,16 @@ public class SendMailService {
         // 替换中文符号 去除空格
         email = email.trim().replaceAll(" ", "").replace("，", ",");
         String[] emailArray = email.split(",");
-        List<Robot> subRobotList = robots.stream().filter(item -> robot.getId().equals(item.getParentId())).collect(Collectors.toList());
-        List<String> userNameList = subRobotList.stream().map(Robot::getPhone).collect(Collectors.toList());
+
         Map<String, List<Location>> locationMap;
         if (locationList == null || locationList.size() == 0) {
-            List<String> vehicleNos = fengXianList.stream().filter(fengXian -> userNameList.contains(fengXian.getOwner())).map(FengXian::getVehicleNo).distinct().collect(Collectors.toList());
+            List<String> vehicleNos = fengXianList.stream().map(FengXian::getVehicleNo).distinct().collect(Collectors.toList());
             locationMap = new HashMap<>();
             for (String vehicleNo : vehicleNos) {
                 locationMap.put(vehicleNo, new ArrayList<>());
             }
         } else {
-            locationMap = locationList.stream().filter(location -> userNameList.contains(location.getOwner())).collect(Collectors.groupingBy(Location::getVehicleNo));
+            locationMap = locationList.stream().filter(location -> accountList.contains(location.getOwner())).collect(Collectors.groupingBy(Location::getVehicleNo));
         }
         // 填充excel数据的列表
         List<ReportDto> reportDtos = new ArrayList<>();
@@ -422,23 +424,21 @@ public class SendMailService {
             // 替换中文符号 去除空格
             email = email.trim().replaceAll(" ", "").replace("，", ",");
             String[] emailArray = email.split(",");
-            List<Robot> subRobotList = robots.stream().filter(item -> robot.getId().equals(item.getParentId())).collect(Collectors.toList());
-            List<String> userNameList = subRobotList.stream().map(Robot::getPhone).collect(Collectors.toList());
-
+            // 过滤出关于当前账号的位置监控
+            List<Location> ownerLocationList = locationList.stream().filter(location -> accountList.contains(location.getOwner())).collect(Collectors.toList());
             Map<String, List<Location>> locationMap;
-            if (locationList == null || locationList.size() == 0) {
-                List<String> vehicleNos = fengXianList.stream().filter(fengXian -> userNameList.contains(fengXian.getOwner())).map(FengXian::getVehicleNo).distinct().collect(Collectors.toList());
+            if (ownerLocationList.size() == 0) {
+                List<String> vehicleNos = fengXianList.stream().filter(fengXian -> accountList.contains(fengXian.getOwner())).map(FengXian::getVehicleNo).distinct().collect(Collectors.toList());
                 locationMap = new HashMap<>();
                 for (String vehicleNo : vehicleNos) {
                     locationMap.put(vehicleNo, new ArrayList<>());
                 }
             } else {
-                locationMap = locationList.stream().filter(location -> userNameList.contains(location.getOwner())).collect(Collectors.groupingBy(Location::getVehicleNo));
+                locationMap = locationList.stream().filter(location -> accountList.contains(location.getOwner())).collect(Collectors.groupingBy(Location::getVehicleNo));
             }
 
             List<ReportDto> reportDtos = new ArrayList<>();
             CountDto countDto = new CountDto();// 统计
-
 
             locationMap.forEach((vehicleNo, dataList) -> {
                 for (Location location : dataList) {
