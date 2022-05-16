@@ -4,6 +4,8 @@ import com.szcinda.controller.util.AppUploadDto;
 import com.szcinda.controller.util.DownPrams;
 import com.szcinda.service.driver.DriverService;
 import com.szcinda.service.robotTask.RobotTaskService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -26,6 +28,8 @@ import java.util.UUID;
 @RequestMapping("handle")
 @RestController
 public class HandleController {
+
+    private final static Logger logger = LoggerFactory.getLogger(HandleController.class);
 
     private final RobotTaskService robotTaskService;
     private final DriverService driverService;
@@ -57,7 +61,8 @@ public class HandleController {
     public Result<String> appUpload(@RequestBody AppUploadDto appUploadDto) {
         Assert.isTrue(StringUtils.hasText(appUploadDto.getVehicleNo()), "参数【车牌号】不能为空");
         Assert.isTrue(StringUtils.hasText(appUploadDto.getFilePath()), "参数【图片链接】不能为空");
-        driverService.generateChuliMissionFromAppUpload(appUploadDto.getVehicleNo(), appUploadDto.getFilePath());
+        logger.info("APP接收到参数：" + appUploadDto.toString());
+        // driverService.generateChuliMissionFromAppUpload(appUploadDto.getVehicleNo(), appUploadDto.getFilePath());
         return Result.success();
     }
 

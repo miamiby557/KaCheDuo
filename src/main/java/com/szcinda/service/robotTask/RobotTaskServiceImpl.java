@@ -354,10 +354,12 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                         task.setTaskStatus(TypeStringUtils.taskStatus1);
                         robotTaskRepository.save(task);
                     }
+                }else{
+                    if (minutes >= minNumber) {
+                        taskIds.add(task.getId());
+                    }
                 }
-                if (minutes >= minNumber) {
-                    taskIds.add(task.getId());
-                }
+
             }
             if (taskIds.size() > 0) {
                 for (String taskId : taskIds) {

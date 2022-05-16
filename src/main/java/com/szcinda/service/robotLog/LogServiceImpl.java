@@ -48,10 +48,10 @@ public class LogServiceImpl implements LogService {
         if (robot != null) {
             log.setCompany(robot.getCompany());
         }
-        if (logDto.getContent() != null && logDto.getContent().contains("位置监控操作失败")) {
+        if (logDto.getContent() != null && (logDto.getContent().contains("位置监控操作失败") || logDto.getContent().contains("点击展开所有车辆按钮失败"))) {
             // 如果是位置监控，则重试
             RobotTask robotTask = robotTaskRepository.findById(logDto.getTaskId());
-            if (robotTask != null && !TypeStringUtils.taskStatus2.equals(robotTask.getTaskStatus())) {
+            if (robotTask != null) {
                 robotTask.setTaskStatus(TypeStringUtils.taskStatus1);
                 robotTaskRepository.save(robotTask);
             }
