@@ -5,6 +5,7 @@ import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 
 @Data
 public class ReportDto implements Serializable {
@@ -28,6 +29,8 @@ public class ReportDto implements Serializable {
     public String type10 = ""; // 其他异常
     public String handleText = "";// 处理
     public String handleResult = "";// 处理结果
+
+    private LocalDateTime happenTime;
 
     public void setSpeed(String speed) {
         if (StringUtils.hasText(speed)) {

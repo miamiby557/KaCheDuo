@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -26,10 +27,7 @@ import java.io.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.szcinda.service.TypeStringUtils.*;
@@ -76,6 +74,8 @@ public class SendMailService {
     // 发送一次公司的邮件
     public void sendOnceCompanyEmail(String id) {
         logger.info(String.format("正在发送邮件：%s", id));
+        //解决附件文件名称过长乱码问题
+        System.setProperty("mail.mime.splitlongparameters", "false");
         // 主账号
         Robot robot = robotRepository.findById(id);
         // 没有成功发送邮件的列表
@@ -97,7 +97,8 @@ public class SendMailService {
             predicates.add(exp.in(accountList));
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         });
-        List<Location> locationList = locationRepository.findAll(specification);
+        Sort order = new Sort(Sort.Direction.ASC, "happenTime");
+        List<Location> locationList = locationRepository.findAll(specification, order);
         String email = robot.getEmail();
         if (StringUtils.isEmpty(email)) {
             return;
@@ -115,7 +116,8 @@ public class SendMailService {
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         });
         // 过滤出关于这个账号的风险处置
-        List<FengXian> fengXianList = fengXianRepository.findAll(specification2);
+        order = new Sort(Sort.Direction.ASC, "gdCreateTime");
+        List<FengXian> fengXianList = fengXianRepository.findAll(specification2, order);
         // 替换中文符号 去除空格
         email = email.trim().replaceAll(" ", "").replace("，", ",");
         String[] emailArray = email.split(",");
@@ -147,6 +149,8 @@ public class SendMailService {
                     reportDto.setSpeed(location.getSpeed());
                     reportDto.setVehicleType("重型货车");
                     reportDto.setMessage("");
+                    // 用于排序
+                    reportDto.setHappenTime(location.getHappenTime());
                     // 正常行驶
                     reportDto.setType(1);
                     countDto.addType(1);
@@ -164,6 +168,8 @@ public class SendMailService {
                     reportDto.setCheckTime(formatCallTime(fengXian.getHappenTime()));
                     reportDto.setSpeed(fengXian.getSpeed());
                     reportDto.setVehicleType("重型货车");
+                    // 用于排序
+                    reportDto.setHappenTime(fengXian.getGdCreateTime());
                     this.handle(fengXian, reportDto, reportDtos, countDto);
                 }
             }
@@ -186,6 +192,8 @@ public class SendMailService {
         for (int i = 0; i < len; i++) {
             reportDtos.get(i).setIndex(i + 1);
         }
+        // 排序
+        reportDtos.sort(Comparator.comparing(ReportDto::getHappenTime, Comparator.naturalOrder()));
 
         beans.put("countDto", countDto);
         beans.put("vehicleList", reportDtos);
@@ -384,6 +392,8 @@ public class SendMailService {
     @Scheduled(cron = "0 0 8 * * ?")
     public void sendMail() throws Exception {
         logger.info("正在全量发邮件");
+        //解决附件文件名称过长乱码问题
+        System.setProperty("mail.mime.splitlongparameters", "false");
         List<Robot> robots = robotRepository.findAll();
         // 发送失败的邮件
         List<String> emailList = new ArrayList<>();
@@ -451,6 +461,8 @@ public class SendMailService {
                     reportDto.setSpeed(location.getSpeed());
                     reportDto.setVehicleType("重型货车");
                     reportDto.setMessage("");
+                    // 用于排序
+                    reportDto.setHappenTime(location.getHappenTime());
                     // 正常行驶
                     reportDto.setType(1);
                     countDto.addType(1);
@@ -467,6 +479,8 @@ public class SendMailService {
                         reportDto.setCheckTime(formatCallTime(fengXian.getHappenTime()));
                         reportDto.setSpeed(fengXian.getSpeed());
                         reportDto.setVehicleType("重型货车");
+                        // 用于排序
+                        reportDto.setHappenTime(fengXian.getGdCreateTime());
                         this.handle(fengXian, reportDto, reportDtos, countDto);
                     }
                 }
@@ -489,6 +503,9 @@ public class SendMailService {
             for (int i = 0; i < len; i++) {
                 reportDtos.get(i).setIndex(i + 1);
             }
+
+            // 排序
+            reportDtos.sort(Comparator.comparing(ReportDto::getHappenTime, Comparator.naturalOrder()));
 
             beans.put("countDto", countDto);
             beans.put("vehicleList", reportDtos);
