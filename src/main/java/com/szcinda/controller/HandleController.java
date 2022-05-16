@@ -1,9 +1,12 @@
 package com.szcinda.controller;
 
+import com.szcinda.controller.util.AppUploadDto;
 import com.szcinda.controller.util.DownPrams;
 import com.szcinda.service.driver.DriverService;
 import com.szcinda.service.robotTask.RobotTaskService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -47,6 +50,14 @@ public class HandleController {
     @GetMapping("lock/{userName}")
     public Result<String> lock(@PathVariable String userName) {
         robotTaskService.lock(userName);
+        return Result.success();
+    }
+
+    @PostMapping("appUpload")
+    public Result<String> appUpload(@RequestBody AppUploadDto appUploadDto) {
+        Assert.isTrue(StringUtils.hasText(appUploadDto.getVehicleNo()), "参数【车牌号】不能为空");
+        Assert.isTrue(StringUtils.hasText(appUploadDto.getFilePath()), "参数【图片链接】不能为空");
+        driverService.generateChuliMissionFromAppUpload(appUploadDto.getVehicleNo(), appUploadDto.getFilePath());
         return Result.success();
     }
 
@@ -125,7 +136,7 @@ public class HandleController {
     }
 
 
-    public void upload(String vehicleNo, File file){
+    public void upload(String vehicleNo, File file) {
         String baseUrl = "http://localhost:9061/api/handle/upload";  // 本地测试
         /*String baseUrl = "http://175.178.222.14/:9061/api/handle/upload";  // 正式网址*/
         String CHARSET = "utf-8"; //设置编码
