@@ -435,6 +435,11 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         robotTask.setId(snowFlakeFactory.nextId("RT"));
         robotTask.setMessage(null);
         robotTask.setCreateTime(LocalDateTime.now());
+        Robot robot = robotRepository.findByPhone(robotTask.getUserName());
+        if (robot != null) {
+            // 更新密码
+            robotTask.setPwd(robot.getPwd());
+        }
         robotTaskRepository.save(robotTask);
     }
 }
