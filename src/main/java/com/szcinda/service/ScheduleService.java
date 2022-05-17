@@ -346,7 +346,7 @@ public class ScheduleService {
         });
     }
 
-    // 30分钟执行一次检查，如果发现掉线超过15分钟，则代表已经下线
+    // 20分钟执行一次检查，如果发现掉线超过10分钟，则代表已经下线
     @Scheduled(cron = "0 */20 * * * ?")
     public void checkRobotIsAliveAndSendMsgToAdmin() {
         List<Robot> robots = robotRepository.findByParentIdIsNull();
@@ -364,7 +364,7 @@ public class ScheduleService {
                 RobotAliveDto aliveDto = robotAliveMap.get(robot.getPhone());
                 Duration duration = Duration.between(now, aliveDto.getTime());
                 long minutes = Math.abs(duration.toMinutes());//相差的分钟数
-                if (minutes >= 15) {
+                if (minutes >= 10) {
                     // 代表下线
                     stringBuilder.append("第").append(index).append("个账号：").append(robot.getPhone())
                             .append("(").append(robot.getCompany()).append(")").append("\n");
