@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
 
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,6 +42,10 @@ public class LocationServiceImpl implements LocationService {
     public void create(CreateLocationDto dto) {
         Location location = new Location();
         BeanUtils.copyProperties(dto, location);
+        if (location.getHappenTime() == null) {
+            // 默认当前时间
+            location.setHappenTime(LocalDateTime.now());
+        }
         location.setId(snowFlakeFactory.nextId("L"));
         locationRepository.save(location);
     }

@@ -150,7 +150,11 @@ public class SendMailService {
                     reportDto.setVehicleType("重型货车");
                     reportDto.setMessage("");
                     // 用于排序
-                    reportDto.setHappenTime(location.getHappenTime());
+                    if (location.getHappenTime() != null) {
+                        reportDto.setHappenTime(location.getHappenTime());
+                    } else {
+                        reportDto.setHappenTime(LocalDateTime.now());
+                    }
                     // 正常行驶
                     reportDto.setType(1);
                     countDto.addType(1);
@@ -169,7 +173,11 @@ public class SendMailService {
                     reportDto.setSpeed(fengXian.getSpeed());
                     reportDto.setVehicleType("重型货车");
                     // 用于排序
-                    reportDto.setHappenTime(fengXian.getGdCreateTime());
+                    if (fengXian.getGdCreateTime() != null) {
+                        reportDto.setHappenTime(fengXian.getGdCreateTime());
+                    } else {
+                        reportDto.setHappenTime(LocalDateTime.now());
+                    }
                     this.handle(fengXian, reportDto, reportDtos, countDto);
                 }
             }
@@ -462,7 +470,11 @@ public class SendMailService {
                     reportDto.setVehicleType("重型货车");
                     reportDto.setMessage("");
                     // 用于排序
-                    reportDto.setHappenTime(location.getHappenTime());
+                    if (location.getHappenTime() != null) {
+                        reportDto.setHappenTime(location.getHappenTime());
+                    } else {
+                        reportDto.setHappenTime(LocalDateTime.now());
+                    }
                     // 正常行驶
                     reportDto.setType(1);
                     countDto.addType(1);
@@ -480,7 +492,11 @@ public class SendMailService {
                         reportDto.setSpeed(fengXian.getSpeed());
                         reportDto.setVehicleType("重型货车");
                         // 用于排序
-                        reportDto.setHappenTime(fengXian.getGdCreateTime());
+                        if (fengXian.getGdCreateTime() != null) {
+                            reportDto.setHappenTime(fengXian.getGdCreateTime());
+                        } else {
+                            reportDto.setHappenTime(LocalDateTime.now());
+                        }
                         this.handle(fengXian, reportDto, reportDtos, countDto);
                     }
                 }
