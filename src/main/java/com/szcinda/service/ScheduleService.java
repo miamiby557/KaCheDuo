@@ -172,7 +172,7 @@ public class ScheduleService {
     }
 
 
-    // 刷新机器人在线的列表，如果15分钟内没有发送日志，则表示不在线
+    // 刷新机器人在线的列表，如果5分钟内没有发送日志，则表示不在线
     @Scheduled(cron = "0/30 * * * * ?")
     public void checkAlive() throws Exception {
         List<String> expireList = new ArrayList<>();
@@ -181,7 +181,7 @@ public class ScheduleService {
             LocalDateTime time = dto.getTime();
             Duration duration = Duration.between(now, time);
             long minutes = Math.abs(duration.toMinutes());//相差的分钟数
-            if (minutes >= 2) {
+            if (minutes >= 5) {
                 expireList.add(phone);
             }
         });
@@ -196,7 +196,7 @@ public class ScheduleService {
         mainRobotWatchMap.forEach((id, time) -> {
             Duration duration = Duration.between(now, time);
             long minutes = Math.abs(duration.toMinutes());//相差的分钟数
-            if (minutes >= 2) {
+            if (minutes >= 5) {
                 deleteIds.add(id);
             }
         });
@@ -347,7 +347,7 @@ public class ScheduleService {
     }
 
     // 30分钟执行一次检查，如果发现掉线超过15分钟，则代表已经下线
-    @Scheduled(cron = "0 */30 * * * ?")
+    @Scheduled(cron = "0 */20 * * * ?")
     public void checkRobotIsAliveAndSendMsgToAdmin() {
         List<Robot> robots = robotRepository.findByParentIdIsNull();
         LocalDateTime now = LocalDateTime.now();

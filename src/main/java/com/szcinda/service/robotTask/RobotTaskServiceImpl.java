@@ -354,7 +354,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
                         task.setTaskStatus(TypeStringUtils.taskStatus1);
                         robotTaskRepository.save(task);
                     }
-                }else{
+                } else {
                     if (minutes >= minNumber) {
                         taskIds.add(task.getId());
                     }
@@ -372,6 +372,11 @@ public class RobotTaskServiceImpl implements RobotTaskService {
     @Override
     public void reRun(String id) {
         RobotTask task = robotTaskRepository.findById(id);
+        Robot robot = robotRepository.findByPhone(task.getUserName());
+        if (robot != null) {
+            // 更新密码
+            task.setPwd(robot.getPwd());
+        }
         List<String> stausList = new ArrayList<>();
         stausList.add(TypeStringUtils.taskStatus1);
         stausList.add(TypeStringUtils.taskStatus2);
