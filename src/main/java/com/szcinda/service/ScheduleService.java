@@ -3,6 +3,8 @@ package com.szcinda.service;
 import com.szcinda.repository.*;
 import com.szcinda.service.robotTask.CreateRobotTaskDto;
 import com.szcinda.service.robotTask.RobotTaskService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 @Component
 public class ScheduleService {
 
+    private final static Logger logger = LoggerFactory.getLogger(ScheduleService.class);
 
     private final RobotRepository robotRepository;
     private final RobotTaskService robotTaskService;
@@ -181,12 +184,15 @@ public class ScheduleService {
             LocalDateTime time = dto.getTime();
             Duration duration = Duration.between(now, time);
             long minutes = Math.abs(duration.toMinutes());//相差的分钟数
+            logger.info(String.format("该账号【%s】上一次心跳时间：【%s】", phone, time.toString()));
             if (minutes >= 5) {
+                logger.info(String.format("该账号【%s】判断为下线", phone));
                 expireList.add(phone);
             }
         });
         // 删除过期的账号
         if (expireList.size() > 0) {
+            logger.info(String.format("以下账号被删除活动状态：【%s】", expireList.toString()));
             for (String phone : expireList) {
                 robotAliveMap.remove(phone);
             }
@@ -196,9 +202,14 @@ public class ScheduleService {
         mainRobotWatchMap.forEach((id, time) -> {
             Duration duration = Duration.between(now, time);
             long minutes = Math.abs(duration.toMinutes());//相差的分钟数
-            if (minutes >= 5) {
-                deleteIds.add(id);
-            }
+            copyOnWriteRobots.stream().filter(robot -> robot.getId().equals(id))
+                    .findFirst().ifPresent(robot -> {
+                logger.info(String.format("该监控账号【%s】上一次心跳时间：【%s】", robot.getPhone(), time.toString()));
+                if (minutes >= 5) {
+                    logger.info(String.format("该监控账号【%s】判断为下线", robot.getPhone()));
+                    deleteIds.add(id);
+                }
+            });
         });
         if (deleteIds.size() > 0) {
             for (String deleteId : deleteIds) {
@@ -354,6 +365,7 @@ public class ScheduleService {
         StringBuilder stringBuilder = new StringBuilder("机器人下线情况：").append("\n");
         int index = 1;
         boolean hasDown = false;
+        int downNumber = 0;
         // 需要重启的账号
         List<String> needRebootAccountList = new ArrayList<>();
         for (Robot robot : robots) {
@@ -370,6 +382,7 @@ public class ScheduleService {
                             .append("(").append(robot.getCompany()).append(")").append("\n");
                     index++;
                     hasDown = true;
+                    downNumber++;
                     needRebootAccountList.add(robot.getPhone());
                 }
             } else {
@@ -377,19 +390,23 @@ public class ScheduleService {
                         .append("(").append(robot.getCompany()).append(")").append("\n");
                 index++;
                 hasDown = true;
+                downNumber++;
                 needRebootAccountList.add(robot.getPhone());
             }
         }
         if (hasDown) {
             // 需要创建一条微信发消息任务通知管理员
-            if (StringUtils.hasText(wechats)) {
+            // 如果下线的机器人等于监控机器人总数，则提醒
+            if (robots.size() == downNumber && StringUtils.hasText(wechats)) {
+                String content = "注意：全部监控端账号都下线了，请及时查看运行程序状态";
                 String[] strings = wechats.split(",");
                 for (String wechat : strings) {
                     // 判断是否存在报警记录，存在则更新
                     List<ScreenShotTask> screenShotTasks = screenShotTaskRepository.findByWechatAndStatus(wechat, TypeStringUtils.wechat_status5);
                     if (screenShotTasks.size() > 0) {
                         ScreenShotTask screenShotTask = screenShotTasks.get(0);
-                        screenShotTask.setContent(stringBuilder.toString());
+                        //screenShotTask.setContent(stringBuilder.toString());
+                        screenShotTask.setContent(content);
                         screenShotTaskRepository.save(screenShotTask);
                     } else {
                         ScreenShotTask screenShotTask = new ScreenShotTask();
@@ -400,7 +417,8 @@ public class ScheduleService {
                         screenShotTask.setWxid(wechat);
                         screenShotTask.setOwner("");
                         screenShotTask.setStatus(TypeStringUtils.wechat_status5);
-                        screenShotTask.setContent(stringBuilder.toString());
+                        // screenShotTask.setContent(stringBuilder.toString());
+                        screenShotTask.setContent(content);
                         screenShotTaskRepository.save(screenShotTask);
                     }
                 }
@@ -464,7 +482,7 @@ public class ScheduleService {
     }
 
     // 重启所有机器
-    public void rebootAllIp(){
+    public void rebootAllIp() {
         ipList.addAll(ipRobotList.keySet());
     }
 
