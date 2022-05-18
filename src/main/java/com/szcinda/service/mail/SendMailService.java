@@ -195,13 +195,14 @@ public class SendMailService {
         countDto.setCzCount((int) reportDtos.stream().filter(reportDto -> StringUtils.isEmpty(reportDto.getType1())).count());
         countDto.setManCount(countDto.getFxCount());
 
+
+        // 排序
+        reportDtos.sort(Comparator.comparing(ReportDto::getHappenTime, Comparator.naturalOrder()));
         // 追加序号
         int len = reportDtos.size();
         for (int i = 0; i < len; i++) {
             reportDtos.get(i).setIndex(i + 1);
         }
-        // 排序
-        reportDtos.sort(Comparator.comparing(ReportDto::getHappenTime, Comparator.naturalOrder()));
 
         beans.put("countDto", countDto);
         beans.put("vehicleList", reportDtos);
@@ -514,14 +515,13 @@ public class SendMailService {
             countDto.setCzCount((int) reportDtos.stream().filter(reportDto -> StringUtils.isEmpty(reportDto.getType1())).count());
             countDto.setManCount(countDto.getFxCount());
 
+            // 排序
+            reportDtos.sort(Comparator.comparing(ReportDto::getHappenTime, Comparator.naturalOrder()));
             // 追加序号
             int len = reportDtos.size();
             for (int i = 0; i < len; i++) {
                 reportDtos.get(i).setIndex(i + 1);
             }
-
-            // 排序
-            reportDtos.sort(Comparator.comparing(ReportDto::getHappenTime, Comparator.naturalOrder()));
 
             beans.put("countDto", countDto);
             beans.put("vehicleList", reportDtos);
