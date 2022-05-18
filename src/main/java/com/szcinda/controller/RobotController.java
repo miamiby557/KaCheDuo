@@ -56,6 +56,14 @@ public class RobotController {
         return Result.fail("不需要重启");
     }
 
+
+    @GetMapping("reRunRobotNow")
+    public Result<String> rebootAllIpNow() {
+        scheduleService.rebootAllIp();
+        ScheduleService.robotAliveMap.clear();
+        return Result.success();
+    }
+
     // 获取需要重启的IP列表
     @GetMapping("getNeedRebootList")
     public Result<Set<String>> getNeedRebootList() {
@@ -80,6 +88,9 @@ public class RobotController {
     public Result<String> create(@RequestBody CreateRobotDto robotDto) {
         logger.info(String.format("创建机器人账号：%s", robotDto.toString()));
         robotService.create(robotDto);
+        // 重启机器
+        scheduleService.rebootAllIp();
+        ScheduleService.robotAliveMap.clear();
         return Result.success();
     }
 
@@ -87,6 +98,9 @@ public class RobotController {
     public Result<String> update(@RequestBody UpdateRobotDto robotDto) {
         logger.info(String.format("更新机器人账号：%s", robotDto.toString()));
         robotService.update(robotDto);
+        // 重启机器
+        scheduleService.rebootAllIp();
+        ScheduleService.robotAliveMap.clear();
         return Result.success();
     }
 
@@ -94,6 +108,9 @@ public class RobotController {
     public Result<String> delete(@PathVariable String id) {
         logger.info(String.format("删除机器人账号：%s", id));
         robotService.delete(id);
+        // 重启机器
+        scheduleService.rebootAllIp();
+        ScheduleService.robotAliveMap.clear();
         return Result.success();
     }
 
@@ -101,6 +118,9 @@ public class RobotController {
     public Result<String> start(@PathVariable String id) {
         logger.info(String.format("启动机器人账号：%s", id));
         robotService.start(id);
+        // 重启机器
+        scheduleService.rebootAllIp();
+        ScheduleService.robotAliveMap.clear();
         return Result.success();
     }
 
@@ -108,6 +128,9 @@ public class RobotController {
     public Result<String> stop(@PathVariable String id) {
         logger.info(String.format("停止机器人账号：%s", id));
         robotService.stop(id);
+        // 重启机器
+        scheduleService.rebootAllIp();
+        ScheduleService.robotAliveMap.clear();
         return Result.success();
     }
 

@@ -463,6 +463,11 @@ public class ScheduleService {
         return ipList.contains(ip);
     }
 
+    // 重启所有机器
+    public void rebootAllIp(){
+        ipList.addAll(ipRobotList.keySet());
+    }
+
     // 重启成功后剔除IP
     public void rebootSuccess(String ip) {
         ipList.remove(ip);
