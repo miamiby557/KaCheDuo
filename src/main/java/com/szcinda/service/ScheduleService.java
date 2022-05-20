@@ -362,7 +362,7 @@ public class ScheduleService {
     }
 
 
-    @Scheduled(cron = "0 0 1 * * ?")
+//    @Scheduled(cron = "0 0 1 * * ?")
     public void sendToApp() {
         // 查询昨天的数据
         LocalDate lastDate = LocalDate.now().minusDays(1);
