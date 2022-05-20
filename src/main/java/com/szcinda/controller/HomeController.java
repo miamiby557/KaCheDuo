@@ -2,6 +2,7 @@ package com.szcinda.controller;
 
 import com.szcinda.repository.Driver;
 import com.szcinda.repository.DriverRepository;
+import com.szcinda.service.ScheduleService;
 import com.szcinda.service.callback.CallParams;
 import com.szcinda.service.callback.CallService;
 import com.szcinda.service.mail.SendMailService;
@@ -26,6 +27,7 @@ public class HomeController {
     private final SendMailService sendMailService;
     private final DriverRepository driverRepository;
     private final CallService callService;
+    private final ScheduleService scheduleService;
 
     @Value("${body.tired.id}")
     private String tiredId;
@@ -34,11 +36,12 @@ public class HomeController {
     private String overSpeedId;
 
     public HomeController(RobotService robotService, SendMailService sendMailService, DriverRepository driverRepository,
-                          CallService callService) {
+                          CallService callService, ScheduleService scheduleService) {
         this.robotService = robotService;
         this.sendMailService = sendMailService;
         this.driverRepository = driverRepository;
         this.callService = callService;
+        this.scheduleService = scheduleService;
     }
 
 
@@ -79,6 +82,12 @@ public class HomeController {
         } catch (Exception exception) {
             exception.printStackTrace();
         }
+        return Result.success();
+    }
+
+    @GetMapping("testSendDataToApp")
+    public Result<String> testSendDataToApp() {
+        scheduleService.sendToApp();
         return Result.success();
     }
 

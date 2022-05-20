@@ -15,6 +15,7 @@ import javax.persistence.criteria.Predicate;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -306,8 +307,11 @@ public class ScheduleService {
         return mainRobotWatchMap.containsKey(id);
     }
 
+    /**
+     * 2022年5月20号正式修改为直接发送到卡车多APP
+     */
     // 每天9点发送司机前一天违规内容
-    @Scheduled(cron = "0 0 9 * * ?")
+//    @Scheduled(cron = "0 0 9 * * ?")
     public void sendMsgToDriver() {
         LocalDate lastDate = LocalDate.now().minusDays(1);
         Specification<FengXian> specification = ((root, criteriaQuery, criteriaBuilder) -> {
@@ -354,6 +358,59 @@ public class ScheduleService {
                         screenShotTask.setContent(totalMsg);
                         screenShotTaskRepository.save(screenShotTask);
                     });
+        });
+    }
+
+
+    @Scheduled(cron = "0 0 1 * * ?")
+    public void sendToApp() {
+        // 查询昨天的数据
+        LocalDate lastDate = LocalDate.now().minusDays(1);
+        Specification<FengXian> specification = ((root, criteriaQuery, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            Predicate createTimeStart = criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), lastDate.atStartOfDay());
+            predicates.add(createTimeStart);
+            Predicate createTimeEnd = criteriaBuilder.lessThan(root.get("createTime"), lastDate.plusDays(1).atStartOfDay());
+            predicates.add(createTimeEnd);
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        });
+        List<FengXian> fengXians = fengXianRepository.findAll(specification);
+        // 按照车牌进行分组
+        Map<String, List<FengXian>> listMap = fengXians.stream().collect(Collectors.groupingBy(FengXian::getVehicleNo));
+        Set<String> vehicleList = listMap.keySet();
+        List<Driver> drivers = driverRepository.findByVehicleNoIn(vehicleList);
+        // 组装发送数据
+        listMap.forEach((vehicleNo, dataList) -> {
+            PostAppDataDto appDataDto = new PostAppDataDto();
+            appDataDto.setVehicleNo(vehicleNo);
+            drivers.stream().filter(driver -> driver.getVehicleNo().equals(vehicleNo))
+                    .findFirst()
+                    .ifPresent(driver -> {
+                        appDataDto.setCompany(driver.getCompany());
+                        appDataDto.setPhone(driver.getPhone());
+                    });
+            List<PostAppDataDto.Item> items = new ArrayList<>();
+
+            for (FengXian fengXian : dataList) {
+                PostAppDataDto.Item item = new PostAppDataDto.Item();
+                item.setId(fengXian.getId());
+                item.setVehicleColor(fengXian.getVehicleColor());
+                item.setArea(fengXian.getArea());
+                item.setCurrentDriver(fengXian.getCurrentDriver());
+                item.setThirdOrg(fengXian.getThirdOrg());
+                item.setBusinessScope(fengXian.getBusinessScope());
+                item.setDangerType(fengXian.getDangerType());
+                item.setDangerLevel(fengXian.getDangerLevel());
+                item.setSpeed(fengXian.getSpeed());
+                item.setHappenPlace(fengXian.getHappenPlace());
+                item.setHappenTime(fengXian.getHappenTime());
+                if(fengXian.getGdCreateTime()!=null){
+                    item.setGdCreateTime(fengXian.getGdCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                }
+                items.add(item);
+            }
+            appDataDto.setDangerList(items);
+            HttpUtil.post(appDataDto);
         });
     }
 
