@@ -286,6 +286,7 @@ public class RobotServiceImpl implements RobotService {
                 ScheduleService.robotPwdMap.remove(subRobot.getPhone());
             }
         }
+        ScheduleService.copyOnWriteRobots.clear();
     }
 
 
@@ -308,6 +309,7 @@ public class RobotServiceImpl implements RobotService {
                 scheduleService.updateRobotFromCopyOnWriteRobots(subRobot);
             }
         }
+        ScheduleService.copyOnWriteRobots.clear();
     }
 
     @Override
@@ -330,6 +332,7 @@ public class RobotServiceImpl implements RobotService {
                 scheduleService.updateRobotFromCopyOnWriteRobots(subRobot);
             }
         }
+        ScheduleService.copyOnWriteRobots.clear();
     }
 
     @Override

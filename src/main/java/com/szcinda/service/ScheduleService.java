@@ -200,6 +200,7 @@ public class ScheduleService {
         }
         // 删除15分钟没有发送心跳的监控帐号
         List<String> deleteIds = new ArrayList<>();
+
         mainRobotWatchMap.forEach((id, time) -> {
             Duration duration = Duration.between(now, time);
             long minutes = Math.abs(duration.toMinutes());//相差的分钟数
@@ -362,7 +363,7 @@ public class ScheduleService {
     }
 
 
-//    @Scheduled(cron = "0 0 1 * * ?")
+    //    @Scheduled(cron = "0 0 1 * * ?")
     public void sendToApp() {
         // 查询昨天的数据
         LocalDate lastDate = LocalDate.now().minusDays(1);
@@ -404,7 +405,7 @@ public class ScheduleService {
                 item.setSpeed(fengXian.getSpeed());
                 item.setHappenPlace(fengXian.getHappenPlace());
                 item.setHappenTime(fengXian.getHappenTime());
-                if(fengXian.getGdCreateTime()!=null){
+                if (fengXian.getGdCreateTime() != null) {
                     item.setGdCreateTime(fengXian.getGdCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                 }
                 items.add(item);
@@ -415,83 +416,35 @@ public class ScheduleService {
     }
 
     // 20分钟执行一次检查，如果发现掉线超过10分钟，则代表已经下线
-    @Scheduled(cron = "0 */20 * * * ?")
+    @Scheduled(cron = "0 */15 * * * ?")
     public void checkRobotIsAliveAndSendMsgToAdmin() {
         List<Robot> robots = robotRepository.findByParentIdIsNull();
-        LocalDateTime now = LocalDateTime.now();
-        StringBuilder stringBuilder = new StringBuilder("机器人下线情况：").append("\n");
-        int index = 1;
-        boolean hasDown = false;
-        int downNumber = 0;
-        // 需要重启的账号
-        List<String> needRebootAccountList = new ArrayList<>();
-        for (Robot robot : robots) {
-            if (!robot.isRun()) {
-                continue;
-            }
-            if (robotAliveMap.containsKey(robot.getPhone())) {
-                RobotAliveDto aliveDto = robotAliveMap.get(robot.getPhone());
-                Duration duration = Duration.between(now, aliveDto.getTime());
-                long minutes = Math.abs(duration.toMinutes());//相差的分钟数
-                if (minutes >= 10) {
-                    // 代表下线
-                    stringBuilder.append("第").append(index).append("个账号：").append(robot.getPhone())
-                            .append("(").append(robot.getCompany()).append(")").append("\n");
-                    index++;
-                    hasDown = true;
-                    downNumber++;
-                    needRebootAccountList.add(robot.getPhone());
-                }
-            } else {
-                stringBuilder.append("第").append(index).append("个账号：").append(robot.getPhone())
-                        .append("(").append(robot.getCompany()).append(")").append("\n");
-                index++;
-                hasDown = true;
-                downNumber++;
-                needRebootAccountList.add(robot.getPhone());
-            }
+        // 判断：如果监控账号的心跳数量不等于正常机器人的数量，则代表有机器人下线了，需要重启
+        long runRobotCount = robots.stream().filter(Robot::isRun).count();
+        if (runRobotCount > mainRobotWatchMap.size()) {
+            ipList.addAll(ipRobotList.keySet());
         }
-        if (hasDown) {
-            // 需要创建一条微信发消息任务通知管理员
-            // 如果下线的机器人等于监控机器人总数，则提醒
-            if (robots.size() == downNumber && StringUtils.hasText(wechats)) {
-                String content = "注意：全部监控端账号都下线了，请及时查看运行程序状态";
-                String[] strings = wechats.split(",");
-                for (String wechat : strings) {
-                    // 判断是否存在报警记录，存在则更新
-                    List<ScreenShotTask> screenShotTasks = screenShotTaskRepository.findByWechatAndStatus(wechat, TypeStringUtils.wechat_status5);
-                    if (screenShotTasks.size() > 0) {
-                        ScreenShotTask screenShotTask = screenShotTasks.get(0);
-                        //screenShotTask.setContent(stringBuilder.toString());
-                        screenShotTask.setContent(content);
-                        screenShotTaskRepository.save(screenShotTask);
-                    } else {
-                        ScreenShotTask screenShotTask = new ScreenShotTask();
-                        screenShotTask.setId(snowFlakeFactory.nextId("ST"));
-                        screenShotTask.setWechat(wechat);
-                        screenShotTask.setVehicleNo("");
-                        screenShotTask.setOwnerWechat("anqin1588");
-                        screenShotTask.setWxid(wechat);
-                        screenShotTask.setOwner("");
-                        screenShotTask.setStatus(TypeStringUtils.wechat_status5);
-                        // screenShotTask.setContent(stringBuilder.toString());
-                        screenShotTask.setContent(content);
-                        screenShotTaskRepository.save(screenShotTask);
-                    }
-                }
-            }
-            // 判断是哪一台电脑的账号，加入到需要重启的列表里面，如果没有找到，则全部机器重启
-            for (String account : needRebootAccountList) {
-                boolean hasInList = false;
-                for (Map.Entry<String, List<String>> entry : ipRobotList.entrySet()) {
-                    List<String> accountList = entry.getValue();
-                    if (accountList.contains(account)) {
-                        hasInList = true;
-                        ipList.add(entry.getKey());
-                    }
-                }
-                if (!hasInList) {
-                    ipList.addAll(ipRobotList.keySet());
+        if (mainRobotWatchMap.size() == 0) {
+            String content = "注意：全部监控端账号都下线了，请及时查看运行程序状态";
+            String[] strings = wechats.split(",");
+            for (String wechat : strings) {
+                // 判断是否存在报警记录，存在则更新
+                List<ScreenShotTask> screenShotTasks = screenShotTaskRepository.findByWechatAndStatus(wechat, TypeStringUtils.wechat_status5);
+                if (screenShotTasks.size() > 0) {
+                    ScreenShotTask screenShotTask = screenShotTasks.get(0);
+                    screenShotTask.setContent(content);
+                    screenShotTaskRepository.save(screenShotTask);
+                } else {
+                    ScreenShotTask screenShotTask = new ScreenShotTask();
+                    screenShotTask.setId(snowFlakeFactory.nextId("ST"));
+                    screenShotTask.setWechat(wechat);
+                    screenShotTask.setVehicleNo("");
+                    screenShotTask.setOwnerWechat("anqin1588");
+                    screenShotTask.setWxid(wechat);
+                    screenShotTask.setOwner("");
+                    screenShotTask.setStatus(TypeStringUtils.wechat_status5);
+                    screenShotTask.setContent(content);
+                    screenShotTaskRepository.save(screenShotTask);
                 }
             }
         }

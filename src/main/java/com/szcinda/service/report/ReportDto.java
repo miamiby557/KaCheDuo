@@ -31,6 +31,7 @@ public class ReportDto implements Serializable {
     public String handleResult = "";// 处理结果
 
     private LocalDateTime happenTime;
+    private LocalDateTime createTime;
 
     public void setSpeed(String speed) {
         if (StringUtils.hasText(speed)) {

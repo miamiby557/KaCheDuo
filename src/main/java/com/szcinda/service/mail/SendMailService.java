@@ -155,6 +155,7 @@ public class SendMailService {
                     } else {
                         reportDto.setHappenTime(LocalDateTime.now());
                     }
+                    reportDto.setCreateTime(location.getCreateTime());
                     // 正常行驶
                     reportDto.setType(1);
                     countDto.addType(1);
@@ -178,6 +179,7 @@ public class SendMailService {
                     } else {
                         reportDto.setHappenTime(LocalDateTime.now());
                     }
+                    reportDto.setCreateTime(fengXian.getCreateTime());
                     this.handle(fengXian, reportDto, reportDtos, countDto);
                 }
             }
@@ -197,7 +199,7 @@ public class SendMailService {
 
 
         // 排序
-        reportDtos.sort(Comparator.comparing(ReportDto::getHappenTime, Comparator.naturalOrder()));
+        reportDtos.sort(Comparator.comparing(ReportDto::getCreateTime, Comparator.naturalOrder()));
         // 追加序号
         int len = reportDtos.size();
         for (int i = 0; i < len; i++) {
@@ -404,6 +406,8 @@ public class SendMailService {
         //解决附件文件名称过长乱码问题
         System.setProperty("mail.mime.splitlongparameters", "false");
         List<Robot> robots = robotRepository.findAll();
+        // 过滤停止监控的账号
+        robots = robots.stream().filter(Robot::isRun).collect(Collectors.toList());
         // 发送失败的邮件
         List<String> emailList = new ArrayList<>();
         // 先查出所有昨天的数据
@@ -476,6 +480,7 @@ public class SendMailService {
                     } else {
                         reportDto.setHappenTime(LocalDateTime.now());
                     }
+                    reportDto.setCreateTime(location.getCreateTime());
                     // 正常行驶
                     reportDto.setType(1);
                     countDto.addType(1);
@@ -498,6 +503,7 @@ public class SendMailService {
                         } else {
                             reportDto.setHappenTime(LocalDateTime.now());
                         }
+                        reportDto.setCreateTime(fengXian.getCreateTime());
                         this.handle(fengXian, reportDto, reportDtos, countDto);
                     }
                 }
@@ -516,7 +522,7 @@ public class SendMailService {
             countDto.setManCount(countDto.getFxCount());
 
             // 排序
-            reportDtos.sort(Comparator.comparing(ReportDto::getHappenTime, Comparator.naturalOrder()));
+            reportDtos.sort(Comparator.comparing(ReportDto::getCreateTime, Comparator.naturalOrder()));
             // 追加序号
             int len = reportDtos.size();
             for (int i = 0; i < len; i++) {
