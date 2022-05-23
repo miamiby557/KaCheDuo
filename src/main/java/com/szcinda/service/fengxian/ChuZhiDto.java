@@ -8,4 +8,6 @@ import java.io.Serializable;
 public class ChuZhiDto implements Serializable {
     private String vehicleNo;//车牌号
     private String happenTime;// 发生时间
+
+    private String account;
 }

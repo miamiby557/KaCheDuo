@@ -7,6 +7,7 @@ import com.szcinda.service.robotTask.RobotTaskDto;
 import com.szcinda.service.robotTask.RobotTaskQuery;
 import com.szcinda.service.robotTask.RobotTaskService;
 import com.szcinda.service.robotTask.TaskErrorDto;
+import com.szcinda.service.wechat.WechatAlarmService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,9 +17,11 @@ import java.util.List;
 public class RobotTaskController {
 
     private final RobotTaskService robotTaskService;
+    private final WechatAlarmService wechatAlarmService;
 
-    public RobotTaskController(RobotTaskService robotTaskService) {
+    public RobotTaskController(RobotTaskService robotTaskService, WechatAlarmService wechatAlarmService) {
         this.robotTaskService = robotTaskService;
+        this.wechatAlarmService = wechatAlarmService;
     }
 
     @GetMapping("getList")
@@ -27,7 +30,7 @@ public class RobotTaskController {
     }
 
     @GetMapping("getLocationMission")
-    public Result<List<RobotTaskDto>> getLocationMission(){
+    public Result<List<RobotTaskDto>> getLocationMission() {
         return Result.success(robotTaskService.getOneLocationMission());
     }
 
@@ -83,12 +86,14 @@ public class RobotTaskController {
     @PostMapping("error")
     public Result<String> error(@RequestBody TaskErrorDto errorDto) {
         robotTaskService.error(errorDto);
+        wechatAlarmService.plusError(errorDto.getUserName());
         return Result.success();
     }
 
-    @GetMapping("finish/{id}")
-    public Result<String> finish(@PathVariable String id) {
+    @GetMapping("finish/{id}/{account}")
+    public Result<String> finish(@PathVariable String id, @PathVariable String account) {
         robotTaskService.finish(id);
+        wechatAlarmService.minusError(account);
         return Result.success();
     }
 }

@@ -4,6 +4,7 @@ import com.szcinda.repository.*;
 import com.szcinda.service.PageResult;
 import com.szcinda.service.SnowFlakeFactory;
 import com.szcinda.service.TypeStringUtils;
+import com.szcinda.service.wechat.WechatAlarmService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,11 +28,14 @@ public class LogServiceImpl implements LogService {
     private final SnowFlakeFactory snowFlakeFactory;
     private final RobotRepository robotRepository;
     private final RobotTaskRepository robotTaskRepository;
+    private final WechatAlarmService wechatAlarmService;
 
-    public LogServiceImpl(RobotLogRepository robotLogRepository, RobotRepository robotRepository, RobotTaskRepository robotTaskRepository) {
+    public LogServiceImpl(RobotLogRepository robotLogRepository, RobotRepository robotRepository,
+                          RobotTaskRepository robotTaskRepository, WechatAlarmService wechatAlarmService) {
         this.robotLogRepository = robotLogRepository;
         this.robotRepository = robotRepository;
         this.robotTaskRepository = robotTaskRepository;
+        this.wechatAlarmService = wechatAlarmService;
         this.snowFlakeFactory = SnowFlakeFactory.getInstance();
     }
 
@@ -55,6 +59,10 @@ public class LogServiceImpl implements LogService {
                 robotTask.setTaskStatus(TypeStringUtils.taskStatus1);
                 robotTaskRepository.save(robotTask);
             }
+        }
+        if (logDto.isError()) {
+            // 累计错误次数
+            wechatAlarmService.plusError(logDto.getPhone());
         }
         robotLogRepository.save(log);
     }

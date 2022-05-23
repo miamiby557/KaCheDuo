@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class WechatAlarmService {
@@ -18,6 +19,40 @@ public class WechatAlarmService {
     // 管理员微信号
     @Value("${admin.user.wechat}")
     private String wechats;
+
+    private static final ConcurrentHashMap<String, Integer> errorCountMap = new ConcurrentHashMap<>();
+
+
+    // 获取错误次数
+    public int geErrorCount(String account) {
+        if (errorCountMap.containsKey(account)) {
+            Integer count = errorCountMap.get(account);
+            if (count != null) {
+                return count;
+            }
+        }
+        return 0;
+    }
+
+    // 累计一次错误
+    public void plusError(String account) {
+        if (errorCountMap.containsKey(account)) {
+            Integer count = errorCountMap.get(account);
+            if (count == null) {
+                count = 1;
+            } else {
+                count += 1;
+            }
+            errorCountMap.put(account, count);
+        } else {
+            errorCountMap.put(account, 1);
+        }
+    }
+
+    //  消除所有错误 一次成功就消除所有错误
+    public void minusError(String account) {
+        errorCountMap.put(account, 0);
+    }
 
     @Autowired
     private ScreenShotTaskRepository screenShotTaskRepository;

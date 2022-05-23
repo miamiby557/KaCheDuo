@@ -114,6 +114,7 @@ public class FengXianServiceImpl implements FengXianService {
         FengXian fengXian = fengXianRepository.findByVehicleNoAndHappenTime(chuZhiDto.getVehicleNo(), chuZhiDto.getHappenTime());
         if (fengXian != null) {
             fengXian.setDisposeTime(LocalDateTime.now());
+            fengXian.setChuZhiType(TypeStringUtils.chuZhiStatus2);
             fengXian.setChuLiType(TypeStringUtils.fxHandleStatus1);
             fengXianRepository.save(fengXian);
             // 如果是疲劳驾驶或者是超速报警，则需要打电话

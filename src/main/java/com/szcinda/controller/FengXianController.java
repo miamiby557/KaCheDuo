@@ -68,6 +68,7 @@ public class FengXianController {
     public Result<String> chuZhi(@RequestBody ChuZhiDto dto) {
         logger.info(String.format("机器人上传处置：%s", dto.toString()));
         fengXianService.chuZhi(dto);
+
         return Result.success();
     }
 
@@ -193,7 +194,7 @@ public class FengXianController {
             response.setHeader("Content-disposition", "attachment;filename=" + fName + ".xls");
             wb.write(out);
             out.flush();
-        } catch (Exception e) {
+        } catch (Exception ignored) {
 
         } finally {
             if (out != null) {
@@ -205,8 +206,27 @@ public class FengXianController {
 
     @PostMapping("sendMsg")
     public Result<String> sendMsg(@RequestBody DownPrams downPrams) {
-        wechatAlarmService.sendMsg(downPrams.getMessage());
+        if (downPrams.isError()) {
+            // 如果是错误的提示，需要统计次数，累计3次才提醒
+            int count = wechatAlarmService.geErrorCount(downPrams.getAccount());
+            if (count >= 3) {
+                // 累计3次发送提醒并将历史错误记录清空
+                wechatAlarmService.sendMsg(String.format("【%s】账号【%s】已经累计3次操作失败，最后一次失败原因：【%s】", downPrams.getType(), downPrams.getAccount(), downPrams.getMessage()));
+                wechatAlarmService.minusError(downPrams.getAccount());
+            } else {
+                // 先累计次数，不通知
+                wechatAlarmService.plusError(downPrams.getAccount());
+            }
+        } else {
+            wechatAlarmService.sendMsg(downPrams.getMessage());
+        }
         return Result.success();
     }
 
+
+    @GetMapping("watchFinish/{account}")
+    public Result<String> watchFinish(@PathVariable String account) {
+        wechatAlarmService.minusError(account);
+        return Result.success();
+    }
 }

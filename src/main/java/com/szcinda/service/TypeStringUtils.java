@@ -20,6 +20,10 @@ public class TypeStringUtils {
     public static final String fxHandleStatus2 = "已处理";
     public static final String fxHandleStatus3 = "处理失败";
 
+    // 处置
+    public static final String chuZhiStatus1 = "待处置";
+    public static final String chuZhiStatus2 = "已处置";
+
     // 报警类型
     public static final String tired_status = "生理疲劳报警";
     public static final String over_status = "超速报警";

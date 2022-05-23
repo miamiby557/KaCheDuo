@@ -29,6 +29,7 @@ public class FengXian extends BaseEntity{
     public LocalDateTime disposeTime;// 处置时间
     public String messageSendTime;// 微信通知时间
     public String messageReceiveTime;// 微信回复时间
+    public String chuZhiType = TypeStringUtils.chuZhiStatus1; // 待处理、处理完成、处理失败
     public String chuLiType = TypeStringUtils.fxHandleStatus1; // 待处理、处理完成、处理失败
     public LocalDateTime chuLiTime;// 处理时间
     public String filePath;//处理图片相对路径

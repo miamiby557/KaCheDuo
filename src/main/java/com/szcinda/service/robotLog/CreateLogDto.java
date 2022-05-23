@@ -10,4 +10,5 @@ public class CreateLogDto implements Serializable {
     private String content;
 
     private String taskId; // 位置监控的主键ID
+    private boolean error;
 }

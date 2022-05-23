@@ -8,4 +8,5 @@ import java.io.Serializable;
 public class TaskErrorDto implements Serializable {
     private String id;
     private String message;
+    private String userName;
 }
