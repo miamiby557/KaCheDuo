@@ -77,6 +77,12 @@ public class RobotTaskController {
         return Result.success();
     }
 
+    @GetMapping("delete/{id}")
+    public Result<String> delete(@PathVariable String id) {
+        robotTaskService.delete(id);
+        return Result.success();
+    }
+
     @GetMapping("reRunHistoryTask/{id}")
     public Result<String> reRunHistoryTask(@PathVariable String id) {
         robotTaskService.reRunHistoryTask(id);

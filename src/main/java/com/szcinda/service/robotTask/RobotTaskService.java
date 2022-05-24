@@ -30,4 +30,6 @@ public interface RobotTaskService {
     void reRunHistoryTask(String id);
 
     List<RobotTaskDto> getOneLocationMission();
+
+    void delete(String id);
 }

@@ -281,6 +281,11 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         return null;
     }
 
+    @Override
+    public void delete(String id) {
+        robotTaskRepository.delete(id);
+    }
+
     // 把相同账号的处理任务放在一起
     private void addToSubTasks(List<RobotTaskDto> filterTasks, RobotTask robotTask) {
         RobotTaskDto hasRecord = filterTasks.stream().filter(robotTaskDto -> robotTaskDto.getUserName().equals(robotTask.getUserName()))
