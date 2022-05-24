@@ -180,7 +180,14 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         task.setFinishTime(LocalDateTime.now());
         HistoryTask historyTask = new HistoryTask();
         BeanUtils.copyProperties(task, historyTask);
-        robotTaskRepository.delete(task);
+        // 如果是位置监控，则重新运行,如果超过3次，则不运行
+        if (TypeStringUtils.robotType3.equals(task.getTaskType()) && task.getCount() < 4) {
+            task.setTaskStatus(TypeStringUtils.taskStatus1);
+            task.setCount(task.getCount() + 1);
+            robotTaskRepository.save(task);
+        } else {
+            robotTaskRepository.delete(task);
+        }
         historyTaskRepository.save(historyTask);
         if (StringUtils.hasText(task.getFxId())) {
             // 更新处理
@@ -189,6 +196,7 @@ public class RobotTaskServiceImpl implements RobotTaskService {
             fengXian.setChuLiType(TypeStringUtils.fxHandleStatus3);
             fengXianRepository.save(fengXian);
         }
+
     }
 
     @Override

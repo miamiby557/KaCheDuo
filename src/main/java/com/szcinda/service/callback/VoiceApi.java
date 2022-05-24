@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.szcinda.controller.Result;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.tomcat.util.codec.binary.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -13,9 +15,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class VoiceApi {
+
+    private final static Logger logger = LoggerFactory.getLogger(VoiceApi.class);
     private static final String ACCOUNT_SID = "c51b0661f537b79fdcd56f38b0079a40";
     private static final String AUTH_TOKEN = "ac38ea6e5dbf1ac4fa4a0bed2fc47bcb";
     private static final String DATE_FORMAT = "yyyyMMddHHmmss";

@@ -22,4 +22,5 @@ public class RobotTask  extends BaseEntity{
     private String happenTime;
     private String filePath;
     private LocalDateTime runTime;
+    private int count; // 累计重试次数
 }
