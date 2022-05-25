@@ -304,8 +304,9 @@ public class ScheduleService {
         }
     }
 
-    public boolean canWatch(String id) {
-        return mainRobotWatchMap.containsKey(id);
+    public boolean canWatch(String userName) {
+        Robot robot = robotRepository.findByPhone(userName);
+        return robot.isRun();
     }
 
     /**

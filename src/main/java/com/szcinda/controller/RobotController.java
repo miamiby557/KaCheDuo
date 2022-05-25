@@ -172,4 +172,14 @@ public class RobotController {
     public Result<List<String>> getLocationRobots(@PathVariable String owner) {
         return Result.success(robotService.getLocationRobots(owner));
     }
+
+    //  是否启用监控
+    @GetMapping("canWatch/{userName}")
+    public Result<String> canWatch(@PathVariable String userName) {
+        boolean canWatch = scheduleService.canWatch(userName);
+        if (canWatch) {
+            return Result.success();
+        }
+        return Result.fail("暂停监控");
+    }
 }

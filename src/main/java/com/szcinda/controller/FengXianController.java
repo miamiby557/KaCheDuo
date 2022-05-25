@@ -96,15 +96,6 @@ public class FengXianController {
         return Result.fail("暂停执行处理和位置监控");
     }
 
-    @GetMapping("canWatch/{id}")
-    public Result<String> canWatch(@PathVariable String id) {
-        boolean canWatch = scheduleService.canWatch(id);
-        if (canWatch) {
-            return Result.success();
-        }
-        return Result.fail("暂停监控");
-    }
-
     @GetMapping("generateScreenShotMissions")
     public Result<String> generateScreenShotMissions() {
         fengXianService.generateScreenShotMissions();
