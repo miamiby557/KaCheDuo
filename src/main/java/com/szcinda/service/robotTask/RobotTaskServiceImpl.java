@@ -206,6 +206,9 @@ public class RobotTaskServiceImpl implements RobotTaskService {
         task.setFinishTime(LocalDateTime.now());
         HistoryTask historyTask = new HistoryTask();
         BeanUtils.copyProperties(task, historyTask);
+        historyTask.setId(snowFlakeFactory.nextId("HT"));
+        historyTask.setCreateTime(LocalDateTime.now());
+        historyTask.setVersion(0);
         robotTaskRepository.delete(task);
         historyTaskRepository.save(historyTask);
         if (StringUtils.hasText(task.getFxId())) {
