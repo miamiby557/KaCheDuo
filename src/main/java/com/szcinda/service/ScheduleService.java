@@ -452,7 +452,7 @@ public class ScheduleService {
         // 检查是否有超过30条处置任务，说明可能处理端机器人有问题了
         List<RobotTask> all = robotTaskRepository.findAll();
         int size = all.size();
-        if (size >= 30) {
+        if (size >= 35) {
             if (StringUtils.hasText(wechats)) {
                 String[] strings = wechats.split(",");
                 for (String wechat : strings) {
