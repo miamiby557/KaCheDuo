@@ -39,4 +39,6 @@ public class ChaGangController {
         chaGangService.delete(id);
         return Result.success();
     }
+
+
 }

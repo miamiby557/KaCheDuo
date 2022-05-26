@@ -89,18 +89,18 @@ public class ChaGangServiceImpl implements ChaGangService {
             String[] strings = wechats.split(",");
             for (String account : deleteList) {
                 chaGangMap.remove(account);
-                for (String wechat : strings) {
-                    ScreenShotTask screenShotTask = new ScreenShotTask();
-                    screenShotTask.setId(snowFlakeFactory.nextId("ST"));
-                    screenShotTask.setWechat(wechat);
-                    screenShotTask.setVehicleNo("");
-                    screenShotTask.setOwnerWechat("anqin1588");
-                    screenShotTask.setWxid(wechat);
-                    screenShotTask.setOwner("");
-                    screenShotTask.setStatus(TypeStringUtils.wechat_status5);
-                    screenShotTask.setContent(String.format("当前时间【%s】查岗账号【%s】已下线，请运维赶紧处理", now.toString(), account));
-                    screenShotTaskRepository.save(screenShotTask);
-                }
+            }
+            for (String wechat : strings) {
+                ScreenShotTask screenShotTask = new ScreenShotTask();
+                screenShotTask.setId(snowFlakeFactory.nextId("ST"));
+                screenShotTask.setWechat(wechat);
+                screenShotTask.setVehicleNo("");
+                screenShotTask.setOwnerWechat("anqin1588");
+                screenShotTask.setWxid(wechat);
+                screenShotTask.setOwner("");
+                screenShotTask.setStatus(TypeStringUtils.wechat_status5);
+                screenShotTask.setContent(String.format("当前时间【%s】查岗账号【%s】已下线，请运维赶紧处理", now.toString(), String.join(",", deleteList)));
+                screenShotTaskRepository.save(screenShotTask);
             }
         }
     }
