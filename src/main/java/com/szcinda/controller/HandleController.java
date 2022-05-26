@@ -62,7 +62,7 @@ public class HandleController {
         Assert.isTrue(StringUtils.hasText(appUploadDto.getVehicleNo()), "参数【车牌号】不能为空");
         Assert.isTrue(StringUtils.hasText(appUploadDto.getFilePath()), "参数【图片链接】不能为空");
         logger.info("APP接收到参数：" + appUploadDto.toString());
-        // driverService.generateChuliMissionFromAppUpload(appUploadDto.getVehicleNo(), appUploadDto.getFilePath());
+        driverService.generateChuliMissionFromAppUpload(appUploadDto.getVehicleNo(), appUploadDto.getFilePath());
         return Result.success();
     }
 

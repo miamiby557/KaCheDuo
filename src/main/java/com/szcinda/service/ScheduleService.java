@@ -364,7 +364,7 @@ public class ScheduleService {
     }
 
 
-    //    @Scheduled(cron = "0 0 1 * * ?")
+    // @Scheduled(cron = "0 0 1 * * ?")
     public void sendToApp() {
         // 查询昨天的数据
         LocalDate lastDate = LocalDate.now().minusDays(1);
@@ -409,14 +409,18 @@ public class ScheduleService {
                 if (fengXian.getGdCreateTime() != null) {
                     item.setGdCreateTime(fengXian.getGdCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                 }
-                items.add(item);
+                if(TypeStringUtils.canSendToApp(fengXian.getDangerType())){
+                    items.add(item);
+                }
             }
-            appDataDto.setDangerList(items);
-            HttpUtil.post(appDataDto);
+            if(items.size()> 0){
+                appDataDto.setDangerList(items);
+                HttpUtil.post(appDataDto);
+            }
         });
     }
 
-    // 20分钟执行一次检查，如果发现掉线超过10分钟，则代表已经下线
+    // 15分钟执行一次检查，如果发现掉线超过10分钟，则代表已经下线
     @Scheduled(cron = "0 */15 * * * ?")
     public void checkRobotIsAliveAndSendMsgToAdmin() {
         List<Robot> robots = robotRepository.findByParentIdIsNull();

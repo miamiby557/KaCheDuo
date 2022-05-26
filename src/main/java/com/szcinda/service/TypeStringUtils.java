@@ -30,6 +30,14 @@ public class TypeStringUtils {
     public static final String smoke_status = "抽烟报警";
     public static final String hangup_phone_status = "接打手机报警";
     public static final String play_phone_status = "玩手机报警";
+    public static final String untied_status = "未系安全带报警";
+    public static final String over_hand_status = "双脱把报警";
+
+    public static boolean canSendToApp(String type){
+        return tired_status.equals(type) || over_status.equals(type) || smoke_status.equals(type) || hangup_phone_status.equals(type)
+                || play_phone_status.equals(type) || untied_status.equals(type) || over_hand_status.equals(type);
+    }
+
     // 微信截图状态
     public static final String screen_status1 = "已截图";
     public static final String screen_status2 = "截图失败";

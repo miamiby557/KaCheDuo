@@ -25,7 +25,8 @@ public class HttpUtil {
 
     public static void post(PostAppDataDto params) {
         HttpClient client = new DefaultHttpClient();
-        String app_url = "http://uat.quanroon.com/kcd-uif/client/carInfo/carIllegalInfo";
+        // String app_url = "http://uat.quanroon.com/kcd-uif/client/carInfo/carIllegalInfo";
+        String app_url = "https://www.kacheduo.com/kcd-uif/client/carInfo/carIllegalInfo";
         HttpPost post = new HttpPost(app_url);
         post.setHeader("Content-Type", "application/json");
         String result = "";
