@@ -27,6 +27,8 @@ public class ChaGangServiceImpl implements ChaGangService {
     private final ScreenShotTaskRepository screenShotTaskRepository;
     private final SnowFlakeFactory snowFlakeFactory = SnowFlakeFactory.getInstance();
 
+    private static List<ChaGang> accountList = new ArrayList<>();
+
     // 管理员微信号
     @Value("${admin.user.wechat}")
     private String wechats;
@@ -46,6 +48,7 @@ public class ChaGangServiceImpl implements ChaGangService {
         BeanUtils.copyProperties(createDto, chaGang);
         chaGang.setId(snowFlakeFactory.nextId("CG"));
         chaGangRepository.save(chaGang);
+        accountList.clear();
     }
 
     @Override
@@ -72,6 +75,15 @@ public class ChaGangServiceImpl implements ChaGangService {
     @Override
     public void delete(String id) {
         chaGangRepository.delete(id);
+        accountList.clear();
+
+    }
+
+    public List<ChaGang> getList() {
+        if (accountList.size() == 0) {
+            accountList = chaGangRepository.findAll();
+        }
+        return accountList;
     }
 
     @Scheduled(cron = "0/30 * * * * ?")
@@ -86,10 +98,26 @@ public class ChaGangServiceImpl implements ChaGangService {
             }
         });
         if (deleteList.size() > 0) {
-            String[] strings = wechats.split(",");
             for (String account : deleteList) {
                 chaGangMap.remove(account);
             }
+        }
+        List<String> alarmAccountList = new ArrayList<>();
+        List<ChaGang> list = getList();
+        for (ChaGang chaGang : list) {
+            if (chaGangMap.containsKey(chaGang.getAccount())) {
+                Duration duration = Duration.between(now, chaGangMap.get(chaGang.getAccount()));
+                long minutes = Math.abs(duration.toMinutes());//相差的分钟数
+                if (minutes > 5) {
+                    deleteList.add(chaGang.getAccount());
+                }
+            } else {
+                alarmAccountList.add(chaGang.getAccount());
+            }
+
+        }
+        if (deleteList.size() > 0) {
+            String[] strings = wechats.split(",");
             for (String wechat : strings) {
                 ScreenShotTask screenShotTask = new ScreenShotTask();
                 screenShotTask.setId(snowFlakeFactory.nextId("ST"));
@@ -99,7 +127,7 @@ public class ChaGangServiceImpl implements ChaGangService {
                 screenShotTask.setWxid(wechat);
                 screenShotTask.setOwner("");
                 screenShotTask.setStatus(TypeStringUtils.wechat_status5);
-                screenShotTask.setContent(String.format("当前时间【%s】查岗账号【%s】已下线，请运维赶紧处理", now.toString(), String.join(",", deleteList)));
+                screenShotTask.setContent(String.format("当前时间【%s】查岗账号【%s】已下线，请运维赶紧处理", now.toString(), String.join(",", alarmAccountList)));
                 screenShotTaskRepository.save(screenShotTask);
             }
         }
