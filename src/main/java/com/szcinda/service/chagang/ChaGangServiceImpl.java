@@ -109,14 +109,14 @@ public class ChaGangServiceImpl implements ChaGangService {
                 Duration duration = Duration.between(now, chaGangMap.get(chaGang.getAccount()));
                 long minutes = Math.abs(duration.toMinutes());//相差的分钟数
                 if (minutes > 5) {
-                    deleteList.add(chaGang.getAccount());
+                    alarmAccountList.add(chaGang.getAccount());
                 }
             } else {
                 alarmAccountList.add(chaGang.getAccount());
             }
 
         }
-        if (deleteList.size() > 0) {
+        if (alarmAccountList.size() > 0) {
             String[] strings = wechats.split(",");
             for (String wechat : strings) {
                 ScreenShotTask screenShotTask = new ScreenShotTask();
