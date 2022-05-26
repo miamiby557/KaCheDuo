@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -28,6 +29,10 @@ public class ChaGangServiceImpl implements ChaGangService {
     private final SnowFlakeFactory snowFlakeFactory = SnowFlakeFactory.getInstance();
 
     private static List<ChaGang> accountList = new ArrayList<>();
+
+
+    // 记录上一次发送微信提醒时间
+    private static final ConcurrentHashMap<String, LocalDateTime> lastMap = new ConcurrentHashMap<>();
 
     // 管理员微信号
     @Value("${admin.user.wechat}")
@@ -114,8 +119,16 @@ public class ChaGangServiceImpl implements ChaGangService {
             } else {
                 alarmAccountList.add(chaGang.getAccount());
             }
-
         }
+        // 过滤15分钟前发送过的账号记录
+        alarmAccountList = alarmAccountList.stream().filter(account -> {
+            if (!lastMap.containsKey(account)) {
+                return true;
+            }
+            Duration duration = Duration.between(now, lastMap.get(account));
+            long minutes = Math.abs(duration.toMinutes());//相差的分钟数
+            return minutes > 15;
+        }).collect(Collectors.toList());
         if (alarmAccountList.size() > 0) {
             String[] strings = wechats.split(",");
             for (String wechat : strings) {
@@ -129,6 +142,10 @@ public class ChaGangServiceImpl implements ChaGangService {
                 screenShotTask.setStatus(TypeStringUtils.wechat_status5);
                 screenShotTask.setContent(String.format("当前时间【%s】查岗账号【%s】已下线，请运维赶紧处理", now.toString(), String.join(",", alarmAccountList)));
                 screenShotTaskRepository.save(screenShotTask);
+            }
+            for (String account : alarmAccountList) {
+                // 记录这一次发送的时间
+                lastMap.put(account, LocalDateTime.now());
             }
         }
     }
