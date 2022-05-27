@@ -1,18 +1,23 @@
 package com.szcinda.service.chagang;
 
-import com.szcinda.repository.ChaGang;
-import com.szcinda.repository.ChaGangRepository;
-import com.szcinda.repository.ScreenShotTask;
-import com.szcinda.repository.ScreenShotTaskRepository;
+import com.szcinda.repository.*;
+import com.szcinda.service.PageResult;
 import com.szcinda.service.SnowFlakeFactory;
 import com.szcinda.service.TypeStringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
+import javax.persistence.criteria.Predicate;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -25,6 +30,7 @@ import java.util.stream.Collectors;
 public class ChaGangServiceImpl implements ChaGangService {
 
     private final ChaGangRepository chaGangRepository;
+    private final ChaGangRecordRepository chaGangRecordRepository;
     private final ScreenShotTaskRepository screenShotTaskRepository;
     private final SnowFlakeFactory snowFlakeFactory = SnowFlakeFactory.getInstance();
 
@@ -40,8 +46,9 @@ public class ChaGangServiceImpl implements ChaGangService {
 
     private final ConcurrentHashMap<String, LocalDateTime> chaGangMap = new ConcurrentHashMap<>();
 
-    public ChaGangServiceImpl(ChaGangRepository chaGangRepository, ScreenShotTaskRepository screenShotTaskRepository) {
+    public ChaGangServiceImpl(ChaGangRepository chaGangRepository, ChaGangRecordRepository chaGangRecordRepository, ScreenShotTaskRepository screenShotTaskRepository) {
         this.chaGangRepository = chaGangRepository;
+        this.chaGangRecordRepository = chaGangRecordRepository;
         this.screenShotTaskRepository = screenShotTaskRepository;
     }
 
@@ -85,6 +92,47 @@ public class ChaGangServiceImpl implements ChaGangService {
         chaGangRepository.delete(id);
         accountList.clear();
 
+    }
+
+    @Override
+    public void createRecord(ChaGangRecordCreateDto recordCreateDto) {
+        ChaGangRecord chaGangRecord = new ChaGangRecord();
+        BeanUtils.copyProperties(recordCreateDto, chaGangRecord);
+        chaGangRecord.setId(snowFlakeFactory.nextId("CG"));
+        chaGangRecordRepository.save(chaGangRecord);
+    }
+
+
+    @Override
+    public PageResult<ChaGangRecord> query(RecordQueryDto params) {
+        Specification<ChaGangRecord> specification = ((root, criteriaQuery, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (StringUtils.hasText(params.getAnswerUser())) {
+                Predicate answerUser = criteriaBuilder.like(root.get("answerUser"), "%" + params.getAnswerUser() + "%");
+                predicates.add(answerUser);
+            }
+            if (params.getCreateTimeStart() != null) {
+                Predicate timeStart = criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), params.getCreateTimeStart().atStartOfDay());
+                predicates.add(timeStart);
+            }
+            if (params.getCreateTimeEnd() != null) {
+                Predicate timeEnd = criteriaBuilder.lessThan(root.get("createTime"), params.getCreateTimeEnd().plusDays(1).atStartOfDay());
+                predicates.add(timeEnd);
+            }
+            if (params.getInquireTimeStart() != null) {
+                Predicate timeStart = criteriaBuilder.greaterThanOrEqualTo(root.get("inquireTime"), params.getInquireTimeStart().atStartOfDay());
+                predicates.add(timeStart);
+            }
+            if (params.getInquireTimeEnd() != null) {
+                Predicate timeEnd = criteriaBuilder.lessThan(root.get("inquireTime"), params.getInquireTimeEnd().plusDays(1).atStartOfDay());
+                predicates.add(timeEnd);
+            }
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        });
+        Sort order = new Sort(Sort.Direction.DESC, "createTime");
+        Pageable pageable = new PageRequest(params.getPage() - 1, params.getPageSize(), order);
+        Page<ChaGangRecord> details = chaGangRecordRepository.findAll(specification, pageable);
+        return PageResult.of(details.getContent(), params.getPage(), params.getPageSize(), details.getTotalElements());
     }
 
     public List<ChaGang> getList() {
