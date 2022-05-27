@@ -74,7 +74,7 @@ public class FengXianController {
 
     @GetMapping("canRun/{phone}")
     public Result<String> canRun(@PathVariable String phone) {
-        boolean canRun = scheduleService.canRunFX(phone);
+        boolean canRun = scheduleService.canWatch(phone);
         if (canRun) {
             String pwd = scheduleService.getPwd(phone);
             return Result.success(pwd);

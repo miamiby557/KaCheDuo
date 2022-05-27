@@ -17,7 +17,9 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import javax.persistence.criteria.Predicate;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -66,11 +68,9 @@ public class RobotServiceImpl implements RobotService {
         robot = new Robot();
         BeanUtils.copyProperties(dto, robot);
         robot.setId(snowFlakeFactory.nextId("RB"));
-        robot.setType("监控");
+        robot.setType(TypeStringUtils.robotType1);
         robotRepository.save(robot);
         scheduleService.addRobotFromCopyOnWriteRobots(robot);
-        // 监控帐号
-        ScheduleService.robotChuZhiMap.put(robot.getPhone(), robot.isRun());
         ScheduleService.robotPwdMap.put(robot.getPhone(), robot.getPwd());
         // 处理和位置监控
         // 创建处理帐号
@@ -81,9 +81,8 @@ public class RobotServiceImpl implements RobotService {
         robot2.setOwner(dto.getOwner());
         robot2.setId(snowFlakeFactory.nextId("RB"));
         robot2.setParentId(robot.getId());
-        robot2.setType("处理-位置监控");
+        robot2.setType(TypeStringUtils.robotType3);
         robotRepository.save(robot2);
-        ScheduleService.robotChuZhiMap.put(robot2.getPhone(), robot2.isRun());
         ScheduleService.robotPwdMap.put(robot2.getPhone(), robot2.getPwd());
         for (CreateRobotDto createRobotDto : dto.getSubRobotList()) {
             Robot subRobot = new Robot();
@@ -92,10 +91,9 @@ public class RobotServiceImpl implements RobotService {
             subRobot.setParentId(robot.getId());
             subRobot.setOwner(robot.getOwner());
             subRobot.setCompany(dto.getCompany());
-            subRobot.setType("处置");
+            subRobot.setType(TypeStringUtils.robotType2);
             robotRepository.save(subRobot);
             scheduleService.addRobotFromCopyOnWriteRobots(subRobot);
-            ScheduleService.robotChuZhiMap.put(subRobot.getPhone(), subRobot.isRun());
             ScheduleService.robotPwdMap.put(subRobot.getPhone(), subRobot.getPwd());
         }
         ScheduleService.copyOnWriteRobots.clear();
@@ -116,7 +114,7 @@ public class RobotServiceImpl implements RobotService {
         robot.setPhone(dto.getPhone());
         robot.setPwd(dto.getPwd());
         robot.setCompany(dto.getCompany());
-        robot.setType("监控");
+        robot.setType(TypeStringUtils.robotType1);
         robot.setAccount2(dto.getAccount2());
         robot.setPwd2(dto.getPwd2());
         robot.setCarCount(dto.getCarCount());
@@ -126,12 +124,9 @@ public class RobotServiceImpl implements RobotService {
         }
         robotRepository.save(robot);
         scheduleService.updateRobotFromCopyOnWriteRobots(robot);
-        // 监控帐号
-        ScheduleService.robotChuZhiMap.put(robot.getPhone(), robot.isRun());
         ScheduleService.robotPwdMap.put(robot.getPhone(), robot.getPwd());
         List<Robot> subRobots = robotRepository.findByParentId(robot.getId());
         for (Robot subRobot : subRobots) {
-            ScheduleService.robotChuZhiMap.remove(subRobot.getPhone());
             ScheduleService.robotPwdMap.remove(subRobot.getPhone());
             robotRepository.delete(subRobot);
             scheduleService.removeRobotFromCopyOnWriteRobots(subRobot.getId());
@@ -151,9 +146,8 @@ public class RobotServiceImpl implements RobotService {
         robot2.setId(snowFlakeFactory.nextId("RB"));
         robot2.setParentId(robot.getId());
         robot2.setOwner(dto.getOwner());
-        robot2.setType("处理-位置监控");
+        robot2.setType(TypeStringUtils.robotType3);
         robotRepository.save(robot2);
-        ScheduleService.robotChuZhiMap.put(robot2.getPhone(), robot2.isRun());
         ScheduleService.robotPwdMap.put(robot2.getPhone(), robot2.getPwd());
         for (UpdateRobotDto createRobotDto : dto.getSubRobotList()) {
             subRobot = new Robot();
@@ -162,10 +156,9 @@ public class RobotServiceImpl implements RobotService {
             subRobot.setParentId(robot.getId());
             subRobot.setOwner(robot.getOwner());
             subRobot.setCompany(dto.getCompany());
-            subRobot.setType("处置");
+            subRobot.setType(TypeStringUtils.robotType2);
             robotRepository.save(subRobot);
             scheduleService.addRobotFromCopyOnWriteRobots(subRobot);
-            ScheduleService.robotChuZhiMap.put(subRobot.getPhone(), subRobot.isRun());
             ScheduleService.robotPwdMap.put(subRobot.getPhone(), subRobot.getPwd());
         }
         ScheduleService.copyOnWriteRobots.clear();
@@ -173,6 +166,7 @@ public class RobotServiceImpl implements RobotService {
 
     @Override
     public PageResult<RobotDto> query(QueryRobotParams params) {
+        LocalDateTime now = LocalDateTime.now();
         Specification<Robot> specification = ((root, criteriaQuery, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             Predicate owner = criteriaBuilder.equal(root.get("owner"), params.getOwner());
@@ -190,20 +184,20 @@ public class RobotServiceImpl implements RobotService {
         Page<Robot> robots = robotRepository.findAll(specification, pageable);
         List<RobotDto> robotDtos = new ArrayList<>();
         if (robots.getContent().size() > 0) {
-            ConcurrentHashMap<String, RobotAliveDto> robotAliveMap = ScheduleService.robotAliveMap;
+            ConcurrentHashMap<String, LocalDateTime> robotAliveMap = ScheduleService.robotAliveMap;
             for (Robot robot : robots) {
                 RobotDto dto = new RobotDto();
                 BeanUtils.copyProperties(robot, dto);
                 if (robotAliveMap.containsKey(robot.getPhone())) {
-                    dto.setAlive(true);
-                    dto.setLastTime(robotAliveMap.get(robot.getPhone()).getTime());
-                } else {
-                    dto.setAlive(false);
+                    Duration duration = Duration.between(now, robotAliveMap.get(robot.getPhone()));
+                    long minutes = Math.abs(duration.toMinutes());//相差的分钟数
+                    dto.setAlive(minutes <= 5);
                 }
+                dto.setLastTime(robotAliveMap.get(robot.getPhone()));
                 // 查找子账号
                 List<Robot> subRobots = robotRepository.findByParentId(robot.getId());
                 for (Robot subRobot : subRobots) {
-                    if ("处理-位置监控".equals(subRobot.getType())) {
+                    if (TypeStringUtils.robotType3.equals(subRobot.getType())) {
                         dto.setAccount2(subRobot.getPhone());
                         dto.setPwd2(subRobot.getPwd());
                         dto.setId2(subRobot.getId());// 处理机器人的id
@@ -213,11 +207,11 @@ public class RobotServiceImpl implements RobotService {
                         RobotDto subRobotDto = new RobotDto();
                         BeanUtils.copyProperties(subRobot, subRobotDto);
                         if (robotAliveMap.containsKey(subRobotDto.getPhone())) {
-                            subRobotDto.setAlive(true);
-                            subRobotDto.setLastTime(robotAliveMap.get(subRobotDto.getPhone()).getTime());
-                        } else {
-                            subRobotDto.setAlive(false);
+                            Duration duration = Duration.between(now, robotAliveMap.get(subRobotDto.getPhone()));
+                            long minutes = Math.abs(duration.toMinutes());//相差的分钟数
+                            subRobotDto.setAlive(minutes <= 5);
                         }
+                        subRobotDto.setLastTime(robotAliveMap.get(subRobotDto.getPhone()));
                         dto.getSubRobots().add(subRobotDto);
                     }
                 }
@@ -230,9 +224,10 @@ public class RobotServiceImpl implements RobotService {
 
     @Override
     public List<RobotGroupDto> querySelf(String owner) {
+        LocalDateTime now = LocalDateTime.now();
         List<Robot> robots = scheduleService.queryBySelfFromCopyOnWriteRobots(owner);
         List<RobotGroupDto> robotDtos = new ArrayList<>();
-        ConcurrentHashMap<String, RobotAliveDto> robotAliveMap = ScheduleService.robotAliveMap;
+        ConcurrentHashMap<String, LocalDateTime> robotAliveMap = ScheduleService.robotAliveMap;
         for (Robot robot : robots) {
             RobotGroupDto groupDto = new RobotGroupDto();
             groupDto.setOwner(robot.getPhone());
@@ -240,11 +235,11 @@ public class RobotServiceImpl implements RobotService {
             RobotDto dto = new RobotDto();
             BeanUtils.copyProperties(robot, dto);
             if (robotAliveMap.containsKey(robot.getPhone())) {
-                dto.setAlive(true);
-                dto.setLastTime(robotAliveMap.get(robot.getPhone()).getTime());
-            } else {
-                dto.setAlive(false);
+                Duration duration = Duration.between(now, robotAliveMap.get(robot.getPhone()));
+                long minutes = Math.abs(duration.toMinutes());//相差的分钟数
+                dto.setAlive(minutes <= 5);
             }
+            dto.setLastTime(robotAliveMap.get(robot.getPhone()));
             dto.setPhone(dto.getPhone() + "(" + dto.getType() + ")");
             groupDto.getSubRobots().add(dto);
             // 查找子账号
@@ -253,11 +248,11 @@ public class RobotServiceImpl implements RobotService {
                 RobotDto subRobotDto = new RobotDto();
                 BeanUtils.copyProperties(subRobot, subRobotDto);
                 if (robotAliveMap.containsKey(subRobotDto.getPhone())) {
-                    subRobotDto.setAlive(true);
-                    subRobotDto.setLastTime(robotAliveMap.get(subRobotDto.getPhone()).getTime());
-                } else {
-                    subRobotDto.setAlive(false);
+                    Duration duration = Duration.between(now, robotAliveMap.get(subRobotDto.getPhone()));
+                    long minutes = Math.abs(duration.toMinutes());//相差的分钟数
+                    subRobotDto.setAlive(minutes <= 5);
                 }
+                subRobotDto.setLastTime(robotAliveMap.get(subRobotDto.getPhone()));
                 subRobotDto.setPhone(subRobotDto.getPhone() + "(" + subRobotDto.getType() + ")");
                 groupDto.getSubRobots().add(subRobotDto);
             }
@@ -273,16 +268,11 @@ public class RobotServiceImpl implements RobotService {
         List<Robot> subRobots = robotRepository.findByParentId(id);
         robotRepository.delete(robot);
         scheduleService.removeRobotFromCopyOnWriteRobots(id);
-        // 监控帐号
-        ScheduleService.robotChuZhiMap.remove(robot.getPhone());
         ScheduleService.robotPwdMap.remove(robot.getPhone());
-        // 把主账号改为停止
-        scheduleService.removeFromMainRobotWatchMap(id);
         if (subRobots.size() > 0) {
             for (Robot subRobot : subRobots) {
                 robotRepository.delete(subRobot);
                 scheduleService.removeRobotFromCopyOnWriteRobots(subRobot.getId());
-                ScheduleService.robotChuZhiMap.remove(subRobot.getPhone());
                 ScheduleService.robotPwdMap.remove(subRobot.getPhone());
             }
         }
@@ -296,16 +286,11 @@ public class RobotServiceImpl implements RobotService {
         List<Robot> subRobots = robotRepository.findByParentId(id);
         robot.setRun(false);
         robotRepository.save(robot);
-        // 改变状态，不允许继续处置
-        scheduleService.changeChuZhiRobotStatus(robot.getPhone(), false);
         scheduleService.updateRobotFromCopyOnWriteRobots(robot);
-        // 把主账号改为停止
-        scheduleService.removeFromMainRobotWatchMap(id);
         if (subRobots.size() > 0) {
             for (Robot subRobot : subRobots) {
                 subRobot.setRun(false);
                 robotRepository.save(subRobot);
-                scheduleService.changeChuZhiRobotStatus(subRobot.getPhone(), false);
                 scheduleService.updateRobotFromCopyOnWriteRobots(subRobot);
             }
         }
@@ -318,17 +303,12 @@ public class RobotServiceImpl implements RobotService {
         List<Robot> subRobots = robotRepository.findByParentId(id);
         robot.setRun(true);
         robotRepository.save(robot);
-        scheduleService.changeChuZhiRobotStatus(robot.getPhone(), true);
-        if (StringUtils.hasText(robot.getAccount2())) {
-            scheduleService.changeChuZhiRobotStatus(robot.getAccount2(), true);
-        }
         // 把主账号改为运行
         scheduleService.updateRobotFromCopyOnWriteRobots(robot);
         if (subRobots.size() > 0) {
             for (Robot subRobot : subRobots) {
                 subRobot.setRun(true);
                 robotRepository.save(subRobot);
-                scheduleService.changeChuZhiRobotStatus(subRobot.getPhone(), true);
                 scheduleService.updateRobotFromCopyOnWriteRobots(subRobot);
             }
         }
@@ -338,9 +318,10 @@ public class RobotServiceImpl implements RobotService {
     @Override
     public List<RobotGroupDto> group() {
         List<RobotGroupDto> groupDtos = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
         List<Robot> robots = scheduleService.queryAllRobotsFromCopyOnWriteRobots();
         Map<String, List<Robot>> map = robots.stream().collect(Collectors.groupingBy(Robot::getOwner));
-        ConcurrentHashMap<String, RobotAliveDto> robotAliveMap = ScheduleService.robotAliveMap;
+        ConcurrentHashMap<String, LocalDateTime> robotAliveMap = ScheduleService.robotAliveMap;
         map.forEach((owner, list) -> {
             RobotGroupDto groupDto = new RobotGroupDto();
             User user = userRepository.findById(owner);
@@ -350,11 +331,11 @@ public class RobotServiceImpl implements RobotService {
                 RobotDto dto = new RobotDto();
                 BeanUtils.copyProperties(robot, dto);
                 if (robotAliveMap.containsKey(robot.getPhone())) {
-                    dto.setAlive(true);
-                    dto.setLastTime(robotAliveMap.get(robot.getPhone()).getTime());
-                } else {
-                    dto.setAlive(false);
+                    Duration duration = Duration.between(now, robotAliveMap.get(robot.getPhone()));
+                    long minutes = Math.abs(duration.toMinutes());//相差的分钟数
+                    dto.setAlive(minutes <= 5);
                 }
+                dto.setLastTime(robotAliveMap.get(robot.getPhone()));
                 dto.setPhone(dto.getPhone() + "(" + dto.getType() + ")");
                 groupDto.getSubRobots().add(dto);
             }
@@ -376,8 +357,6 @@ public class RobotServiceImpl implements RobotService {
                 dto.setPhone(robot.getPhone());
                 dto.setPwd(robot.getPwd());
                 robotDtos.add(dto);
-                // 添加到主账号监控集合中
-                scheduleService.updateToMainRobotWatchMap(robot.getId());
             }
         }
         return robotDtos;
