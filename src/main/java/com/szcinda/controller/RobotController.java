@@ -180,6 +180,6 @@ public class RobotController {
         if (canWatch) {
             return Result.success();
         }
-        return Result.fail("暂停监控");
+        return Result.fail(String.format("该账号【%s】停止运行", userName));
     }
 }

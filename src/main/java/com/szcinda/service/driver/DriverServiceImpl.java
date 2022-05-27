@@ -202,7 +202,7 @@ public class DriverServiceImpl implements DriverService {
         for (FengXian fengXian : fengXianList) {
             fengXian.setFilePath(filePath);
             fengXianRepository.save(fengXian);
-            RobotTask task = new RobotTask();
+            /*RobotTask task = new RobotTask();
             task.setId(snowFlakeFactory.nextId("RT"));
             task.setTaskStatus(TypeStringUtils.taskStatus1);
             task.setTaskType(TypeStringUtils.robotType3);
@@ -222,8 +222,9 @@ public class DriverServiceImpl implements DriverService {
                 }
             });
             if (StringUtils.hasText(task.getUserName())) {
+                // 停止处理，待两客系统开放功能
                 robotTaskRepository.save(task);
-            }
+            }*/
         }
     }
 
