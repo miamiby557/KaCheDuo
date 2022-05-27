@@ -60,13 +60,16 @@ public class ChaGangServiceImpl implements ChaGangService {
     public List<ChaGangDto> query() {
         List<ChaGang> chaGangs = chaGangRepository.findAll();
         List<ChaGangDto> dtos = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
         for (ChaGang chaGang : chaGangs) {
             ChaGangDto dto = new ChaGangDto();
             BeanUtils.copyProperties(chaGang, dto);
             if (chaGangMap.containsKey(chaGang.getAccount())) {
-                dto.setAlive(true);
-                dto.setLastTime(chaGangMap.get(chaGang.getAccount()));
+                Duration duration = Duration.between(now, chaGangMap.get(chaGang.getAccount()));
+                long minutes = Math.abs(duration.toMinutes());//相差的分钟数
+                dto.setAlive(minutes <= 5);
             }
+            dto.setLastTime(chaGangMap.get(chaGang.getAccount()));
             dtos.add(dto);
         }
         return dtos;
@@ -93,20 +96,7 @@ public class ChaGangServiceImpl implements ChaGangService {
 
     @Scheduled(cron = "0/30 * * * * ?")
     public void checkAlive() {
-        List<String> deleteList = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
-        chaGangMap.forEach((account, time) -> {
-            Duration duration = Duration.between(now, time);
-            long minutes = Math.abs(duration.toMinutes());//相差的分钟数
-            if (minutes > 5) {
-                deleteList.add(account);
-            }
-        });
-        if (deleteList.size() > 0) {
-            for (String account : deleteList) {
-                chaGangMap.remove(account);
-            }
-        }
         List<String> alarmAccountList = new ArrayList<>();
         List<ChaGang> list = getList();
         for (ChaGang chaGang : list) {
