@@ -1,15 +1,14 @@
 package com.szcinda.controller;
 
+import com.szcinda.controller.util.CsvExportUtil;
 import com.szcinda.controller.util.DownPrams;
-import com.szcinda.controller.util.FieldMapUtil;
+import com.szcinda.controller.util.FieldMapUtl;
 import com.szcinda.repository.FengXian;
 import com.szcinda.service.PageResult;
 import com.szcinda.service.ScheduleService;
 import com.szcinda.service.fengxian.*;
 import com.szcinda.service.robotTask.RobotTaskServiceImpl;
 import com.szcinda.service.wechat.WechatAlarmService;
-import org.apache.poi.hssf.usermodel.*;
-import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
@@ -18,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
-import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -123,74 +121,49 @@ public class FengXianController {
         params.setUserName(userName);
         params.setOwner(owner);
         List<FengXian> fengXianList = fengXianService.queryAll(params);
-        OutputStream out = response.getOutputStream();
-        try {
-            Map<String, List<String>> map = new HashMap<>();
-            HSSFWorkbook wb = new HSSFWorkbook();
-            HSSFSheet sheet = wb.createSheet("sheet1");
-            sheet.setDefaultColumnWidth(20);// 默认列宽
-            HSSFRow row = sheet.createRow(0);
-            HSSFCellStyle style = wb.createCellStyle();
-            style.setAlignment(HorizontalAlignment.CENTER);
-            HSSFCell cell;
-            Map<String, String> fieldMap = FieldMapUtil.fxMap();
-            List<String> columnList = FieldMapUtil.fxColumns();
-            // 生成标题
-            int size = columnList.size();
-            for (int i = 0; i < size; i++) {
-                cell = row.createCell((short) i);
-                cell.setCellValue(columnList.get(i));
-                cell.setCellStyle(style);
+        try (OutputStream out = response.getOutputStream()) {
+            StringBuilder titles = new StringBuilder();
+            List<FieldMapUtl.Item> fxFieldMap = FieldMapUtl.getFXFieldMap();
+            List<String> keys = new ArrayList<>();
+            for (FieldMapUtl.Item item : fxFieldMap) {
+                titles.append(item.getLabel()).append(CsvExportUtil.CSV_COLUMN_SEPARATOR);
+                keys.add(item.getField());
             }
-            for (FengXian dto : fengXianList) {
-                String id = dto.getId();
-                List<String> list = new ArrayList<>();
-                columnList.forEach(column -> {
-                    if (fieldMap.containsKey(column)) {
-                        String value;
-                        try {
-                            Field field = FengXian.class.getDeclaredField(fieldMap.get(column));
-                            if (field.getType() == String.class) {
-                                value = (String) field.get(dto);
-                            } else if (field.getType() == Integer.class || field.getGenericType().getTypeName().equals("int")) {
-                                value = ((Integer) field.get(dto)).toString();
-                            } else if (field.getType() == Double.class || field.getGenericType().getTypeName().equals("double")) {
-                                value = field.get(dto).toString();
-                            } else if (field.getType() == LocalDateTime.class) {
-                                value = ((LocalDateTime) field.get(dto)).toString().replace("T", " ");
-                            } else if (field.getType() == LocalDate.class) {
-                                value = ((LocalDate) field.get(dto)).toString();
-                            } else {
-                                value = "";
-                            }
-                        } catch (Exception e) {
+            // 构造导出数据
+            List<Map<String, String>> datas = new ArrayList<>();
+            Map<String, String> mapInfo;
+            for (FengXian fengXian : fengXianList) {
+                mapInfo = new HashMap<>(keys.size());
+                String value;
+                for (String key : keys) {
+                    try {
+                        Field field = FengXian.class.getDeclaredField(key);
+                        if (field.getType() == String.class) {
+                            value = (String) field.get(fengXian);
+                        } else if (field.getType() == Integer.class || field.getGenericType().getTypeName().equals("int")) {
+                            value = ((Integer) field.get(fengXian)).toString();
+                        } else if (field.getType() == Double.class || field.getGenericType().getTypeName().equals("double")) {
+                            value = field.get(fengXian).toString();
+                        } else if (field.getType() == LocalDateTime.class) {
+                            value = ((LocalDateTime) field.get(fengXian)).toString().replace("T", " ");
+                        } else if (field.getType() == LocalDate.class) {
+                            value = ((LocalDate) field.get(fengXian)).toString();
+                        } else {
                             value = "";
                         }
-                        list.add(value);
+                    } catch (Exception exception) {
+                        value = "";
                     }
-                });
-                map.put(id, list);
-            }
-            int i = 0;
-            for (String str : map.keySet()) {
-                row = sheet.createRow(i + 1);
-                List<String> list = map.get(str);
-                for (int j = 0; j < size; j++) {
-                    row.createCell((short) j).setCellValue(list.get(j));
+                    mapInfo.put(key, value);
                 }
-                i++;
+                datas.add(mapInfo);
             }
-            // 下载EXCEL
-            String fName = URLEncoder.encode("处置账单", "UTF-8");
-            response.setHeader("Content-disposition", "attachment;filename=" + fName + ".xls");
-            wb.write(out);
-            out.flush();
-        } catch (Exception ignored) {
-
-        } finally {
-            if (out != null) {
-                out.close();
-            }
+            String fName = "处置-";
+            CsvExportUtil.responseSetProperties(fName, response);
+            CsvExportUtil.doExport(datas, titles.substring(0, titles.length() - 1), keys, out);
+        } catch (Exception exception) {
+            logger.info("导出数据异常，异常信息如下：");
+            logger.info(exception.getLocalizedMessage());
         }
     }
 

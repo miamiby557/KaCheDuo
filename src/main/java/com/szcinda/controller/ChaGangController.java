@@ -3,6 +3,8 @@ package com.szcinda.controller;
 import com.szcinda.repository.ChaGangRecord;
 import com.szcinda.service.PageResult;
 import com.szcinda.service.chagang.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -10,6 +12,8 @@ import java.util.List;
 @RestController
 @RequestMapping("chaGang")
 public class ChaGangController {
+
+    private final static Logger logger = LoggerFactory.getLogger(ChaGangController.class);
 
     private final ChaGangService chaGangService;
 
@@ -42,6 +46,7 @@ public class ChaGangController {
 
     @PostMapping("createRecord")
     public Result<String> createRecord(@RequestBody List<ChaGangRecordCreateDto> createDtos) {
+        logger.info(String.format("创建查岗记录：【%s】", createDtos));
         for (ChaGangRecordCreateDto createDto : createDtos) {
             chaGangService.createRecord(createDto);
         }

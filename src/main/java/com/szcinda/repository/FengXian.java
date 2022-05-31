@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
-public class FengXian extends BaseEntity{
+public class FengXian extends BaseEntity {
     public String vehicleNo;//车牌号
     public String vehicleColor;//车牌颜色
     public String area;// 所属地区

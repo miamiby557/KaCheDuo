@@ -305,7 +305,19 @@ public class FengXianServiceImpl implements FengXianService {
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         });
         Sort order = new Sort(Sort.Direction.DESC, "createTime");
-        return fengXianRepository.findAll(specification, order);
+        // 数据量大，分页查询
+        Pageable pageable = new PageRequest(0, 5000, order);
+        Page<FengXian> details = fengXianRepository.findAll(specification, pageable);
+        List<FengXian> fengXianList = new ArrayList<>(details.getContent());
+        int totalPages = details.getTotalPages();
+        if (totalPages > 1) {
+            for (int page = 1; page < totalPages; page++) {
+                pageable = new PageRequest(page, 5000, order);
+                details = fengXianRepository.findAll(specification, pageable);
+                fengXianList.addAll(details.getContent());
+            }
+        }
+        return fengXianList;
     }
 
     @Override

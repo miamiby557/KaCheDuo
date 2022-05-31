@@ -36,6 +36,9 @@ public class WechatAlarmService {
 
     // 累计一次错误
     public void plusError(String account) {
+        if (account == null) {
+            return;
+        }
         if (errorCountMap.containsKey(account)) {
             Integer count = errorCountMap.get(account);
             if (count == null) {
