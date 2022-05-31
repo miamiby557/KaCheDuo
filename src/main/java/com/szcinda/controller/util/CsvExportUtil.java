@@ -5,6 +5,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import javax.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -52,7 +53,7 @@ public class CsvExportUtil {
             }
         }
         // 写出响应
-        os.write(buf.toString().getBytes(StandardCharsets.UTF_8));
+        os.write(buf.toString().getBytes());
         os.flush();
     }
 
