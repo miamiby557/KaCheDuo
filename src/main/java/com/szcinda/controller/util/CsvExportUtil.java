@@ -53,7 +53,7 @@ public class CsvExportUtil {
             }
         }
         // 写出响应
-        os.write(buf.toString().getBytes());
+        os.write(buf.toString().getBytes(StandardCharsets.UTF_8));
         os.flush();
     }
 
