@@ -37,7 +37,7 @@ public class CsvExportUtil {
         // 保证线程安全
         StringBuilder buf = new StringBuilder();
 
-        String[] titleArr = titles.split(",");
+        String[] titleArr = titles.split(CSV_COLUMN_SEPARATOR);
         // 组装表头
         for (String title : titleArr) {
             buf.append(title).append(CSV_COLUMN_SEPARATOR);

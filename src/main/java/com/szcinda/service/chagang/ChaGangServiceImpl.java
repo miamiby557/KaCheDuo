@@ -151,7 +151,7 @@ public class ChaGangServiceImpl implements ChaGangService {
             if (chaGangMap.containsKey(chaGang.getAccount())) {
                 Duration duration = Duration.between(now, chaGangMap.get(chaGang.getAccount()));
                 long minutes = Math.abs(duration.toMinutes());//相差的分钟数
-                if (minutes > 5) {
+                if (minutes > 10) {
                     alarmAccountList.add(chaGang.getAccount());
                 }
             } else {
