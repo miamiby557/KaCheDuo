@@ -23,4 +23,27 @@ public class CountFx2Dto implements Serializable {
     public long secondCountP;
     public long thirdCount;
     public long thirdCountP;
+
+    public long levelCount = 0;
+
+
+    public void addLevelCount(String levelType) {
+        if(levelType == null){
+            return;
+        }
+        switch (levelType) {
+            case "一级风险":
+                firstCount++;
+                levelCount++;
+                break;
+            case "二级风险":
+                secondCount++;
+                levelCount++;
+                break;
+            case "三级风险":
+                thirdCount++;
+                levelCount++;
+                break;
+        }
+    }
 }

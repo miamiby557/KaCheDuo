@@ -422,16 +422,22 @@ public class SendMailService {
      * @throws Exception
      */
     @Scheduled(cron = "0 30 3 ? * MON")
-    public void sendWeekReport() {
+    public void sendWeekReport() throws Exception {
         logger.info("正在全量发周报邮件");
         //解决附件文件名称过长乱码问题
         System.setProperty("mail.mime.splitlongparameters", "false");
         List<Robot> robots = robotRepository.findAll();
         CountFxDto countFxDto = new CountFxDto();
+        CountFx2Dto countFx2Dto = new CountFx2Dto();
+        LocalDate now = LocalDate.now();
         // 过滤出主账号
         List<Robot> mainRobotList = robots.stream().filter(item -> item.isRun() && StringUtils.isEmpty(item.getParentId())).collect(Collectors.toList());
         // 先查出所有昨天的数据
         for (Robot robot : mainRobotList) {
+            String email = robot.getEmail();
+            if (StringUtils.isEmpty(email)) {
+                continue;
+            }
             // 取出子账号
             List<String> accountList = robots.stream().filter(robot1 -> robot1.getParentId() != null && robot1.getParentId().equals(robot.getId())).map(Robot::getPhone).collect(Collectors.toList());
             accountList.add(robot.getPhone());
@@ -462,8 +468,16 @@ public class SendMailService {
                     }
                 }
                 last7Date = last7Date.plusDays(1);
-                //统计今天的数量
+                //统计今天的原始警情数量
                 countFxDto.setWeekDayValue(i, fengXianList.size());
+                for (FengXian fengXian : fengXianList) {
+                    // 判断是否是6种风险类型
+                    if (inDangerType(fengXian.getDangerType())) {
+                        countFxDto.setWeekDayValue2(i);
+                    }
+                    // 统计风险等级数量
+                    countFx2Dto.addLevelCount(fengXian.getDangerLevel());
+                }
             }
             String company = robot.getCompany();
             String startDate = LocalDate.now().minusDays(7).toString();
@@ -495,9 +509,271 @@ public class SendMailService {
             countDto.setPhoneCount(fengXianList.stream().filter(fengXian -> StringUtils.hasText(fengXian.getCallTime())).count());
             countDto.setAqCount(countDto.getCzCount());
 
-            //统计每天的风险数量
+            //统计每种风险类型的数量
+            for (FengXian fengXian : fengXianList) {
+                countFxDto.addTypeCount(fengXian.getDangerType());
+            }
+
+            //求占比
+            countFx2Dto.setOsCount(countFxDto.getOsCount());
+            countFx2Dto.setSmkCount(countFxDto.getSmkCount());
+            countFx2Dto.setHpCount(countFxDto.getHpCount());
+            countFx2Dto.setTiredCount(countFxDto.getTiredCount());
+            countFx2Dto.setPpCount(countFxDto.getPpCount());
+
+            Map<String, Object> beans = new HashMap<>();
+            beans.put("vehicleList", vehicleList);
+            beans.put("company", company);
+            beans.put("startDate", startDate);
+            beans.put("endDate", endDate);
+            beans.put("countDto", countDto);
+            beans.put("countFxDto", countFxDto);
+            beans.put("countFx2Dto", countFx2Dto);
+
+            InputStream is = null;
+            OutputStream os = null;
+            // 写出文件
+            File saveFile = new File(System.getProperty("user.dir"), robot.getCompany() + "周报.xls");
+            try {
+                // 获取模板文件
+                is = this.getClass().getClassLoader().getResourceAsStream("周报模板.xls");
+                // 实例化 XLSTransformer 对象
+                XLSTransformer xlsTransformer = new XLSTransformer();
+                // 获取 Workbook ，传入 模板 和 数据
+                Workbook workbook = xlsTransformer.transformXLS(is, beans);
+                os = new BufferedOutputStream(new FileOutputStream(saveFile));
+                // 输出
+                workbook.write(os);
+                // 关闭和刷新管道，不然可能会出现表格数据不齐，打不开之类的问题
+            } catch (Exception ignored) {
+
+            } finally {
+                if (is != null) {
+                    is.close();
+                }
+                if (os != null) {
+                    os.flush();
+                    os.close();
+                }
+            }
+            if (!saveFile.exists()) {
+                continue;
+            }
+            // 替换中文符号 去除空格
+            email = email.trim().replaceAll(" ", "").replace("，", ",");
+            String[] emailArray = email.split(",");
+            String mailText = "详情见附件\n";
+            // 发送邮件
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper;
+            try {
+                helper = new MimeMessageHelper(message, true);
+                String fileName = robot.getCompany() + "周报";
+                //true代表支持多组件，如附件，图片等
+                helper.setFrom(from);
+                helper.setTo(emailArray);
+                helper.setSubject(now.toString() + "-" + fileName);
+                helper.setCc(ccEmail);
+                helper.setText(mailText, true);
+                FileSystemResource file = new FileSystemResource(saveFile);
+                fileName = fileName + ".xls";
+                helper.addAttachment(fileName, file);//添加附件，可多次调用该方法添加多个附件
+                for (int i = 0; i < 3; i++) {
+                    try {
+                        mailSender.send(message);
+                        logger.info("这些账号发送成功：" + email);
+                        break;
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
+                        logger.info(exception.getLocalizedMessage());
+                        Thread.sleep(2000);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            // 删除临时文件
+            try {
+                saveFile.delete();
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+
+    public void sendOneCompanyWeekReport(String id) throws Exception {
+        //解决附件文件名称过长乱码问题
+        System.setProperty("mail.mime.splitlongparameters", "false");
+        Robot robot = robotRepository.findById(id);
+        CountFxDto countFxDto = new CountFxDto();
+        CountFx2Dto countFx2Dto = new CountFx2Dto();
+        LocalDate now = LocalDate.now();
+        // 过滤出主账号
+        String email = robot.getEmail();
+        if (StringUtils.isEmpty(email)) {
+            return;
+        }
+        // 子账号
+        List<Robot> robots = robotRepository.findByParentId(robot.getId());
+        // 取出子账号
+        List<String> accountList = robots.stream().map(Robot::getPhone).collect(Collectors.toList());
+        accountList.add(robot.getPhone());
+        LocalDate last7Date = LocalDate.now().minusDays(7);
+        List<FengXian> fengXianList = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            // 取出一周的处置列表
+            LocalDate finalLast7Date = last7Date;
+            Specification<FengXian> specification2 = ((root, criteriaQuery, criteriaBuilder) -> {
+                List<Predicate> predicates = new ArrayList<>();
+                Predicate timeStart = criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), finalLast7Date.atStartOfDay());
+                predicates.add(timeStart);
+                Predicate timeEnd = criteriaBuilder.lessThan(root.get("createTime"), finalLast7Date.plusDays(1).atStartOfDay());
+                predicates.add(timeEnd);
+                Expression<String> exp = root.get("owner");
+                predicates.add(exp.in(accountList));
+                return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            });
+            Pageable pageable = new PageRequest(0, 5000);
+            Page<FengXian> details = fengXianRepository.findAll(specification2, pageable);
+            fengXianList.addAll(details.getContent());
+            int totalPages = details.getTotalPages();
+            if (totalPages > 1) {
+                for (int page = 1; page < totalPages; page++) {
+                    pageable = new PageRequest(page, 5000);
+                    details = fengXianRepository.findAll(specification2, pageable);
+                    fengXianList.addAll(details.getContent());
+                }
+            }
+            last7Date = last7Date.plusDays(1);
+            //统计今天的原始警情数量
+            countFxDto.setWeekDayValue(i, fengXianList.size());
+            for (FengXian fengXian : fengXianList) {
+                // 判断是否是6种风险类型
+                if (inDangerType(fengXian.getDangerType())) {
+                    countFxDto.setWeekDayValue2(i);
+                }
+                // 统计风险等级数量
+                countFx2Dto.addLevelCount(fengXian.getDangerLevel());
+            }
+        }
+        String company = robot.getCompany();
+        String startDate = LocalDate.now().minusDays(7).toString();
+        String endDate = LocalDate.now().minusDays(1).toString();
+        List<Top10DriverCount> vehicleList = new ArrayList<>();
+        // 按照车牌汇总数量
+        Map<String, Long> collect = fengXianList.stream().collect(Collectors.groupingBy(FengXian::getVehicleNo, Collectors.counting()));
+        // 按照车辆数量进行排序
+        List<Map.Entry<String, Long>> entryList = new ArrayList<>(collect.entrySet());
+        entryList.sort((me1, me2) -> {
+            return me2.getValue().compareTo(me1.getValue()); // 降序排序
+        });
+        // 取风险处置发生次数前10位最高的
+        for (int i = 1; i < 11; i++) {
+            if (i > entryList.size()) {
+                break;
+            }
+            Top10DriverCount top10DriverCount = new Top10DriverCount();
+            top10DriverCount.setIndex(i);
+            top10DriverCount.setNo(entryList.get(i - 1).getKey());
+            top10DriverCount.setCount(entryList.get(i - 1).getValue());
+        }
+        WeekCountDto countDto = new WeekCountDto();
+        countDto.setCarCount(robot.getCarCount());
+        countDto.setWgCount(fengXianList.stream().filter(fengXian -> inDangerType(fengXian.getDangerType())).map(FengXian::getVehicleNo).distinct().count());
+        countDto.setTotalCount(fengXianList.size());
+        countDto.setFxCount(fengXianList.stream().filter(fengXian -> inDangerType(fengXian.getDangerType())).count());
+        countDto.setCzCount(countDto.getFxCount());
+        countDto.setPhoneCount(fengXianList.stream().filter(fengXian -> StringUtils.hasText(fengXian.getCallTime())).count());
+        countDto.setAqCount(countDto.getCzCount());
+
+        //统计每种风险类型的数量
+        for (FengXian fengXian : fengXianList) {
+            countFxDto.addTypeCount(fengXian.getDangerType());
         }
 
+        //求占比
+        countFx2Dto.setOsCount(countFxDto.getOsCount());
+        countFx2Dto.setSmkCount(countFxDto.getSmkCount());
+        countFx2Dto.setHpCount(countFxDto.getHpCount());
+        countFx2Dto.setTiredCount(countFxDto.getTiredCount());
+        countFx2Dto.setPpCount(countFxDto.getPpCount());
+
+        Map<String, Object> beans = new HashMap<>();
+        beans.put("vehicleList", vehicleList);
+        beans.put("company", company);
+        beans.put("startDate", startDate);
+        beans.put("endDate", endDate);
+        beans.put("countDto", countDto);
+        beans.put("countFxDto", countFxDto);
+        beans.put("countFx2Dto", countFx2Dto);
+
+        InputStream is = null;
+        OutputStream os = null;
+        // 写出文件
+        File saveFile = new File(System.getProperty("user.dir"), robot.getCompany() + "周报.xls");
+        try {
+            // 获取模板文件
+            is = this.getClass().getClassLoader().getResourceAsStream("周报模板.xls");
+            // 实例化 XLSTransformer 对象
+            XLSTransformer xlsTransformer = new XLSTransformer();
+            // 获取 Workbook ，传入 模板 和 数据
+            Workbook workbook = xlsTransformer.transformXLS(is, beans);
+            os = new BufferedOutputStream(new FileOutputStream(saveFile));
+            // 输出
+            workbook.write(os);
+            // 关闭和刷新管道，不然可能会出现表格数据不齐，打不开之类的问题
+        } catch (Exception ignored) {
+
+        } finally {
+            if (is != null) {
+                is.close();
+            }
+            if (os != null) {
+                os.flush();
+                os.close();
+            }
+        }
+        if (!saveFile.exists()) {
+            return;
+        }
+        // 替换中文符号 去除空格
+        email = email.trim().replaceAll(" ", "").replace("，", ",");
+        String[] emailArray = email.split(",");
+        String mailText = "详情见附件\n";
+        // 发送邮件
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper;
+        try {
+            helper = new MimeMessageHelper(message, true);
+            String fileName = robot.getCompany() + "周报";
+            //true代表支持多组件，如附件，图片等
+            helper.setFrom(from);
+            helper.setTo(emailArray);
+            helper.setSubject(now.toString() + "-" + fileName);
+            helper.setCc(ccEmail);
+            helper.setText(mailText, true);
+            FileSystemResource file = new FileSystemResource(saveFile);
+            fileName = fileName + ".xls";
+            helper.addAttachment(fileName, file);//添加附件，可多次调用该方法添加多个附件
+            for (int i = 0; i < 3; i++) {
+                try {
+                    mailSender.send(message);
+                    logger.info("这些账号发送成功：" + email);
+                    break;
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                    logger.info(exception.getLocalizedMessage());
+                    Thread.sleep(2000);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // 删除临时文件
+        try {
+            saveFile.delete();
+        } catch (Exception ignored) {
+        }
     }
 
 
@@ -775,7 +1051,7 @@ public class SendMailService {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         new SendMailService().sendWeekReport();
     }
 }

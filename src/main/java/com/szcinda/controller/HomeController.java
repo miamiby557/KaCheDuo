@@ -75,6 +75,16 @@ public class HomeController {
         return Result.success();
     }
 
+    @GetMapping("sendOneCompanyWeekReport/{id}")
+    public Result<String> sendOneCompanyWeekReport(@PathVariable String id) {
+        try {
+            sendMailService.sendOneCompanyWeekReport(id);
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
+        return Result.success();
+    }
+
     @GetMapping("testSendMail2")
     public Result<String> testSendMail2() {
         try {
