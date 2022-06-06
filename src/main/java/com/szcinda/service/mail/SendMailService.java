@@ -499,6 +499,7 @@ public class SendMailService {
                 top10DriverCount.setIndex(i);
                 top10DriverCount.setNo(entryList.get(i - 1).getKey());
                 top10DriverCount.setCount(entryList.get(i - 1).getValue());
+                vehicleList.add(top10DriverCount);
             }
             WeekCountDto countDto = new WeekCountDto();
             countDto.setCarCount(robot.getCarCount());
@@ -676,6 +677,7 @@ public class SendMailService {
             top10DriverCount.setIndex(i);
             top10DriverCount.setNo(entryList.get(i - 1).getKey());
             top10DriverCount.setCount(entryList.get(i - 1).getValue());
+            vehicleList.add(top10DriverCount);
         }
         WeekCountDto countDto = new WeekCountDto();
         countDto.setCarCount(robot.getCarCount());
