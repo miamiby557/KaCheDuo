@@ -18,7 +18,7 @@
             <!-- 每日生成日志文件或日志文件大小超出限制后输出的文件名模板 -->
             <fileNamePattern>${LOG_PATH}/info-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <!-- 日志文件保留天数 -->
-            <maxHistory>30</maxHistory>
+            <maxHistory>20</maxHistory>
             <!-- 日志文件最大大小：100MB -->
             <maxFileSize>100MB</maxFileSize>
         </rollingPolicy>
@@ -36,7 +36,7 @@
         <File>${LOG_PATH}/error.log</File>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>${LOG_PATH}/error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxHistory>30</maxHistory>
+            <maxHistory>20</maxHistory>
             <maxFileSize>100MB</maxFileSize>
         </rollingPolicy>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">

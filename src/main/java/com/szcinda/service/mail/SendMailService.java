@@ -12,6 +12,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -104,7 +107,7 @@ public class SendMailService {
             return;
         }
 
-        // 取出关于这个账号的所有处置列表
+        // 取出关于这个账号的所有处置列表,这里优化成按页查询
         Specification<FengXian> specification2 = ((root, criteriaQuery, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             Predicate timeStart = criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), lastDate.atStartOfDay());
@@ -117,7 +120,17 @@ public class SendMailService {
         });
         // 过滤出关于这个账号的风险处置
         order = new Sort(Sort.Direction.ASC, "gdCreateTime");
-        List<FengXian> fengXianList = fengXianRepository.findAll(specification2, order);
+        Pageable pageable = new PageRequest(0, 5000, order);
+        Page<FengXian> details = fengXianRepository.findAll(specification2, pageable);
+        List<FengXian> fengXianList = new ArrayList<>(details.getContent());
+        int totalPages = details.getTotalPages();
+        if (totalPages > 1) {
+            for (int page = 1; page < totalPages; page++) {
+                pageable = new PageRequest(page, 5000, order);
+                details = fengXianRepository.findAll(specification2, pageable);
+                fengXianList.addAll(details.getContent());
+            }
+        }
         // 替换中文符号 去除空格
         email = email.trim().replaceAll(" ", "").replace("，", ",");
         String[] emailArray = email.split(",");
@@ -180,6 +193,10 @@ public class SendMailService {
                         reportDto.setHappenTime(LocalDateTime.now());
                     }
                     reportDto.setCreateTime(fengXian.getCreateTime());
+                    // 添加处理凭证
+                    if (StringUtils.hasText(fengXian.getFilePath())) {
+                        reportDto.setFilePath(fengXian.getFilePath());
+                    }
                     this.handle(fengXian, reportDto, reportDtos, countDto);
                 }
             }
@@ -399,6 +416,90 @@ public class SendMailService {
         }
     }
 
+    /**
+     * 每周一凌晨3点推送周报
+     *
+     * @throws Exception
+     */
+    @Scheduled(cron = "0 30 3 ? * MON")
+    public void sendWeekReport() {
+        logger.info("正在全量发周报邮件");
+        //解决附件文件名称过长乱码问题
+        System.setProperty("mail.mime.splitlongparameters", "false");
+        List<Robot> robots = robotRepository.findAll();
+        CountFxDto countFxDto = new CountFxDto();
+        // 过滤出主账号
+        List<Robot> mainRobotList = robots.stream().filter(item -> item.isRun() && StringUtils.isEmpty(item.getParentId())).collect(Collectors.toList());
+        // 先查出所有昨天的数据
+        for (Robot robot : mainRobotList) {
+            // 取出子账号
+            List<String> accountList = robots.stream().filter(robot1 -> robot1.getParentId() != null && robot1.getParentId().equals(robot.getId())).map(Robot::getPhone).collect(Collectors.toList());
+            accountList.add(robot.getPhone());
+            LocalDate last7Date = LocalDate.now().minusDays(7);
+            List<FengXian> fengXianList = new ArrayList<>();
+            for (int i = 0; i < 7; i++) {
+                // 取出一周的处置列表
+                LocalDate finalLast7Date = last7Date;
+                Specification<FengXian> specification2 = ((root, criteriaQuery, criteriaBuilder) -> {
+                    List<Predicate> predicates = new ArrayList<>();
+                    Predicate timeStart = criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), finalLast7Date.atStartOfDay());
+                    predicates.add(timeStart);
+                    Predicate timeEnd = criteriaBuilder.lessThan(root.get("createTime"), finalLast7Date.plusDays(1).atStartOfDay());
+                    predicates.add(timeEnd);
+                    Expression<String> exp = root.get("owner");
+                    predicates.add(exp.in(accountList));
+                    return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+                });
+                Pageable pageable = new PageRequest(0, 5000);
+                Page<FengXian> details = fengXianRepository.findAll(specification2, pageable);
+                fengXianList.addAll(details.getContent());
+                int totalPages = details.getTotalPages();
+                if (totalPages > 1) {
+                    for (int page = 1; page < totalPages; page++) {
+                        pageable = new PageRequest(page, 5000);
+                        details = fengXianRepository.findAll(specification2, pageable);
+                        fengXianList.addAll(details.getContent());
+                    }
+                }
+                last7Date = last7Date.plusDays(1);
+                //统计今天的数量
+                countFxDto.setWeekDayValue(i, fengXianList.size());
+            }
+            String company = robot.getCompany();
+            String startDate = LocalDate.now().minusDays(7).toString();
+            String endDate = LocalDate.now().minusDays(1).toString();
+            List<Top10DriverCount> vehicleList = new ArrayList<>();
+            // 按照车牌汇总数量
+            Map<String, Long> collect = fengXianList.stream().collect(Collectors.groupingBy(FengXian::getVehicleNo, Collectors.counting()));
+            // 按照车辆数量进行排序
+            List<Map.Entry<String, Long>> entryList = new ArrayList<>(collect.entrySet());
+            entryList.sort((me1, me2) -> {
+                return me2.getValue().compareTo(me1.getValue()); // 降序排序
+            });
+            // 取风险处置发生次数前10位最高的
+            for (int i = 1; i < 11; i++) {
+                if (i > entryList.size()) {
+                    break;
+                }
+                Top10DriverCount top10DriverCount = new Top10DriverCount();
+                top10DriverCount.setIndex(i);
+                top10DriverCount.setNo(entryList.get(i - 1).getKey());
+                top10DriverCount.setCount(entryList.get(i - 1).getValue());
+            }
+            WeekCountDto countDto = new WeekCountDto();
+            countDto.setCarCount(robot.getCarCount());
+            countDto.setWgCount(fengXianList.stream().filter(fengXian -> inDangerType(fengXian.getDangerType())).map(FengXian::getVehicleNo).distinct().count());
+            countDto.setTotalCount(fengXianList.size());
+            countDto.setFxCount(fengXianList.stream().filter(fengXian -> inDangerType(fengXian.getDangerType())).count());
+            countDto.setCzCount(countDto.getFxCount());
+            countDto.setPhoneCount(fengXianList.stream().filter(fengXian -> StringUtils.hasText(fengXian.getCallTime())).count());
+            countDto.setAqCount(countDto.getCzCount());
+
+            //统计每天的风险数量
+        }
+
+    }
+
 
     @Scheduled(cron = "0 0 8 * * ?")
     public void sendMail() throws Exception {
@@ -443,7 +544,18 @@ public class SendMailService {
                 return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
             });
             // 过滤出关于这个账号的风险处置
-            List<FengXian> fengXianList = fengXianRepository.findAll(specification2);
+            Sort order = new Sort(Sort.Direction.ASC, "gdCreateTime");
+            Pageable pageable = new PageRequest(0, 5000, order);
+            Page<FengXian> details = fengXianRepository.findAll(specification2, pageable);
+            List<FengXian> fengXianList = new ArrayList<>(details.getContent());
+            int totalPages = details.getTotalPages();
+            if (totalPages > 1) {
+                for (int page = 1; page < totalPages; page++) {
+                    pageable = new PageRequest(page, 5000, order);
+                    details = fengXianRepository.findAll(specification2, pageable);
+                    fengXianList.addAll(details.getContent());
+                }
+            }
             // 替换中文符号 去除空格
             email = email.trim().replaceAll(" ", "").replace("，", ",");
             String[] emailArray = email.split(",");
@@ -661,5 +773,9 @@ public class SendMailService {
         } catch (Exception exception) {
             exception.printStackTrace();
         }
+    }
+
+    public static void main(String[] args) {
+        new SendMailService().sendWeekReport();
     }
 }

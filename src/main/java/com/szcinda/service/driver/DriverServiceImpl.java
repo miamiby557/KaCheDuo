@@ -13,6 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import javax.persistence.criteria.Predicate;
@@ -195,6 +196,8 @@ public class DriverServiceImpl implements DriverService {
     public void generateChuliMissionFromAppUpload(String vehicleNo, String filePath) {
         // 创建处理任务，把历史关于这个车牌号码未处理的都生成一个处理任务
         List<Robot> copyOnWriteRobots = scheduleService.queryAllRobotsFromCopyOnWriteRobots();
+        Driver driver = driverRepository.findByVehicleNo(vehicleNo);
+        Assert.isTrue(driver != null, String.format("根据车牌号【%s】找不到司机信息", vehicleNo));
         List<FengXian> fengXianList = fengXianRepository.findByVehicleNoAndChuLiType(vehicleNo, TypeStringUtils.fxHandleStatus1);
         if (fengXianList == null || fengXianList.size() == 0) {
             return;
@@ -320,5 +323,12 @@ public class DriverServiceImpl implements DriverService {
             }
         }
         driverRepository.save(drivers);
+    }
+
+    @Override
+    public Driver getDriverByVehicleNo(String vehicleNo) {
+        Driver driver = driverRepository.findByVehicleNo(vehicleNo);
+        Assert.isTrue(driver != null, String.format("根据车牌号【%s】找不到司机信息", vehicleNo));
+        return driver;
     }
 }

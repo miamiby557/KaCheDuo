@@ -2,6 +2,7 @@ package com.szcinda.controller;
 
 import com.szcinda.controller.util.AppUploadDto;
 import com.szcinda.controller.util.DownPrams;
+import com.szcinda.repository.Driver;
 import com.szcinda.service.driver.DriverService;
 import com.szcinda.service.robotTask.RobotTaskService;
 import org.slf4j.Logger;
@@ -61,10 +62,20 @@ public class HandleController {
     public Result<String> appUpload(@RequestBody AppUploadDto appUploadDto) {
         Assert.isTrue(StringUtils.hasText(appUploadDto.getVehicleNo()), "参数【车牌号】不能为空");
         Assert.isTrue(StringUtils.hasText(appUploadDto.getFilePath()), "参数【图片链接】不能为空");
-        logger.info("APP接收到参数：" + appUploadDto.toString());
+        logger.info("接收到APP端上传的参数：" + appUploadDto.toString());
         driverService.generateChuliMissionFromAppUpload(appUploadDto.getVehicleNo(), appUploadDto.getFilePath());
         return Result.success();
     }
+
+
+    @PostMapping("testAppUpload")
+    public Result<Object> testAppUpload(@RequestBody AppUploadDto appUploadDto) {
+        Assert.isTrue(StringUtils.hasText(appUploadDto.getVehicleNo()), "参数【车牌号】不能为空");
+        logger.info("测试车牌是否存在的接口数据：" + appUploadDto.toString());
+        Driver driver = driverService.getDriverByVehicleNo(appUploadDto.getVehicleNo());
+        return Result.success(driver);
+    }
+
 
     @RequestMapping(value = "upload", method = RequestMethod.POST)
     public Result<String> driverAppUpload(HttpServletRequest request) {

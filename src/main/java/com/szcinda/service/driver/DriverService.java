@@ -27,4 +27,6 @@ public interface DriverService {
     List<DriverDto> queryNotFriend(String owner);
 
     void updateInfo(UpdateDriverInfo driverInfo);
+
+    Driver getDriverByVehicleNo(String vehicleNo);
 }

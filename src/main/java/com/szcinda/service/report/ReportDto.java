@@ -29,6 +29,7 @@ public class ReportDto implements Serializable {
     public String type10 = ""; // 其他异常
     public String handleText = "";// 处理
     public String handleResult = "";// 处理结果
+    public String filePath = "";
 
     private LocalDateTime happenTime;
     private LocalDateTime createTime;

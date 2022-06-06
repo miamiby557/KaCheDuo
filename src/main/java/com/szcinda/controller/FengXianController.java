@@ -43,7 +43,7 @@ public class FengXianController {
 
     @PostMapping("apiCreate")
     public Result<String> apiCreate(@RequestBody List<CreateFengXianDto> dtos) {
-        logger.info(String.format("批量创建风险处置：%s", dtos.toString()));
+        //logger.info(String.format("批量创建风险处置：%s", dtos.toString()));
         fengXianService.batchCreate(dtos);
         return Result.success();
     }
