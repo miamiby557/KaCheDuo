@@ -8,5 +8,5 @@ import java.io.Serializable;
 public class Top10DriverCount implements Serializable {
     public int index;
     public String no;
-    public Long count;
+    public String count;
 }

@@ -503,7 +503,16 @@ public class SendMailService {
                 Top10DriverCount top10DriverCount = new Top10DriverCount();
                 top10DriverCount.setIndex(i);
                 top10DriverCount.setNo(entryList.get(i - 1).getKey());
-                top10DriverCount.setCount(entryList.get(i - 1).getValue());
+                top10DriverCount.setCount(entryList.get(i - 1).getValue().toString());
+                vehicleList.add(top10DriverCount);
+            }
+            // 如果不够10个，需要凑够10个
+            while (vehicleList.size() < 10) {
+                int index = vehicleList.size();
+                Top10DriverCount top10DriverCount = new Top10DriverCount();
+                top10DriverCount.setIndex(index + 1);
+                top10DriverCount.setNo("-");
+                top10DriverCount.setCount("-");
                 vehicleList.add(top10DriverCount);
             }
             WeekCountDto countDto = new WeekCountDto();
@@ -522,19 +531,19 @@ public class SendMailService {
 
             //求占比
             countFx2Dto.setOsCount(countFxDto.getOsCount());
-            countFx2Dto.setOsCountP(calculatePercent(countFx2Dto.getOsCount(), countDto.getFxCount()));
+            countFx2Dto.setOsCountP(calculatePercent(countFx2Dto.getOsCount(), countDto.getFxCount()) * 100);
             countFx2Dto.setSmkCount(countFxDto.getSmkCount());
-            countFx2Dto.setSmkCountP(calculatePercent(countFx2Dto.getSmkCount(), countDto.getFxCount()));
+            countFx2Dto.setSmkCountP(calculatePercent(countFx2Dto.getSmkCount(), countDto.getFxCount()) * 100);
             countFx2Dto.setHpCount(countFxDto.getHpCount());
-            countFx2Dto.setHpCountP(calculatePercent(countFx2Dto.getHpCount(), countDto.getFxCount()));
+            countFx2Dto.setHpCountP(calculatePercent(countFx2Dto.getHpCount(), countDto.getFxCount()) * 100);
             countFx2Dto.setTiredCount(countFxDto.getTiredCount());
-            countFx2Dto.setTiredCountP(calculatePercent(countFx2Dto.getTiredCount(), countDto.getFxCount()));
+            countFx2Dto.setTiredCountP(calculatePercent(countFx2Dto.getTiredCount(), countDto.getFxCount()) * 100);
             countFx2Dto.setPpCount(countFxDto.getPpCount());
-            countFx2Dto.setPpCountP(calculatePercent(countFx2Dto.getPpCount(), countDto.getFxCount()));
+            countFx2Dto.setPpCountP(calculatePercent(countFx2Dto.getPpCount(), countDto.getFxCount()) * 100);
 
-            countFx2Dto.setFirstCountP(calculatePercent(countFx2Dto.getFirstCount(), countFx2Dto.getLevelCount()));
-            countFx2Dto.setSecondCountP(calculatePercent(countFx2Dto.getSecondCount(), countFx2Dto.getLevelCount()));
-            countFx2Dto.setThirdCountP(calculatePercent(countFx2Dto.getThirdCount(), countFx2Dto.getLevelCount()));
+            countFx2Dto.setFirstCountP(calculatePercent(countFx2Dto.getFirstCount(), countFx2Dto.getLevelCount()) * 100);
+            countFx2Dto.setSecondCountP(calculatePercent(countFx2Dto.getSecondCount(), countFx2Dto.getLevelCount()) * 100);
+            countFx2Dto.setThirdCountP(calculatePercent(countFx2Dto.getThirdCount(), countFx2Dto.getLevelCount()) * 100);
 
             Map<String, Object> beans = new HashMap<>();
             beans.put("vehicleList", vehicleList);
@@ -544,6 +553,7 @@ public class SendMailService {
             beans.put("countDto", countDto);
             beans.put("countFxDto", countFxDto);
             beans.put("countFx2Dto", countFx2Dto);
+            beans.put("dayPercent", calculatePercent(countDto.getFxCount(), 7));
 
             InputStream is = null;
             OutputStream os = null;
@@ -551,7 +561,7 @@ public class SendMailService {
             File saveFile = new File(System.getProperty("user.dir"), robot.getCompany() + "周报.xls");
             try {
                 // 获取模板文件
-                is = this.getClass().getClassLoader().getResourceAsStream("周报模板.xls");
+                is = this.getClass().getClassLoader().getResourceAsStream("周报模板老版本.xls");
                 // 实例化 XLSTransformer 对象
                 XLSTransformer xlsTransformer = new XLSTransformer();
                 // 获取 Workbook ，传入 模板 和 数据
@@ -700,7 +710,16 @@ public class SendMailService {
             Top10DriverCount top10DriverCount = new Top10DriverCount();
             top10DriverCount.setIndex(i);
             top10DriverCount.setNo(entryList.get(i - 1).getKey());
-            top10DriverCount.setCount(entryList.get(i - 1).getValue());
+            top10DriverCount.setCount(entryList.get(i - 1).getValue().toString());
+            vehicleList.add(top10DriverCount);
+        }
+        // 如果不够10个，需要凑够10个
+        while (vehicleList.size() < 10) {
+            int index = vehicleList.size();
+            Top10DriverCount top10DriverCount = new Top10DriverCount();
+            top10DriverCount.setIndex(index + 1);
+            top10DriverCount.setNo("-");
+            top10DriverCount.setCount("-");
             vehicleList.add(top10DriverCount);
         }
         WeekCountDto countDto = new WeekCountDto();
@@ -719,19 +738,19 @@ public class SendMailService {
 
         //求占比
         countFx2Dto.setOsCount(countFxDto.getOsCount());
-        countFx2Dto.setOsCountP(calculatePercent(countFx2Dto.getOsCount(), countDto.getFxCount()));
+        countFx2Dto.setOsCountP(calculatePercent(countFx2Dto.getOsCount(), countDto.getFxCount()) * 100);
         countFx2Dto.setSmkCount(countFxDto.getSmkCount());
-        countFx2Dto.setSmkCountP(calculatePercent(countFx2Dto.getSmkCount(), countDto.getFxCount()));
+        countFx2Dto.setSmkCountP(calculatePercent(countFx2Dto.getSmkCount(), countDto.getFxCount()) * 100);
         countFx2Dto.setHpCount(countFxDto.getHpCount());
-        countFx2Dto.setHpCountP(calculatePercent(countFx2Dto.getHpCount(), countDto.getFxCount()));
+        countFx2Dto.setHpCountP(calculatePercent(countFx2Dto.getHpCount(), countDto.getFxCount()) * 100);
         countFx2Dto.setTiredCount(countFxDto.getTiredCount());
-        countFx2Dto.setTiredCountP(calculatePercent(countFx2Dto.getTiredCount(), countDto.getFxCount()));
+        countFx2Dto.setTiredCountP(calculatePercent(countFx2Dto.getTiredCount(), countDto.getFxCount()) * 100);
         countFx2Dto.setPpCount(countFxDto.getPpCount());
-        countFx2Dto.setPpCountP(calculatePercent(countFx2Dto.getPpCount(), countDto.getFxCount()));
+        countFx2Dto.setPpCountP(calculatePercent(countFx2Dto.getPpCount(), countDto.getFxCount()) * 100);
 
-        countFx2Dto.setFirstCountP(calculatePercent(countFx2Dto.getFirstCount(), countFx2Dto.getLevelCount()));
-        countFx2Dto.setSecondCountP(calculatePercent(countFx2Dto.getSecondCount(), countFx2Dto.getLevelCount()));
-        countFx2Dto.setThirdCountP(calculatePercent(countFx2Dto.getThirdCount(), countFx2Dto.getLevelCount()));
+        countFx2Dto.setFirstCountP(calculatePercent(countFx2Dto.getFirstCount(), countFx2Dto.getLevelCount()) * 100);
+        countFx2Dto.setSecondCountP(calculatePercent(countFx2Dto.getSecondCount(), countFx2Dto.getLevelCount()) * 100);
+        countFx2Dto.setThirdCountP(calculatePercent(countFx2Dto.getThirdCount(), countFx2Dto.getLevelCount()) * 100);
 
         Map<String, Object> beans = new HashMap<>();
         beans.put("vehicleList", vehicleList);
@@ -741,6 +760,7 @@ public class SendMailService {
         beans.put("countDto", countDto);
         beans.put("countFxDto", countFxDto);
         beans.put("countFx2Dto", countFx2Dto);
+        beans.put("dayPercent", calculatePercent(countDto.getFxCount(), 7));
 
         InputStream is = null;
         OutputStream os = null;
@@ -748,7 +768,7 @@ public class SendMailService {
         File saveFile = new File(System.getProperty("user.dir"), robot.getCompany() + "周报.xls");
         try {
             // 获取模板文件
-            is = this.getClass().getClassLoader().getResourceAsStream("周报模板.xls");
+            is = this.getClass().getClassLoader().getResourceAsStream("周报模板老版本.xls");
             // 实例化 XLSTransformer 对象
             XLSTransformer xlsTransformer = new XLSTransformer();
             // 获取 Workbook ，传入 模板 和 数据
