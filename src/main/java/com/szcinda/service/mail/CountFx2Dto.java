@@ -7,22 +7,22 @@ import java.io.Serializable;
 @Data
 public class CountFx2Dto implements Serializable {
     public long osCount = 0;
-    public long osCountP = 0;
+    public String osCountP = "=B68/B65*100%";
     public long smkCount = 0;
-    public long smkCountP = 0;
+    public String smkCountP = "=D68/B65*100%";
     public long hpCount = 0;
-    public long hpCountP = 0;
+    public String hpCountP = "=F68/B65*100%";
     public long tiredCount = 0;
-    public long tiredCountP = 0;
+    public String tiredCountP = "=H68/B65*100%";
     public long ppCount = 0;
-    public long ppCountP = 0;
+    public String ppCountP = "=J68/B65*100%";
 
-    public long firstCount;
-    public long firstCountP;
-    public long secondCount;
-    public long secondCountP;
-    public long thirdCount;
-    public long thirdCountP;
+    public long firstCount = 0;
+    public String firstCountP = "=M68/M65*100%";
+    public long secondCount = 0;
+    public String secondCountP = "=O68/M65*100%";
+    public long thirdCount = 0;
+    public String thirdCountP = "=Q68/B65*100%";
 
     public long levelCount = 0;
 

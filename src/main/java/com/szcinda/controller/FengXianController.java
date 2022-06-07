@@ -107,7 +107,7 @@ public class FengXianController {
                        @RequestParam(required = false) String userName, @RequestParam(required = false) String happenTime,
                        @RequestParam(required = false) String vehicleNo, @RequestParam(required = false) String company,
                        @RequestParam(required = false) String owner,
-                       HttpServletResponse response) throws Exception {
+                       HttpServletResponse response) {
         ChuZhiQuery params = new ChuZhiQuery();
         if (StringUtils.hasText(createTimeStart)) {
             params.setCreateTimeStart(LocalDate.parse(createTimeStart, dateTimeFormatter));
@@ -152,6 +152,64 @@ public class FengXianController {
                             value = "";
                         }
                     } catch (Exception exception) {
+                        value = "";
+                    }
+                    if(value == null){
+                        value = "";
+                    }
+                    mapInfo.put(key, value);
+                }
+                datas.add(mapInfo);
+            }
+            String fName = "处置-";
+            CsvExportUtil.responseSetProperties(fName, response);
+            CsvExportUtil.doExport(datas, titles.substring(0, titles.length() - 1), keys, out);
+        } catch (Exception exception) {
+            logger.info("导出数据异常，异常信息如下：");
+            logger.info(exception.getLocalizedMessage());
+        }
+    }
+
+    @GetMapping("testExport")
+    public void testExport(HttpServletResponse response){
+        try (OutputStream out = response.getOutputStream()) {
+            StringBuilder titles = new StringBuilder();
+            List<FieldMapUtl.Item> fxFieldMap = FieldMapUtl.getFXFieldMap();
+            List<String> keys = new ArrayList<>();
+            for (FieldMapUtl.Item item : fxFieldMap) {
+                titles.append(item.getLabel()).append(CsvExportUtil.CSV_COLUMN_SEPARATOR);
+                keys.add(item.getField());
+            }
+            // 构造导出数据
+            List<Map<String, String>> datas = new ArrayList<>();
+            Map<String, String> mapInfo;
+            List<FengXian> fengXianList = new ArrayList<>();
+            FengXian create = new FengXian();
+            create.setVehicleNo("粤B12345");
+            fengXianList.add(create);
+            for (FengXian fengXian : fengXianList) {
+                mapInfo = new HashMap<>(keys.size());
+                String value;
+                for (String key : keys) {
+                    try {
+                        Field field = FengXian.class.getDeclaredField(key);
+                        if (field.getType() == String.class) {
+                            value = (String) field.get(fengXian);
+                        } else if (field.getType() == Integer.class || field.getGenericType().getTypeName().equals("int")) {
+                            value = ((Integer) field.get(fengXian)).toString();
+                        } else if (field.getType() == Double.class || field.getGenericType().getTypeName().equals("double")) {
+                            value = field.get(fengXian).toString();
+                        } else if (field.getType() == LocalDateTime.class) {
+                            value = ((LocalDateTime) field.get(fengXian)).toString().replace("T", " ");
+                        } else if (field.getType() == LocalDate.class) {
+                            value = ((LocalDate) field.get(fengXian)).toString();
+                        } else {
+                            value = "";
+                        }
+                    } catch (Exception exception) {
+                        value = "";
+                    }
+                    if(value == null){
                         value = "";
                     }
                     mapInfo.put(key, value);

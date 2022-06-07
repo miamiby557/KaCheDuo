@@ -443,6 +443,7 @@ public class SendMailService {
             accountList.add(robot.getPhone());
             LocalDate last7Date = LocalDate.now().minusDays(7);
             List<FengXian> fengXianList = new ArrayList<>();
+            List<FengXian> dayFengXianList;
             for (int i = 0; i < 7; i++) {
                 // 取出一周的处置列表
                 LocalDate finalLast7Date = last7Date;
@@ -458,19 +459,19 @@ public class SendMailService {
                 });
                 Pageable pageable = new PageRequest(0, 5000);
                 Page<FengXian> details = fengXianRepository.findAll(specification2, pageable);
-                fengXianList.addAll(details.getContent());
+                dayFengXianList = new ArrayList<>(details.getContent());
                 int totalPages = details.getTotalPages();
                 if (totalPages > 1) {
                     for (int page = 1; page < totalPages; page++) {
                         pageable = new PageRequest(page, 5000);
                         details = fengXianRepository.findAll(specification2, pageable);
-                        fengXianList.addAll(details.getContent());
+                        dayFengXianList.addAll(details.getContent());
                     }
                 }
                 last7Date = last7Date.plusDays(1);
                 //统计今天的原始警情数量
-                countFxDto.setWeekDayValue(i, fengXianList.size());
-                for (FengXian fengXian : fengXianList) {
+                countFxDto.setWeekDayValue(i, dayFengXianList.size());
+                for (FengXian fengXian : dayFengXianList) {
                     // 判断是否是6种风险类型
                     if (inDangerType(fengXian.getDangerType())) {
                         countFxDto.setWeekDayValue2(i);
@@ -478,6 +479,8 @@ public class SendMailService {
                     // 统计风险等级数量
                     countFx2Dto.addLevelCount(fengXian.getDangerLevel());
                 }
+                // 加到所有的列表里面
+                fengXianList.addAll(dayFengXianList);
             }
             String company = robot.getCompany();
             String startDate = LocalDate.now().minusDays(7).toString();
@@ -621,6 +624,7 @@ public class SendMailService {
         accountList.add(robot.getPhone());
         LocalDate last7Date = LocalDate.now().minusDays(7);
         List<FengXian> fengXianList = new ArrayList<>();
+        List<FengXian> dayFengXianList;
         for (int i = 0; i < 7; i++) {
             // 取出一周的处置列表
             LocalDate finalLast7Date = last7Date;
@@ -636,19 +640,19 @@ public class SendMailService {
             });
             Pageable pageable = new PageRequest(0, 5000);
             Page<FengXian> details = fengXianRepository.findAll(specification2, pageable);
-            fengXianList.addAll(details.getContent());
+            dayFengXianList = new ArrayList<>(details.getContent());
             int totalPages = details.getTotalPages();
             if (totalPages > 1) {
                 for (int page = 1; page < totalPages; page++) {
                     pageable = new PageRequest(page, 5000);
                     details = fengXianRepository.findAll(specification2, pageable);
-                    fengXianList.addAll(details.getContent());
+                    dayFengXianList.addAll(details.getContent());
                 }
             }
             last7Date = last7Date.plusDays(1);
             //统计今天的原始警情数量
-            countFxDto.setWeekDayValue(i, fengXianList.size());
-            for (FengXian fengXian : fengXianList) {
+            countFxDto.setWeekDayValue(i, dayFengXianList.size());
+            for (FengXian fengXian : dayFengXianList) {
                 // 判断是否是6种风险类型
                 if (inDangerType(fengXian.getDangerType())) {
                     countFxDto.setWeekDayValue2(i);
@@ -656,6 +660,8 @@ public class SendMailService {
                 // 统计风险等级数量
                 countFx2Dto.addLevelCount(fengXian.getDangerLevel());
             }
+            // 加到所有的列表里面
+            fengXianList.addAll(dayFengXianList);
         }
         String company = robot.getCompany();
         String startDate = LocalDate.now().minusDays(7).toString();

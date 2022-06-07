@@ -53,7 +53,7 @@ public class CsvExportUtil {
             }
         }
         // 写出响应
-        os.write(buf.toString().getBytes(StandardCharsets.UTF_8));
+        os.write(buf.toString().getBytes("GBK"));
         os.flush();
     }
 
@@ -66,15 +66,12 @@ public class CsvExportUtil {
      */
     public static void responseSetProperties(String fileName, HttpServletResponse response) throws Exception {
         // 设置文件后缀
-        String fn = fileName + df.format(LocalDateTime.now()) + ".csv";
+        String fName = URLEncoder.encode(fileName + df.format(LocalDateTime.now()), "UTF-8");
         // 读取字符编码
-        String utf = "UTF-8";
-
+        String utf = "GBK";
         // 设置响应
         response.setContentType("application/ms-txt.numberformat:@");
         response.setCharacterEncoding(utf);
-        response.setHeader("Pragma", "public");
-        response.setHeader("Cache-Control", "max-age=30");
-        response.setHeader("Content-Disposition", "attachment; filename=" + URLEncoder.encode(fn, utf));
+        response.setHeader("Content-Disposition", "attachment; filename=" + fName + ".csv");
     }
 }
