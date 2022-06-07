@@ -72,6 +72,8 @@ public class CsvExportUtil {
         // 设置响应
         response.setContentType("application/ms-txt.numberformat:@");
         response.setCharacterEncoding(utf);
+        response.addHeader("Pargam", "no-cache");
+        response.addHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Disposition", "attachment; filename=" + fName + ".csv");
     }
 }

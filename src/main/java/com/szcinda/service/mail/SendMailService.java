@@ -27,6 +27,8 @@ import javax.mail.internet.MimeMessage;
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
 import java.io.*;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -520,10 +522,19 @@ public class SendMailService {
 
             //求占比
             countFx2Dto.setOsCount(countFxDto.getOsCount());
+            countFx2Dto.setOsCountP(calculatePercent(countFx2Dto.getOsCount(), countDto.getFxCount()));
             countFx2Dto.setSmkCount(countFxDto.getSmkCount());
+            countFx2Dto.setSmkCountP(calculatePercent(countFx2Dto.getSmkCount(), countDto.getFxCount()));
             countFx2Dto.setHpCount(countFxDto.getHpCount());
+            countFx2Dto.setHpCountP(calculatePercent(countFx2Dto.getHpCount(), countDto.getFxCount()));
             countFx2Dto.setTiredCount(countFxDto.getTiredCount());
+            countFx2Dto.setTiredCountP(calculatePercent(countFx2Dto.getTiredCount(), countDto.getFxCount()));
             countFx2Dto.setPpCount(countFxDto.getPpCount());
+            countFx2Dto.setPpCountP(calculatePercent(countFx2Dto.getPpCount(), countDto.getFxCount()));
+
+            countFx2Dto.setFirstCountP(calculatePercent(countFx2Dto.getFirstCount(), countFx2Dto.getLevelCount()));
+            countFx2Dto.setSecondCountP(calculatePercent(countFx2Dto.getSecondCount(), countFx2Dto.getLevelCount()));
+            countFx2Dto.setThirdCountP(calculatePercent(countFx2Dto.getThirdCount(), countFx2Dto.getLevelCount()));
 
             Map<String, Object> beans = new HashMap<>();
             beans.put("vehicleList", vehicleList);
@@ -602,6 +613,13 @@ public class SendMailService {
             } catch (Exception ignored) {
             }
         }
+    }
+
+    public long calculatePercent(long val1, long val2) {
+        if (val2 == 0) {
+            return 0;
+        }
+        return BigDecimal.valueOf(val1).divide(BigDecimal.valueOf(val2), 2, RoundingMode.HALF_UP).longValue();
     }
 
 
@@ -701,10 +719,19 @@ public class SendMailService {
 
         //求占比
         countFx2Dto.setOsCount(countFxDto.getOsCount());
+        countFx2Dto.setOsCountP(calculatePercent(countFx2Dto.getOsCount(), countDto.getFxCount()));
         countFx2Dto.setSmkCount(countFxDto.getSmkCount());
+        countFx2Dto.setSmkCountP(calculatePercent(countFx2Dto.getSmkCount(), countDto.getFxCount()));
         countFx2Dto.setHpCount(countFxDto.getHpCount());
+        countFx2Dto.setHpCountP(calculatePercent(countFx2Dto.getHpCount(), countDto.getFxCount()));
         countFx2Dto.setTiredCount(countFxDto.getTiredCount());
+        countFx2Dto.setTiredCountP(calculatePercent(countFx2Dto.getTiredCount(), countDto.getFxCount()));
         countFx2Dto.setPpCount(countFxDto.getPpCount());
+        countFx2Dto.setPpCountP(calculatePercent(countFx2Dto.getPpCount(), countDto.getFxCount()));
+
+        countFx2Dto.setFirstCountP(calculatePercent(countFx2Dto.getFirstCount(), countFx2Dto.getLevelCount()));
+        countFx2Dto.setSecondCountP(calculatePercent(countFx2Dto.getSecondCount(), countFx2Dto.getLevelCount()));
+        countFx2Dto.setThirdCountP(calculatePercent(countFx2Dto.getThirdCount(), countFx2Dto.getLevelCount()));
 
         Map<String, Object> beans = new HashMap<>();
         beans.put("vehicleList", vehicleList);
