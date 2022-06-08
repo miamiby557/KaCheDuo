@@ -625,11 +625,11 @@ public class SendMailService {
         }
     }
 
-    public long calculatePercent(long val1, long val2) {
+    public double calculatePercent(long val1, long val2) {
         if (val2 == 0) {
             return 0;
         }
-        return BigDecimal.valueOf(val1).divide(BigDecimal.valueOf(val2), 2, RoundingMode.HALF_UP).longValue();
+        return BigDecimal.valueOf(val1).divide(BigDecimal.valueOf(val2), 2, RoundingMode.HALF_UP).doubleValue();
     }
 
 
