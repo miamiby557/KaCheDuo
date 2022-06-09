@@ -488,8 +488,8 @@ public class SendMailService {
             String startDate = LocalDate.now().minusDays(7).toString();
             String endDate = LocalDate.now().minusDays(1).toString();
             List<Top10DriverCount> vehicleList = new ArrayList<>();
-            // 按照车牌汇总数量
-            Map<String, Long> collect = fengXianList.stream().collect(Collectors.groupingBy(FengXian::getVehicleNo, Collectors.counting()));
+            // 按照车牌汇总数量，只统计6种风险类型内的数据
+            Map<String, Long> collect = fengXianList.stream().filter(fengXian -> inDangerType(fengXian.getDangerType())).collect(Collectors.groupingBy(FengXian::getVehicleNo, Collectors.counting()));
             // 按照车辆数量进行排序
             List<Map.Entry<String, Long>> entryList = new ArrayList<>(collect.entrySet());
             entryList.sort((me1, me2) -> {
