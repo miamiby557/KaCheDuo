@@ -117,11 +117,6 @@ public class RobotTaskController {
         return Result.success(robotScheduleService.getOneChaGangRobot());
     }
 
-    @GetMapping("getRobotPwd/{account}")
-    public Result<String> getRobotPwd(@PathVariable String account) {
-        return Result.success(robotScheduleService.getPwdByAccount(account));
-    }
-
     @GetMapping("getTopWatchRobotList")
     public Result<List<RobotPriorityDto>> getTopWatchRobotList() {
         return Result.success(robotScheduleService.getTop20FromWatchRobotList());
@@ -130,5 +125,25 @@ public class RobotTaskController {
     @GetMapping("getTopChaGangRobotList")
     public Result<List<RobotPriorityDto>> getTopChaGangRobotList() {
         return Result.success(robotScheduleService.getTop20FromChaGangRobotList());
+    }
+
+    // 调用此方法代表运行成功，则需要把帐号的优先级降低，把下一次机会留给其他帐号
+    @GetMapping("hasRun/{account}")
+    public Result<String> hasRun(@PathVariable String account) {
+        robotScheduleService.updateLastTime(account);
+        return Result.success();
+    }
+
+    // 如果没有运行成功，则代表其他任务已经占用了资源，优先级提高，等下一次运行
+    @GetMapping("addPriority/{account}")
+    public Result<String> addPriority(@PathVariable String account) {
+        robotScheduleService.addPriority(account);
+        return Result.success();
+    }
+
+    // 获取查岗帐号密码
+    @GetMapping("chaGangPwd/{account}")
+    public Result<String> chaGangPwd(@PathVariable String account) {
+        return Result.success(robotScheduleService.getChaGangPwd(account));
     }
 }

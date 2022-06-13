@@ -35,4 +35,6 @@ public interface RobotService {
     void runOnceLocation(String id);
 
     void  updateCarCount(CarCountDto carCountDto);
+
+    String getPwdByAccount(String account);
 }

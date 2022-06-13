@@ -1,9 +1,6 @@
 package com.szcinda.service;
 
-import com.szcinda.repository.ChaGang;
-import com.szcinda.repository.ChaGangRepository;
-import com.szcinda.repository.Robot;
-import com.szcinda.repository.RobotRepository;
+import com.szcinda.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -35,10 +32,10 @@ public class RobotScheduleService {
         this.chaGangRepository = chaGangRepository;
     }
 
-    public String getPwdByAccount(String account) {
-        Robot robot = robotRepository.findByPhone(account);
-        if (robot != null) {
-            return robot.getPwd();
+    public String getChaGangPwd(String account) {
+        ChaGang chaGang = chaGangRepository.findByAccount(account);
+        if (chaGang != null) {
+            return chaGang.getPwd();
         }
         return null;
     }
@@ -51,17 +48,17 @@ public class RobotScheduleService {
         // 是否有删除帐号
         List<String> needDeleteFromWatchRobotList = new ArrayList<>();
         for (RobotPriorityDto robotPriorityDto : watchRobotList) {
-            boolean noRecord = allWatchRobotList.stream().noneMatch(robot -> robot.getPhone().equals(robotPriorityDto.getPhone()));
+            boolean noRecord = allWatchRobotList.stream().noneMatch(robot -> robot.getPhone().equals(robotPriorityDto.getAccount()));
             if (noRecord) {
-                needDeleteFromWatchRobotList.add(robotPriorityDto.getPhone());
+                needDeleteFromWatchRobotList.add(robotPriorityDto.getAccount());
             }
         }
         // 删除已经删除的监控帐号
-        watchRobotList.removeIf(robotPriorityDto -> needDeleteFromWatchRobotList.contains(robotPriorityDto.getPhone()));
+        watchRobotList.removeIf(robotPriorityDto -> needDeleteFromWatchRobotList.contains(robotPriorityDto.getAccount()));
         // 需要新增的帐号
         List<Robot> needAddFromWatchRobotList = new ArrayList<>();
         for (Robot robot : allWatchRobotList) {
-            boolean noRecord = watchRobotList.stream().noneMatch(robotPriorityDto -> robotPriorityDto.getPhone().equals(robot.getPhone()));
+            boolean noRecord = watchRobotList.stream().noneMatch(robotPriorityDto -> robotPriorityDto.getAccount().equals(robot.getPhone()));
             if (noRecord) {
                 needAddFromWatchRobotList.add(robot);
             }
@@ -76,16 +73,16 @@ public class RobotScheduleService {
         // 需要删除的查岗账号
         List<String> needDeleteFromChaGangRobotList = new ArrayList<>();
         for (RobotPriorityDto robotPriorityDto : chaGangRobotList) {
-            boolean noRecord = gangRecords.stream().noneMatch(robot -> robot.getAccount().equals(robotPriorityDto.getPhone()));
+            boolean noRecord = gangRecords.stream().noneMatch(robot -> robot.getAccount().equals(robotPriorityDto.getAccount()));
             if (noRecord) {
-                needDeleteFromChaGangRobotList.add(robotPriorityDto.getPhone());
+                needDeleteFromChaGangRobotList.add(robotPriorityDto.getAccount());
             }
         }
-        chaGangRobotList.removeIf(robotPriorityDto -> needDeleteFromChaGangRobotList.contains(robotPriorityDto.getPhone()));
+        chaGangRobotList.removeIf(robotPriorityDto -> needDeleteFromChaGangRobotList.contains(robotPriorityDto.getAccount()));
         // 需要新增的查岗帐号
         List<ChaGang> needAddFromChaGangRobotList = new ArrayList<>();
         for (ChaGang gangRecord : gangRecords) {
-            boolean noRecord = chaGangRobotList.stream().noneMatch(robotPriorityDto -> robotPriorityDto.getPhone().equals(gangRecord.getAccount()));
+            boolean noRecord = chaGangRobotList.stream().noneMatch(robotPriorityDto -> robotPriorityDto.getAccount().equals(gangRecord.getAccount()));
             if (noRecord) {
                 needAddFromChaGangRobotList.add(gangRecord);
             }
@@ -97,14 +94,30 @@ public class RobotScheduleService {
         }
     }
 
-    // 更新上一次心跳的时间
+    // 更新上一次心跳的时间，代表正常运行一次，需要降低优先级
     public void updateLastTime(String account) {
-        watchRobotList.stream().filter(robotPriorityDto -> robotPriorityDto.getPhone().equals(account))
+        watchRobotList.stream().filter(robotPriorityDto -> robotPriorityDto.getAccount().equals(account))
                 .findFirst()
-                .ifPresent(robotPriorityDto -> robotPriorityDto.setLastTime(LocalDateTime.now()));
-        chaGangRobotList.stream().filter(robotPriorityDto -> robotPriorityDto.getPhone().equals(account))
+                .ifPresent(robotPriorityDto -> {
+                    robotPriorityDto.setLastTime(LocalDateTime.now());
+                    robotPriorityDto.setPriority(0);
+                });
+        chaGangRobotList.stream().filter(robotPriorityDto -> robotPriorityDto.getAccount().equals(account))
                 .findFirst()
-                .ifPresent(robotPriorityDto -> robotPriorityDto.setLastTime(LocalDateTime.now()));
+                .ifPresent(robotPriorityDto -> {
+                    robotPriorityDto.setLastTime(LocalDateTime.now());
+                    robotPriorityDto.setPriority(0);
+                });
+    }
+
+    // 更新，优先级+1
+    public void addPriority(String account) {
+        watchRobotList.stream().filter(robotPriorityDto -> robotPriorityDto.getAccount().equals(account))
+                .findFirst()
+                .ifPresent(robotPriorityDto -> robotPriorityDto.setPriority(robotPriorityDto.getPriority() + 1));
+        chaGangRobotList.stream().filter(robotPriorityDto -> robotPriorityDto.getAccount().equals(account))
+                .findFirst()
+                .ifPresent(robotPriorityDto -> robotPriorityDto.setPriority(robotPriorityDto.getPriority() + 1));
     }
 
     // 20秒排序一次列表，包括监控帐号和查岗账号

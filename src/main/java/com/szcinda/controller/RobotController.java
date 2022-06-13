@@ -47,7 +47,6 @@ public class RobotController {
         // logger.info(String.format("机器人发送心跳包：%s,%s,%s", ipRobotDto.getId(), ipRobotDto.getIp(), ipRobotDto.getAccount()));
         scheduleService.alive(ipRobotDto.getAccount());
         scheduleService.aliveIp(ipRobotDto.getIp(), ipRobotDto.getAccount());
-        robotScheduleService.updateLastTime(ipRobotDto.getAccount());
         return Result.success();
     }
 
@@ -175,6 +174,11 @@ public class RobotController {
     @GetMapping("getLocationRobots/{owner}")
     public Result<List<String>> getLocationRobots(@PathVariable String owner) {
         return Result.success(robotService.getLocationRobots(owner));
+    }
+
+    @GetMapping("getPwdByAccount/{account}")
+    public Result<String> getPwdByAccount(@PathVariable String account){
+        return Result.success(robotService.getPwdByAccount(account));
     }
 
     //  是否启用监控

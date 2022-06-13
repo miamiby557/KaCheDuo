@@ -7,12 +7,12 @@ import java.time.LocalDateTime;
 
 @Data
 public class RobotPriorityDto implements Serializable{
-    private String phone;
+    private String account;
     private int priority;
     private LocalDateTime lastTime;
 
-    public RobotPriorityDto(String phone) {
+    public RobotPriorityDto(String account) {
         this.priority = 99;
-        this.phone = phone;
+        this.account = account;
     }
 }

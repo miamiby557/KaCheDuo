@@ -449,4 +449,13 @@ public class RobotServiceImpl implements RobotService {
 
     }
 
+    @Override
+    public String getPwdByAccount(String account) {
+        Robot robot = robotRepository.findByPhone(account);
+        if (robot != null) {
+            return robot.getPwd();
+        }
+        return null;
+    }
+
 }
