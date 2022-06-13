@@ -1,6 +1,7 @@
 package com.szcinda.controller;
 
 import com.szcinda.service.PageResult;
+import com.szcinda.service.RobotScheduleService;
 import com.szcinda.service.ScheduleService;
 import com.szcinda.service.robot.*;
 import org.slf4j.Logger;
@@ -18,10 +19,12 @@ public class RobotController {
 
     private final ScheduleService scheduleService;
     private final RobotService robotService;
+    private final RobotScheduleService robotScheduleService;
 
-    public RobotController(ScheduleService scheduleService, RobotService robotService) {
+    public RobotController(ScheduleService scheduleService, RobotService robotService, RobotScheduleService robotScheduleService) {
         this.scheduleService = scheduleService;
         this.robotService = robotService;
+        this.robotScheduleService = robotScheduleService;
     }
 
 
@@ -44,6 +47,7 @@ public class RobotController {
         // logger.info(String.format("机器人发送心跳包：%s,%s,%s", ipRobotDto.getId(), ipRobotDto.getIp(), ipRobotDto.getAccount()));
         scheduleService.alive(ipRobotDto.getAccount());
         scheduleService.aliveIp(ipRobotDto.getIp(), ipRobotDto.getAccount());
+        robotScheduleService.updateLastTime(ipRobotDto.getAccount());
         return Result.success();
     }
 

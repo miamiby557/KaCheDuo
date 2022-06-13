@@ -3,6 +3,8 @@ package com.szcinda.controller;
 import com.szcinda.repository.HistoryTask;
 import com.szcinda.repository.RobotTask;
 import com.szcinda.service.PageResult;
+import com.szcinda.service.RobotPriorityDto;
+import com.szcinda.service.RobotScheduleService;
 import com.szcinda.service.robotTask.RobotTaskDto;
 import com.szcinda.service.robotTask.RobotTaskQuery;
 import com.szcinda.service.robotTask.RobotTaskService;
@@ -18,10 +20,12 @@ public class RobotTaskController {
 
     private final RobotTaskService robotTaskService;
     private final WechatAlarmService wechatAlarmService;
+    private final RobotScheduleService robotScheduleService;
 
-    public RobotTaskController(RobotTaskService robotTaskService, WechatAlarmService wechatAlarmService) {
+    public RobotTaskController(RobotTaskService robotTaskService, WechatAlarmService wechatAlarmService, RobotScheduleService robotScheduleService) {
         this.robotTaskService = robotTaskService;
         this.wechatAlarmService = wechatAlarmService;
+        this.robotScheduleService = robotScheduleService;
     }
 
     @GetMapping("getList")
@@ -101,5 +105,30 @@ public class RobotTaskController {
         robotTaskService.finish(id);
         wechatAlarmService.minusError(account);
         return Result.success();
+    }
+
+    @GetMapping("getOneWatchRobot")
+    public Result<RobotPriorityDto> getOneWatchRobot() {
+        return Result.success(robotScheduleService.getOneWatchRobot());
+    }
+
+    @GetMapping("getOneChaGangRobot")
+    public Result<RobotPriorityDto> getOneChaGangRobot() {
+        return Result.success(robotScheduleService.getOneChaGangRobot());
+    }
+
+    @GetMapping("getRobotPwd/{account}")
+    public Result<String> getRobotPwd(@PathVariable String account) {
+        return Result.success(robotScheduleService.getPwdByAccount(account));
+    }
+
+    @GetMapping("getTopWatchRobotList")
+    public Result<List<RobotPriorityDto>> getTopWatchRobotList() {
+        return Result.success(robotScheduleService.getTop20FromWatchRobotList());
+    }
+
+    @GetMapping("getTopChaGangRobotList")
+    public Result<List<RobotPriorityDto>> getTopChaGangRobotList() {
+        return Result.success(robotScheduleService.getTop20FromChaGangRobotList());
     }
 }
